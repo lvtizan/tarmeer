@@ -13,6 +13,7 @@ exports.getMaterialSearch = getMaterialSearch;
 exports.getMegaMenu = getMegaMenu;
 exports.getPopularProducts = getPopularProducts;
 const database_1 = require("../config/database");
+const materialVideo_1 = require("../lib/materialVideo");
 const supplierRedact_1 = require("../lib/supplierRedact");
 
 // LIKE 转义(防 % _ 被当通配) + 包裹
@@ -306,7 +307,7 @@ async function getMaterialSearch(req, res) {
         );
         const total = cntRows[0].total;
         const [rows] = await database_1.default.query(
-            `SELECT p.id, COALESCE(p.title_translated, p.title, 'Product') AS title, p.image_url, p.category,
+            `SELECT p.id, COALESCE(p.title_translated, p.title, 'Product') AS title, p.image_url, p.video_url, p.category,
          p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
          sp.slug AS supplier_slug, sp.company_name AS supplier_real_name,
          sp.name_zh AS supplier_real_name_zh, sp.categories AS supplier_categories
@@ -322,6 +323,7 @@ async function getMaterialSearch(req, res) {
             id: r.id,
             title: maskTitle(r.title, r.supplier_real_name, r.supplier_real_name_zh),
             image_url: r.image_url,
+            video_url: (0, materialVideo_1.normalizeMaterialVideoUrl)(r.video_url),
             category: r.category,
             price: r.price,
             price_max: r.price_max,

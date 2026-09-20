@@ -1,20 +1,12 @@
 'use client';
 
-// Hub 右侧默认内容（未搜索时）：最新上架商品瀑布流。
+// Hub 右侧默认内容（未搜索时）：宽屏自适应商品网格。
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
-import { resolveImageUrl } from '@/lib/imageUrl';
-import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 import { type MegaCategory } from '@/lib/materialMacros';
 import { fetchMaterialProducts, type PublicMaterialProduct } from '@/lib/materialsApi';
-import ProductPriceLine from './ProductPriceLine';
-
-function isValidSupplierSlug(slug: string | null): slug is string {
-  return typeof slug === 'string' && /^[a-zA-Z0-9_-]+$/.test(slug);
-}
+import HubProductCard from './HubProductCard';
 
 export default function HubFeatured({
   selectedCategory,
@@ -97,19 +89,22 @@ export default function HubFeatured({
 
   return (
     <div className="relative">
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-500">
+      <div className="mb-6 flex flex-col items-start justify-between gap-3 border-b border-stone-200/80 pb-5 sm:flex-row sm:items-end sm:gap-6">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#a8773e]">Product directory</p>
+          <h2 className="mt-1.5 break-words font-serif text-3xl leading-none text-[#1c1917] sm:text-[2rem]">
             {displayedCategory ? displayedCategory.label : 'All products'}
-          </h3>
-          {!loading && !hidesStaleCountryProducts && <p className="mt-1 text-[13px] text-stone-400">{total} products</p>}
+            {!loading && !hidesStaleCountryProducts && (
+              <span className="ml-2 align-middle font-sans text-sm font-normal text-stone-400">({total})</span>
+            )}
+          </h2>
         </div>
         {selectedCategory ? (
-          <button type="button" onClick={onShowAll} className="text-[13px] font-semibold text-[#b8864a] hover:text-[#a07640]">
+          <button type="button" onClick={onShowAll} className="shrink-0 rounded-full border border-[#d6b98e] bg-white px-4 py-2 text-[13px] font-semibold text-[#9a6d36] transition hover:border-[#b8864a] hover:bg-[#faf6ef]">
             Show all products
           </button>
         ) : (
-          <span className="text-[13px] text-stone-400">Sourced from China · seen in Dubai</span>
+          <span className="hidden text-[13px] text-stone-400 sm:block">Curated from verified suppliers</span>
         )}
       </div>
 
@@ -133,48 +128,8 @@ export default function HubFeatured({
               Updating products…
             </div>
           )}
-          <div className="columns-2 gap-4 sm:columns-3 lg:columns-4 [column-fill:_balance]">
-            {products.map((p) => {
-            const supplierSlug = isValidSupplierSlug(p.supplier_slug) ? p.supplier_slug : null;
-            const card = (
-              <>
-                <div className="block overflow-hidden bg-white">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={resolveImageUrl(p.image_url)}
-                    alt={`${p.title}${p.supplier_name ? ' — ' + p.supplier_name : ''}, sourced from China through Tarmeer UAE`}
-                    loading="lazy"
-                    className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                </div>
-                <div className="p-3">
-                  <p className="line-clamp-1 text-sm font-medium text-[#1c1917]">{p.title}</p>
-                  <ProductPriceLine product={p} />
-                  {p.supplier_name && (
-                    <p className="mt-0.5 line-clamp-1 text-[12px] text-stone-500">{p.supplier_name}</p>
-                  )}
-                  {supplierSlug && (
-                    <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[#b8864a] transition group-hover:text-[#a07640]">
-                      View Supplier <ArrowRight className="h-3 w-3" />
-                    </span>
-                  )}
-                </div>
-              </>
-            );
-            const className = 'group mb-4 block break-inside-avoid overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm';
-            if (supplierSlug) {
-              return (
-                <Link key={p.id} href={supplierFromProductsHref(supplierSlug)} className={`${className} cursor-pointer`}>
-                  {card}
-                </Link>
-              );
-            }
-            return (
-              <div key={p.id} className={className}>
-                {card}
-              </div>
-            );
-            })}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {products.map((product) => <HubProductCard key={product.id} product={product} />)}
           </div>
           {canLoadMore && products.length < total && (
             <div className="mt-7 flex justify-center">

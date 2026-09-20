@@ -146,6 +146,7 @@ export type SearchProduct = ProductPriceFields & {
   id: number;
   title: string;
   image_url: string;
+  video_url: string | null;
   category: string | null;
   supplier_slug: string | null;
   supplier_name: string | null;

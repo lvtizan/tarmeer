@@ -5,10 +5,12 @@ import { parseJsonArray } from '../../server/dist/lib/productJsonFields.js';
 
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
 const controller = read('server/dist/controllers/supplierProductController.js');
+const macroController = read('server/dist/controllers/materialsMacroController.js');
 const profileController = read('server/dist/controllers/supplierProfileController.js');
 const migrations = read('server/dist/lib/autoMigrate.js');
 const serverVideo = read('server/dist/lib/materialVideo.js');
 const materialsApi = read('src/lib/materialsApi.ts');
+const materialMacros = read('src/lib/materialMacros.ts');
 const detail = read('src/components/materials/ProductDetailClient.tsx');
 const supplierLibrary = read('src/components/materials/SupplierProductLibrary.tsx');
 const supplierDetail = read('src/components/materials/SupplierDetailClient.tsx');
@@ -34,6 +36,9 @@ assert.match(serverVideo, /A-Za-z0-9_-/);
 assert.doesNotMatch(serverVideo, /https:/);
 assert.match(materialsApi, /video_url: string \| null/);
 assert.match(materialsApi, /video_url: normalizeMaterialVideoUrl\(row\.video_url\)/);
+assert.match(materialMacros, /export type SearchProduct[\s\S]{0,240}video_url: string \| null/);
+assert.match(macroController, /p\.image_url, p\.video_url, p\.category/);
+assert.match(macroController, /video_url: \(0, materialVideo_1\.normalizeMaterialVideoUrl\)\(r\.video_url\)/);
 assert.match(detail, /<video[\s\S]*?controls[\s\S]*?playsInline[\s\S]*?preload="metadata"/);
 assert.match(detail, /<source src=\{resolveImageUrl\(product\.video_url\)\} type="video\/mp4"/);
 assert.match(supplierLibrary, /product\.video_url &&/);
@@ -47,4 +52,4 @@ assert.match(supplierDetail, /<video[\s\S]*?playsInline[\s\S]*?preload="metadata
 assert.match(supplierDetail, /className="aspect-video w-\[min\(90vw,960px\)\]/);
 assert.doesNotMatch(supplierDetail, /<video[\s\S]*?autoPlay/);
 
-console.log('supplier-product-video: 25/25 PASS');
+console.log('supplier-product-video: 28/28 PASS');

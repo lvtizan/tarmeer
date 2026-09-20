@@ -13,6 +13,7 @@ const check = (label, condition) => checks.push({ label, condition: Boolean(cond
 const adminForgot = read('src/app/admin/forgot-password/page.tsx');
 const hubFeatured = read('src/components/materials/HubFeatured.tsx');
 const hubSearchResults = read('src/components/materials/HubSearchResults.tsx');
+const hubProductCard = read('src/components/materials/HubProductCard.tsx');
 
 check(
   'admin forgot password uses the admin reset endpoint',
@@ -23,37 +24,38 @@ check(
     !adminForgot.includes('fetch("/api/auth/forgot-password"'),
 );
 
+check('hub product card validates supplier slugs before linking',
+  /function isValidSupplierSlug\(slug: string \| null\): slug is string/.test(hubProductCard) &&
+    /isValidSupplierSlug\(product\.supplier_slug\)/.test(hubProductCard));
+
 check(
-  'popular product cards validate supplier slugs before linking',
-  /function isValidSupplierSlug\(slug: string \| null\): slug is string/.test(hubFeatured) &&
-    /isValidSupplierSlug\(p\.supplier_slug\)/.test(hubFeatured),
+  'shared product card uses a full-card supplier link when supplier_slug exists',
+  /if\s*\(supplierSlug\)\s*\{[\s\S]{0,500}<Link[\s\S]{0,220}href=\{supplierFromProductsHref\(supplierSlug\)\}/.test(hubProductCard) &&
+    !hubProductCard.includes("href={product.supplier_slug ? `/materials/suppliers/${product.supplier_slug}` : '#'}"),
 );
 
 check(
-  'popular product cards use a full-card supplier link when supplier_slug exists',
-  /if\s*\(supplierSlug\)\s*\{[\s\S]{0,500}<Link[\s\S]{0,220}href=\{supplierFromProductsHref\(supplierSlug\)\}/.test(hubFeatured) &&
-    !hubFeatured.includes("href={p.supplier_slug ? `/materials/suppliers/${p.supplier_slug}` : '#'}"),
+  'shared product card does not contain nested supplier links',
+  (hubProductCard.match(/<Link/g) || []).length === 1,
 );
 
 check(
-  'popular product cards do not contain nested supplier links',
-  !/href=\{`\/materials\/suppliers\/\$\{supplierSlug\}`\}[\s\S]{0,900}<Link/.test(hubFeatured),
+  'popular product cards use the shared card implementation',
+  /import HubProductCard from ['"]\.\/HubProductCard['"]/.test(hubFeatured) &&
+    /<HubProductCard key=\{product\.id\} product=\{product\}/.test(hubFeatured),
 );
 
 check(
-  'search product cards validate supplier slugs before linking',
-  /function isValidSupplierSlug\(slug: string \| null\): slug is string/.test(hubSearchResults) &&
-    /isValidSupplierSlug\(r\.supplier_slug\)/.test(hubSearchResults),
+  'search product cards use the shared card implementation',
+  /import HubProductCard from ['"]\.\/HubProductCard['"]/.test(hubSearchResults) &&
+    /<HubProductCard key=\{product\.id\} product=\{product\}/.test(hubSearchResults),
 );
 
 check(
-  'search product cards use a full-card supplier link when supplier_slug exists',
-  /if\s*\(supplierSlug\)\s*\{[\s\S]{0,500}<Link[\s\S]{0,220}href=\{supplierFromProductsHref\(supplierSlug\)\}/.test(hubSearchResults),
-);
-
-check(
-  'search product cards do not contain nested supplier links',
-  !/href=\{`\/materials\/suppliers\/\$\{r\.supplier_slug\}`\}/.test(hubSearchResults),
+  'shared product card has safe title and stable metadata slots',
+  /product\.title\?\.trim\(\) \|\| 'Material'/.test(hubProductCard) &&
+    /className="min-h-6 min-w-0 overflow-hidden \[&>p\]:truncate"/.test(hubProductCard) &&
+    /flex min-h-5 min-w-0/.test(hubProductCard),
 );
 
 let passed = 0;

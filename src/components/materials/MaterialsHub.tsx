@@ -180,7 +180,7 @@ export default function MaterialsHub() {
       {tab === 'suppliers' && !isSearching ? (
         <MaterialsClient initialSuppliers={[]} embedded />
       ) : (
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[300px_1fr] lg:py-10">
+        <div className="mx-auto grid w-full max-w-[1920px] gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-7 lg:px-8 lg:py-8 2xl:gap-9">
           <div className="relative lg:z-20">
             <MegaMenuDirectory
               categories={mega}

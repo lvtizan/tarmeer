@@ -195,6 +195,12 @@ try {
   ng('供应商材质库系列聚合与搜索', commandTail(e));
 }
 try {
+  execSync('node scripts/harness/materials-hub-layout.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('材料总览宽版目录与自适应商品网格');
+} catch (e) {
+  ng('材料总览宽版目录与自适应商品网格', commandTail(e));
+}
+try {
   execSync('node --test src/lib/supplierProjectGallery.test.mjs', { cwd: ROOT, stdio: 'pipe' });
   ok('供应商项目图库 1–6+ 图平衡布局');
 } catch (e) {

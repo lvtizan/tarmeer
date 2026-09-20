@@ -18,8 +18,7 @@ const serviceInquiry = read('src/components/services/ServiceInquiryCard.tsx');
 const publicSurfaces = [
   ['material product card', read('src/components/materials/MaterialProductCard.tsx')],
   ['material search results', read('src/components/materials/MaterialSearchResults.tsx')],
-  ['hub featured', read('src/components/materials/HubFeatured.tsx')],
-  ['hub search results', read('src/components/materials/HubSearchResults.tsx')],
+  ['hub product card', read('src/components/materials/HubProductCard.tsx')],
   ['macro product grid', read('src/components/materials/MacroProductGrid.tsx')],
   ['mega menu directory', read('src/components/materials/MegaMenuDirectory.tsx')],
   ['product detail title', read('src/components/materials/ProductDetailClient.tsx')],

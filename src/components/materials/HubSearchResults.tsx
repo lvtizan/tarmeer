@@ -1,14 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import type { SearchProduct, SearchSupplier } from '@/lib/materialMacros';
-import ProductPriceLine from './ProductPriceLine';
-import { supplierFromProductsHref } from '@/lib/materialsNavigation';
-
-function isValidSupplierSlug(slug: string | null): slug is string {
-  return typeof slug === 'string' && /^[a-zA-Z0-9_-]+$/.test(slug);
-}
+import HubProductCard from './HubProductCard';
 
 export default function HubSearchResults({
   type,
@@ -47,46 +41,10 @@ export default function HubSearchResults({
           </p>
         </div>
       ) : type === 'products' ? (
-        <div className="columns-2 gap-4 sm:columns-3 lg:columns-4 [column-fill:_balance]">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {results.map((item) => {
-            const r = item as SearchProduct;
-            const supplierSlug = isValidSupplierSlug(r.supplier_slug) ? r.supplier_slug : null;
-            const card = (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={r.image_url}
-                  alt={r.title}
-                  className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="p-3">
-                  <p className="line-clamp-1 text-sm font-medium text-[#1c1917]">{r.title}</p>
-                  <ProductPriceLine product={r} />
-                  {r.supplier_name && (
-                    <p className="mt-0.5 text-xs text-stone-500">{r.supplier_name}</p>
-                  )}
-                  {supplierSlug && (
-                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#b8864a] transition group-hover:text-[#a07640]">
-                      View Supplier
-                      <ArrowRight className="h-3 w-3" />
-                    </span>
-                  )}
-                </div>
-              </>
-            );
-            const className = 'group mb-4 block break-inside-avoid overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm';
-            if (supplierSlug) {
-              return (
-                <Link key={r.id} href={supplierFromProductsHref(supplierSlug)} className={`${className} cursor-pointer`}>
-                  {card}
-                </Link>
-              );
-            }
-            return (
-              <div key={r.id} className={className}>
-                {card}
-              </div>
-            );
+            const product = item as SearchProduct;
+            return <HubProductCard key={product.id} product={product} />;
           })}
         </div>
       ) : (
