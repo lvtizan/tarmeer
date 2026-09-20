@@ -3,6 +3,7 @@
 // SSR 与客户端解析方式对齐 publicApi.ts：country 同时走 query + x-country header。
 import { normalizeProductPriceFields, type ProductPriceFields } from '@/lib/supplierProductUnits';
 import { sanitizeDescription } from '@/lib/materialDescription';
+import { normalizeMaterialVideoUrl } from '@/lib/materialVideo';
 export { sanitizeDescription } from '@/lib/materialDescription';
 
 const API_BASE =
@@ -36,6 +37,7 @@ export interface PublicMaterialProduct extends ProductPriceFields {
   category: string | null;
   image_url: string;
   image_urls: string[];
+  video_url: string | null;
   specs: ProductSpec[];
   certifications: string[];
   application_scenes: string[];
@@ -114,6 +116,7 @@ export function toMaterialProduct(row: any): PublicMaterialProduct {
     category: row.category ?? null,
     image_url: String(row.image_url || imageUrls[0] || ''),
     image_urls: imageUrls.length ? imageUrls : row.image_url ? [String(row.image_url)] : [],
+    video_url: normalizeMaterialVideoUrl(row.video_url),
     specs: normalizeSpecs(row.specs),
     certifications: normalizeStringArray(row.certifications),
     application_scenes: normalizeStringArray(row.application_scenes),

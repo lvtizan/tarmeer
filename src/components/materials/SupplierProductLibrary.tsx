@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Grid2X2, LayoutGrid, PackageSearch, Search, X } from 'lucide-react';
+import { Grid2X2, LayoutGrid, PackageSearch, Play, Search, X } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import FilterSidebar from '@/components/shared/FilterSidebar';
 import { sanitizeDescription } from '@/lib/materialDescription';
@@ -17,7 +17,7 @@ type Density = 'comfortable' | 'compact';
 interface SupplierProductLibraryProps {
   products: Product[];
   categoryLabel: (category: string) => string;
-  onOpenProduct: (visibleProducts: Product[], index: number) => void;
+  onOpenProduct: (product: Product) => void;
 }
 
 export default function SupplierProductLibrary({ products, categoryLabel, onOpenProduct }: SupplierProductLibraryProps) {
@@ -181,7 +181,7 @@ export default function SupplierProductLibrary({ products, categoryLabel, onOpen
                   ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
                   : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5'
               }`}>
-                {visibleProducts.map((product, index) => {
+                {visibleProducts.map((product) => {
                   const series = seriesByProductId.get(product.id)!;
                   return (
                     <article
@@ -190,10 +190,10 @@ export default function SupplierProductLibrary({ products, categoryLabel, onOpen
                     >
                       <button
                         type="button"
-                        onClick={() => onOpenProduct(visibleProducts, index)}
+                        onClick={() => onOpenProduct(product)}
                         className="block w-full overflow-hidden rounded-xl border border-stone-200 bg-[#efede8] text-left transition-colors hover:border-[#c99a5f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8864a] focus-visible:ring-offset-2"
                       >
-                        <div className="aspect-[4/3] overflow-hidden">
+                        <div className="relative aspect-[4/3] overflow-hidden">
                           <SmartImage
                             src={product.image_url}
                             variant="thumb"
@@ -201,6 +201,11 @@ export default function SupplierProductLibrary({ products, categoryLabel, onOpen
                             loading="lazy"
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.025]"
                           />
+                          {product.video_url && (
+                            <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
+                              <Play className="h-3 w-3 fill-current" /> Video
+                            </span>
+                          )}
                         </div>
                       </button>
                       <div className="pt-2.5">

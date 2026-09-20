@@ -201,6 +201,12 @@ try {
   ng('供应商项目图库平衡布局', commandTail(e));
 }
 try {
+  execSync('node scripts/harness/supplier-product-video.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('供应商产品视频 URL 安全与播放契约');
+} catch (e) {
+  ng('供应商产品视频契约', commandTail(e));
+}
+try {
   execSync('node --test src/lib/materialDescription.test.mjs', { cwd: ROOT, stdio: 'pipe' });
   ok('公开材料描述价格与导入元数据清洗');
 } catch (e) {

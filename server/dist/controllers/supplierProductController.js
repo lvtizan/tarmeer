@@ -23,6 +23,7 @@ const translate_1 = require("../lib/translate");
 const productJsonFields_1 = require("../lib/productJsonFields");
 const productPriceRange_1 = require("../lib/productPriceRange");
 const supplierRedact_1 = require("../lib/supplierRedact");
+const materialVideo_1 = require("../lib/materialVideo");
 // ── 公开产品 feed（中国新材料改版 spec §3.1，additive：不改动任何既有端点行为）──
 // 应用场景 slug → 存量 category 兜底映射（spec docs/plans/china-materials-revamp-spec.md §2.3）。
 // 场景过滤 = JSON_CONTAINS(application_scenes) OR category IN (映射表[scene])，兼容未打场景标签的存量产品。
@@ -38,7 +39,7 @@ const SCENE_CATEGORY_FALLBACK = {
 };
 // 公开产品 feed 的 SELECT/JOIN 片段：供应商字段平铺（spec §3.1 契约）。
 // 去标识（P0，对齐 redactPublicSupplier/FA-14）：真实厂名/name_zh 只取来遮蔽用，不外发；logo 不外发。
-const PUBLIC_PRODUCT_SELECT = `p.id, p.title, p.description, p.category, p.image_url, p.image_urls,
+const PUBLIC_PRODUCT_SELECT = `p.id, p.title, p.description, p.category, p.image_url, p.image_urls, p.video_url,
        p.specs, p.certifications, p.application_scenes, p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
        p.title_translated, p.description_translated,
        sp.id AS supplier_id, sp.slug AS supplier_slug, sp.origin AS supplier_origin,
@@ -62,6 +63,7 @@ function mapPublicProduct(row) {
     const enDesc = (typeof description_translated === 'string' && description_translated.trim()) ? description_translated : rest.description;
     return {
         ...rest,
+        video_url: (0, materialVideo_1.normalizeMaterialVideoUrl)(rest.video_url),
         title: mask(enTitle),
         description: supplierRedact_1.stripLeadingRedact(mask(enDesc)),
         supplier_name: supplierRedact_1.supplierPublicTitle(supplier_categories),
@@ -254,6 +256,8 @@ async function listProducts(req, res) {
         const __mask = (value) => supplierRedact_1.maskSupplierValue(value, __rn, __rz);
         const masked = (Array.isArray(products) ? products : []).map((p) => ({
             ...p,
+            image_urls: (0, productJsonFields_1.parseJsonArray)(p.image_urls),
+            video_url: (0, materialVideo_1.normalizeMaterialVideoUrl)(p.video_url),
             title: __mask(p.title),
             description: __mask(p.description),
             title_translated: __mask(p.title_translated),

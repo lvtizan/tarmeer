@@ -515,6 +515,7 @@ const REQUIRED_COLUMNS = [
     // Supplier product multi-image + category
     { table: 'supplier_products', column: 'image_urls', type: 'JSON NULL' },
     { table: 'supplier_products', column: 'category', type: 'VARCHAR(100) NULL' },
+    { table: 'supplier_products', column: 'video_url', type: 'VARCHAR(500) NULL' },
     // Supplier product pricing (price required at API/form layer; column nullable for legacy rows)
     { table: 'supplier_products', column: 'price', type: 'DECIMAL(12,2) NULL' },
     { table: 'supplier_products', column: 'price_max', type: 'DECIMAL(12,2) NULL' },

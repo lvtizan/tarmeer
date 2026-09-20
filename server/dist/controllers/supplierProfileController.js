@@ -15,6 +15,8 @@ const crypto_1 = require("crypto");
 const variantWorker_1 = require("../lib/variantWorker");
 const supplierRedact_1 = require("../lib/supplierRedact");
 const catalogRenderer_1 = require("../lib/catalogRenderer");
+const materialVideo_1 = require("../lib/materialVideo");
+const productJsonFields_1 = require("../lib/productJsonFields");
 const redactPublicSupplier = supplierRedact_1.redactPublicSupplier;
 async function uploadLicense(req, res) {
     try {
@@ -137,6 +139,8 @@ async function getPublicProfile(req, res) {
         const realNameZh = supplier.name_zh || '';
         const maskedProducts = (Array.isArray(products) ? products : []).map((p) => ({
             ...p,
+            image_urls: (0, productJsonFields_1.parseJsonArray)(p.image_urls),
+            video_url: (0, materialVideo_1.normalizeMaterialVideoUrl)(p.video_url),
             title: supplierRedact_1.maskSupplierValue(p.title, realName, realNameZh),
             description: supplierRedact_1.maskSupplierValue(p.description, realName, realNameZh),
             title_translated: supplierRedact_1.maskSupplierValue(p.title_translated, realName, realNameZh),

@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { BadgeCheck, ArrowRight, ArrowLeft, ChevronRight } from 'lucide-react';
+import { BadgeCheck, ArrowRight, ArrowLeft, ChevronRight, PlayCircle } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import SourcingRequestForm from '@/components/sourcing/SourcingRequestForm';
 import MaterialProductCard from './MaterialProductCard';
@@ -17,6 +17,7 @@ import { APPLICATION_SCENES, type PublicMaterialProduct, type SupplierCatalog } 
 import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 import ProductPriceLine from './ProductPriceLine';
+import { resolveImageUrl } from '@/lib/imageUrl';
 
 // pdf.js 阅读器懒加载：只在客户端、独立 chunk，不进初始包（不看图册的用户零成本）
 // loading 占位预留 16:9 空间 → 避免标题短暂悬在塌陷的空白上 + 布局抖动(CLS)
@@ -221,6 +222,26 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
                   </div>
                 )}
               </div>
+            )}
+
+            {product.video_url && (
+              <section aria-labelledby="material-video-heading">
+                <h2 id="material-video-heading" className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#1c1917]">
+                  <PlayCircle className="h-5 w-5 text-[#b8864a]" /> Material video
+                </h2>
+                <div className="aspect-video overflow-hidden rounded-2xl border border-stone-200 bg-black">
+                  <video
+                    controls
+                    playsInline
+                    preload="metadata"
+                    poster={resolveImageUrl(images[0] || product.image_url)}
+                    className="h-full w-full object-contain"
+                  >
+                    <source src={resolveImageUrl(product.video_url)} type="video/mp4" />
+                    Your browser does not support video playback.
+                  </video>
+                </div>
+              </section>
             )}
 
             {/* 产品图册（供应商 PDF → 电子书）— 无 catalog 时 CatalogReader 返回 null 自动隐藏 */}

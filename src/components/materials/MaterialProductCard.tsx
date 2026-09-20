@@ -5,7 +5,7 @@
 // 右上角放大镜 → 就地弹出该材料的图廊（复用 flooring Lightbox，全站放大交互一致）。
 import { useState } from 'react';
 import Link from 'next/link';
-import { ZoomIn } from 'lucide-react';
+import { Play, ZoomIn } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import Lightbox, { type LightboxShot } from '@/components/flooring/Lightbox';
 import { resolveImageUrl } from '@/lib/imageUrl';
@@ -41,6 +41,11 @@ export default function MaterialProductCard({ product }: { product: PublicMateri
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
+          {product.video_url && (
+            <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
+              <Play className="h-3 w-3 fill-current" /> Video
+            </span>
+          )}
         </div>
         {product.category && (
           <p className="mt-3 text-[10px] font-medium uppercase tracking-wider text-[#b8864a]">

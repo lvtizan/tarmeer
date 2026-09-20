@@ -20,6 +20,8 @@ import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { createSupplierIdentityGuard, isSupplierContentStale } from '@/lib/supplierDetailIdentity';
 import { buildSupplierProjectGallery } from '@/lib/supplierProjectGallery';
+import { resolveImageUrl } from '@/lib/imageUrl';
+import { normalizeMaterialVideoUrl } from '@/lib/materialVideo';
 import SupplierProductLibrary from './SupplierProductLibrary';
 
 // PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
@@ -56,6 +58,8 @@ export interface Product {
   title: string | null;
   description: string | null;
   image_url: string;
+  image_urls?: string[] | null;
+  video_url?: string | null;
   category: string | null;
   sort_order: number;
   title_translated: string | null;
@@ -108,11 +112,23 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   const [loading, setLoading] = useState(!initialSupplier);
   const [lightbox, setLightbox] = useState<{
     images: string[];
-    labels?: (string | null)[];
+    videoUrl?: string | null;
+    label?: string | null;
     idx: number;
   } | null>(null);
-  const openLightbox = (images: string[], idx: number, labels?: (string | null)[]) =>
-    setLightbox({ images, labels, idx });
+  const openProductMedia = (product: Product) => {
+    const images = Array.isArray(product.image_urls) && product.image_urls.length > 0
+      ? product.image_urls
+      : product.image_url ? [product.image_url] : [];
+    const videoUrl = normalizeMaterialVideoUrl(product.video_url);
+    if (images.length === 0 && !videoUrl) return;
+    setLightbox({
+      images,
+      videoUrl,
+      label: product.title_translated || product.title,
+      idx: 0,
+    });
+  };
   const closeLightbox = () => setLightbox(null);
   const [logoError, setLogoError] = useState(false);
 
@@ -448,11 +464,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
           <SupplierProductLibrary
             products={products}
             categoryLabel={catLabel}
-            onOpenProduct={(visibleProducts, index) => openLightbox(
-              visibleProducts.map((product) => product.image_url),
-              index,
-              visibleProducts.map((product) => product.title_translated || product.title),
-            )}
+            onOpenProduct={openProductMedia}
           />
         </div>
       )}
@@ -650,32 +662,60 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
 
       {/* ========== Lightbox ========== */}
       {lightbox !== null && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4" onClick={closeLightbox}>
-          <button className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl z-10" onClick={closeLightbox}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${lightbox.label || 'Material'} media gallery`}
+          className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4"
+          onClick={closeLightbox}
+        >
+          <button
+            type="button"
+            aria-label="Close media"
+            className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl z-10"
+            onClick={closeLightbox}
+          >
             ×
           </button>
           <div className="flex flex-col items-center gap-3 max-w-full" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <SmartImage
-              src={lightbox.images[lightbox.idx]}
-              alt={lightbox.labels?.[lightbox.idx] || ''}
-              className="max-w-full max-h-[75vh] object-contain rounded-lg"
-            />
-            {lightbox.labels?.[lightbox.idx] && (
+            {lightbox.videoUrl && lightbox.idx === lightbox.images.length ? (
+              <video
+                controls
+                playsInline
+                preload="metadata"
+                poster={lightbox.images[0] ? resolveImageUrl(lightbox.images[0]) : undefined}
+                className="aspect-video w-[min(90vw,960px)] max-h-[75vh] max-w-full rounded-lg bg-black object-contain"
+              >
+                <source src={resolveImageUrl(lightbox.videoUrl)} type="video/mp4" />
+                Your browser does not support video playback.
+              </video>
+            ) : (
+              <SmartImage
+                src={lightbox.images[lightbox.idx]}
+                alt={lightbox.label || ''}
+                className="max-w-full max-h-[75vh] object-contain rounded-lg"
+              />
+            )}
+            {lightbox.label && (
               <div className="bg-black/60 backdrop-blur-sm text-white px-5 py-2.5 rounded-xl text-sm font-medium">
-                {lightbox.labels[lightbox.idx]}
+                {lightbox.label}{lightbox.videoUrl && lightbox.idx === lightbox.images.length ? ' · Video' : ''}
               </div>
             )}
           </div>
           {lightbox.idx > 0 && (
             <button
+              type="button"
+              aria-label="Previous media"
               className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xl transition"
               onClick={e => { e.stopPropagation(); setLightbox(lb => lb && ({ ...lb, idx: lb.idx - 1 })); }}
             >
               ‹
             </button>
           )}
-          {lightbox.idx < lightbox.images.length - 1 && (
+          {lightbox.idx < lightbox.images.length + (lightbox.videoUrl ? 1 : 0) - 1 && (
             <button
+              type="button"
+              aria-label="Next media"
               className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xl transition"
               onClick={e => { e.stopPropagation(); setLightbox(lb => lb && ({ ...lb, idx: lb.idx + 1 })); }}
             >
