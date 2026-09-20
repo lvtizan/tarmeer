@@ -171,6 +171,12 @@ try {
   ng('材料产品价格区间 UI 契约', commandTail(e));
 }
 try {
+  execSync('node scripts/harness/supplier-inquiry-targeting.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('供应商询盘目标与国家归属');
+} catch (e) {
+  ng('供应商询盘目标与国家归属', commandTail(e));
+}
+try {
   execSync('node --test src/lib/productPriceDisplay.test.mjs', { cwd: ROOT, stdio: 'pipe' });
   ok('公开产品价格 DOM 行为');
 } catch (e) {
@@ -187,6 +193,12 @@ try {
   ok('供应商材质库系列聚合与搜索');
 } catch (e) {
   ng('供应商材质库系列聚合与搜索', commandTail(e));
+}
+try {
+  execSync('node --test src/lib/supplierProjectGallery.test.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('供应商项目图库 1–6+ 图平衡布局');
+} catch (e) {
+  ng('供应商项目图库平衡布局', commandTail(e));
 }
 try {
   execSync('node --test src/lib/materialDescription.test.mjs', { cwd: ROOT, stdio: 'pipe' });

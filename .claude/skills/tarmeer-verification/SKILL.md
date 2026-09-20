@@ -41,6 +41,7 @@ description: Tarmeer 验收标准——"完成"的唯一定义。适用于：任
 
 - harness 依赖本地后端 3002 + 本地 MySQL `tarmeer` 库（`server/.env` DB_HOST=localhost）+ 前端 5180。
 - **walkthrough 含注册接口，同一后端进程连跑两次会被限流 429** → 重跑前先重启本地后端。
+- **walkthrough 会创建测试注册/询盘** → 脚本会自行启动独立隔离后端，强制 `DB_HOST=localhost`、关闭真实邮件并清空 CRM 配置；禁止改回依赖外部 3002 进程。
 - **本地跑过 `next build` 会覆盖 `.next`** → 跑完必须重启 5180 dev server，否则 dev 环境行为异常。
 - 用例自检 = 模拟真实用户路径（写入 → 按预期视图查询断言），**不是 curl 一下 200 就完事**。
 

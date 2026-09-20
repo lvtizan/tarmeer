@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowUp, ArrowLeft, X,
+  ArrowRight,
   Package, Layers, MapPin,
   Maximize2, Banknote,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { createSupplierIdentityGuard, isSupplierContentStale } from '@/lib/supplierDetailIdentity';
+import { buildSupplierProjectGallery } from '@/lib/supplierProjectGallery';
 import SupplierProductLibrary from './SupplierProductLibrary';
 
 // PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
@@ -455,47 +457,71 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
         </div>
       )}
 
-      {/* ========== Main Content ========== */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <div className="min-[1700px]:flex">
-          <div className="min-w-0 min-[1700px]:flex-1 space-y-10">
-            {/* Projects section — 无项目则整块隐藏，不显示空状态 */}
-            {projects.length > 0 && (
-            <div ref={projectsRef} id="section-projects" className="scroll-mt-28">
-              <h2 className="text-lg font-semibold text-[#2c2c2c] mb-4 flex items-center gap-2">
-                <Layers className="w-5 h-5" style={{ color: 'var(--color-tarmeer-primary)' }} />
-                Projects
-                <span className="text-sm font-normal text-stone-400">({projects.length})</span>
-              </h2>
-                <div className="space-y-6">
+      {/* Projects use the same generous full-width rhythm as the material library. */}
+      {projects.length > 0 && (
+        <section
+          ref={projectsRef}
+          id="section-projects"
+          className="scroll-mt-28 border-t border-stone-200 bg-[#f7f5f1] py-12 sm:py-16"
+        >
+          <div className="mx-auto max-w-[1920px] px-4 sm:px-6 lg:px-8">
+            <div className="mb-7 flex flex-col gap-3 border-b border-stone-300/70 pb-6 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b8864a]">Project portfolio</p>
+                <h2 className="mt-2 flex items-center gap-3 font-serif text-3xl text-[#1c1917] sm:text-4xl">
+                  <Layers className="h-6 w-6 text-[#b8864a]" />
+                  Projects
+                </h2>
+              </div>
+              <p className="max-w-xl text-sm leading-6 text-stone-500 sm:text-right">
+                {projects.length} completed {projects.length === 1 ? 'project' : 'projects'} showcasing production, materials and built applications.
+              </p>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
                   {projects.map(proj => {
                     const imgs = Array.isArray(proj.images) ? proj.images : [];
+                    const gallery = buildSupplierProjectGallery(imgs);
                     const materials = Array.isArray(proj.materials) ? proj.materials : [];
                     const projectDescription = sanitizeDescription(proj.description);
+                    const projectHref = `/materials/suppliers/${slug}/projects/${proj.id}`;
                     return (
-                      <div key={proj.id} className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+                      <article key={proj.id} className="overflow-hidden rounded-3xl border border-stone-200 bg-white transition-colors hover:border-stone-300">
                         {imgs.length > 0 && (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                            {imgs.map((img, i) => (
-                              <div key={i} className="cursor-pointer group relative" onClick={() => router.push(`/materials/suppliers/${slug}/projects/${proj.id}?photo=${i}`)}>
-                                <SmartImage src={img} alt={`${proj.title} ${i + 1}`} className="w-full aspect-[4/3] object-cover group-hover:brightness-90 transition duration-200" loading="lazy" />
-                                {i === imgs.length - 1 && imgs.length > 6 && (
-                                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-semibold">
-                                    +{imgs.length - 6} more
-                                  </div>
+                          <div className={`grid gap-1 bg-stone-100 ${gallery.visible.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                            {gallery.visible.map((img, i) => (
+                              <button
+                                type="button"
+                                key={`${img}-${i}`}
+                                className="group relative overflow-hidden text-left"
+                                onClick={() => router.push(`${projectHref}?photo=${i}`)}
+                                aria-label={i === 0 ? `View ${proj.title}` : `View ${proj.title} image ${i + 1}`}
+                              >
+                                <SmartImage src={img} alt={i === 0 ? proj.title : ''} className="aspect-video w-full object-cover transition duration-500 group-hover:scale-[1.015]" loading="lazy" />
+                                {i === 1 && gallery.remaining > 0 && (
+                                  <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-semibold text-white">
+                                    +{gallery.remaining}
+                                  </span>
                                 )}
-                              </div>
+                              </button>
                             ))}
                           </div>
                         )}
-                        <div className="p-5">
-                          <h3 className="text-[15px] font-semibold text-[#2c2c2c]">{proj.title}</h3>
-                          {projectDescription && (
-                            <p className="text-sm text-stone-500 mt-1 leading-relaxed">
-                              {projectDescription}
-                            </p>
-                          )}
-                          <div className="flex flex-wrap gap-3 mt-2">
+                        <div className="p-5 sm:p-6">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <h3 className="font-serif text-2xl leading-tight text-[#1c1917]">{proj.title}</h3>
+                              {projectDescription && (
+                                <p className="mt-2 line-clamp-3 text-sm leading-6 text-stone-500">
+                                  {projectDescription}
+                                </p>
+                              )}
+                            </div>
+                            <Link href={projectHref} className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-[#a87335] hover:text-[#855a29]">
+                              View project <ArrowRight className="h-4 w-4" />
+                            </Link>
+                          </div>
+                          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-stone-100 pt-4">
                             {proj.location && (
                               <span className="inline-flex items-center gap-1 text-xs text-stone-500">
                                 <MapPin className="w-3.5 h-3.5 text-[#b8864a] shrink-0" />{proj.location}
@@ -516,7 +542,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                             )}
                           </div>
                           {materials.length > 0 && (
-                            <div className="mt-5 pt-4 border-t border-stone-100">
+                            <div className="mt-5 border-t border-stone-100 pt-4">
                               <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-3">Materials Used In This Project</p>
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 {materials.slice(0, 6).map((m) => {
@@ -536,18 +562,15 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                             </div>
                           )}
                         </div>
-                      </div>
+                      </article>
                     );
                   })}
-                </div>
             </div>
-            )}
-
-            {/* 画册已移到 hero 区右侧展示（复用 flooring hero 同款电子书控件），此处不再重复渲染 */}
-
           </div>
-        </div>
-      </div>
+        </section>
+      )}
+
+      {/* 画册已移到 hero 区右侧展示（复用 flooring hero 同款电子书控件），此处不再重复渲染 */}
 
       {/* ========== Floating CTA ========== */}
       {!inquiryOpen && (
@@ -619,8 +642,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                 submitLabel="Send inquiry"
                 leadTag="Material Inquiry"
                 companyName={publicTitle}
-                companySlug={supplier.slug}
-                companyId={supplier.id}
+                supplierProfileId={supplier.id}
                 isVn={country.code === 'vn'}
               />
             </motion.div>

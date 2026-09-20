@@ -237,6 +237,15 @@ check('supplier inquiry uses the current country city list and mobile safe-area 
   && (supplierDetail.match(/env\(safe-area-inset-bottom\)/g) || []).length >= 3
   && has(supplierDetail, /document\.body\.style\.paddingBottom = mobile\.matches/)
   && has(supplierDetail, /document\.body\.style\.paddingBottom = previousPaddingBottom/));
+check('supplier inquiry uses the explicit supplier sourcing target instead of company fields',
+  !has(supplierDetail, /companyId=\{supplier\.id\}/)
+  && !has(supplierDetail, /companySlug=\{supplier\.slug\}/)
+  && has(supplierDetail, /supplierProfileId=\{supplier\.id\}/)
+  && has(serviceInquiry, /if \(supplierProfileId\)/)
+  && has(serviceInquiry, /api\.post\('\/sourcing-requests'/)
+  && has(serviceInquiry, /supplier_profile_id: supplierProfileId/)
+  && has(serviceInquiry, /`supplier:\$\{supplierProfileId\}`/)
+  && has(supplierDetail, /leadTag="Material Inquiry"/));
 check('inquiry success is announced and receives focus after submission',
   has(serviceInquiry, /role="status"/)
   && has(serviceInquiry, /aria-live="polite"/)

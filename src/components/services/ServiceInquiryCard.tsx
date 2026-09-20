@@ -39,6 +39,8 @@ interface ServiceInquiryCardProps {
   companyName?: string;
   /** Company slug/id for linking back to company page */
   companySlug?: string;
+  /** Supplier profile target. Supplier inquiries use the country-safe sourcing request pipeline. */
+  supplierProfileId?: number;
   /** Minimal mode: only phone + area (used on homepage) */
   minimal?: boolean;
   /** Vietnam site: show VN cities */
@@ -59,6 +61,7 @@ export default function ServiceInquiryCard({
   companyId,
   companyName,
   companySlug,
+  supplierProfileId,
   minimal = false,
   isVn = false,
   onSuccess,
@@ -96,20 +99,38 @@ export default function ServiceInquiryCard({
       const taggedMessage = leadTag
         ? `[${leadTag}]${form.message ? ' ' + form.message : ''}`
         : form.message || undefined;
-      await api.post('/inquiries', {
-        name: form.name || undefined,
-        phone: form.phone,
-        city: form.city || undefined,
-        area_range: `${Number(form.areaSize)}m²`,
-        message: taggedMessage,
-        company_id: companyId || undefined,
-        source_company_name: companyName || undefined,
-        source_company_slug: companySlug || undefined,
-        source_page: typeof window !== 'undefined' ? window.location.href : '',
-      });
+      const sourcePage = typeof window !== 'undefined' ? window.location.href : '';
+      if (supplierProfileId) {
+        const supplierMessage = [
+          `Project area: ${Number(form.areaSize)}m²`,
+          taggedMessage,
+        ].filter(Boolean).join(' | ');
+        await api.post('/sourcing-requests', {
+          request_type: 'sourcing',
+          name: form.name,
+          phone: form.phone,
+          city: form.city || undefined,
+          message: supplierMessage,
+          supplier_profile_id: supplierProfileId,
+          source_page: sourcePage,
+        });
+      } else {
+        await api.post('/inquiries', {
+          name: form.name || undefined,
+          phone: form.phone,
+          city: form.city || undefined,
+          area_range: `${Number(form.areaSize)}m²`,
+          message: taggedMessage,
+          company_id: companyId || undefined,
+          source_company_name: companyName || undefined,
+          source_company_slug: companySlug || undefined,
+          source_page: sourcePage,
+        });
+      }
       setSubmitted(true);
-      trackContact({ content_name: companyName || 'Service Page', content_id: companySlug || '' });
-      trackLead({ content_name: companyName || 'Service Page', content_id: companySlug || '' });
+      const analyticsTargetId = supplierProfileId ? `supplier:${supplierProfileId}` : (companySlug || '');
+      trackContact({ content_name: companyName || 'Service Page', content_id: analyticsTargetId });
+      trackLead({ content_name: companyName || 'Service Page', content_id: analyticsTargetId });
       onSuccess?.(); // 解锁下载等后续动作
 
     } catch (err: unknown) {

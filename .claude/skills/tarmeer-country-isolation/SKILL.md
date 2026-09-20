@@ -46,6 +46,7 @@ description: Tarmeer AE/VN 国家数据隔离契约——本仓库最高优先�
 - [ ] 查询/JOIN 带 country 条件了吗？
 - [ ] admin 页面新请求传了 `useAdminCountry()` 的 country 吗？
 - [ ] 前端城市白名单同步了吗？（询盘 city 校验在 `server/dist/controllers/inquiryController.js` 的 `VALID_CITIES`，**前端下拉加城市必须同步后端白名单**，VN 城市曾因缺白名单被 400）
+- [ ] 询盘的 `company_id` 是否真的来自 `company_profiles.id`？供应商目标不得把 `supplier_profiles.id` 塞进该字段；没有显式供应商引用列时宁可按 phone 归属，也不能猜表。
 - [ ] `country-walkthrough.mjs` 全绿？（注意：注册接口有限流，连跑两次 429，重启本地后端再跑）
 
 ## 姊妹文档

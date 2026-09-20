@@ -4,16 +4,24 @@
  * 用法: node scripts/harness/country-walkthrough.mjs
  *
  * 前提:
- *   - 本地后端 localhost:3002 已启动（server/.env DB_HOST=localhost）
  *   - 本地 MySQL tarmeer 库，admin_users 里有 harness-test@tarmeer.local
  *
  * 每个用例 = 模拟一次用户侧写入 → 用 admin 接口按 country=vn / country=ae
  * 分别查询，断言数据落入正确的国家桶。结束后清理测试数据。
  */
 
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
+import { randomUUID } from 'crypto';
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-const API = 'http://localhost:3002/api';
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const SERVER_DIR = path.join(ROOT, 'server');
+const SERVER_ENTRY = path.join(ROOT, 'scripts/harness/start-isolated-backend.cjs');
+const SAFE_PORT = 3312;
+const API = `http://127.0.0.1:${SAFE_PORT}/api`;
+const HARNESS_NONCE = randomUUID();
 const ADMIN_EMAIL = 'harness-test@tarmeer.local';
 const ADMIN_PASSWORD = 'Harness#Local123';
 // 测试夹具用的假密码（非真实凭证）
@@ -21,6 +29,60 @@ const TEST_PASSWORD = 'Walk#12345';
 const TEST_STAFF_PASSWORD = 'Walk#12345678';
 const TS = Date.now();
 const MARK = `walk${TS}`;
+
+if (!existsSync(SERVER_ENTRY)) throw new Error('拒绝执行：找不到本地 server/dist/app.js。');
+
+// Own the tested backend process so an already-running server or shell override
+// cannot bypass the local-DB / no-email / no-CRM safety boundary.
+const safeBackend = spawn(process.execPath, [SERVER_ENTRY], {
+  cwd: SERVER_DIR,
+  env: {
+    ...process.env,
+    PORT: String(SAFE_PORT),
+    DB_HOST: 'localhost',
+    DB_NAME: 'tarmeer',
+    NODE_ENV: 'development',
+    DEV_SKIP_EMAIL: 'true',
+    DISABLE_AUTH_RATE_LIMIT: 'true',
+    CRM_INBOUND_URL: '',
+    CRM_API_KEY: '',
+    CRM_TENANT_ID: '',
+    CRM_COMPANY_TENANT_ID: '',
+    TARMEER_HARNESS_NONCE: HARNESS_NONCE,
+  },
+  stdio: ['ignore', 'pipe', 'pipe'],
+});
+let backendLog = '';
+safeBackend.stdout.on('data', (chunk) => { backendLog = (backendLog + chunk).slice(-8000); });
+safeBackend.stderr.on('data', (chunk) => { backendLog = (backendLog + chunk).slice(-8000); });
+process.on('exit', () => { if (!safeBackend.killed) safeBackend.kill('SIGTERM'); });
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.once(signal, () => {
+    if (!safeBackend.killed) safeBackend.kill('SIGTERM');
+    process.exit(130);
+  });
+}
+
+const waitForSafeBackend = async () => {
+  for (let attempt = 0; attempt < 60; attempt++) {
+    if (safeBackend.exitCode !== null) {
+      throw new Error(`隔离后端启动失败（exit ${safeBackend.exitCode}）：${backendLog}`);
+    }
+    if (backendLog.includes('[harness-startup] Isolated backend refused to start')) {
+      throw new Error(`隔离后端拒绝启动：${backendLog}`);
+    }
+    // Bind readiness to this exact child, IPv4 address and one-time nonce.
+    if (backendLog.includes(`HARNESS_READY ${HARNESS_NONCE} 127.0.0.1:${SAFE_PORT}`)) {
+      try {
+        const response = await fetch(`${API}/health`);
+        if (response.ok) return;
+      } catch { /* child is listening but health is not ready yet */ }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(`隔离后端启动超时：${backendLog}`);
+};
+await waitForSafeBackend();
 
 let pass = 0, fail = 0, bug = 0;
 const bugs = [];

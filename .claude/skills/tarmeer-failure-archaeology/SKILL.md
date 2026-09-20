@@ -244,6 +244,18 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：改为始终可达的固定 CTA；桌面在右下角打开对话抽屉，移动端打开底部 sheet，保持页面滚动位置和表单草稿，并补齐焦点锁、Esc/遮罩关闭、焦点恢复、滚动锁和 reduced-motion。
 - **预防**：上下文型 CTA 默认使用邻近弹层/抽屉，不得把用户强制滚离当前内容；验收必须覆盖入口首屏可达、滚动位置不变、关闭后可重开、草稿保留及键盘操作。
 
+### FA-39 供应商 ID 被误写为装修公司 ID（2026-09-18）
+- **现象**：供应商详情页提交材料询盘时，把 `supplier_profiles.id` 写进了仅属于 `company_profiles.id` 的 `design_inquiries.company_id`；两张表 ID 碰撞时，询盘可能归到无关装修公司并按错误国家分桶。
+- **根因**：共享询盘表单的 `companyId` 参数被按“页面目标实体 ID”理解，忽略了它实际绑定的是单一 `company_profiles` 命名空间。
+- **修复**：供应商询盘不再传 `companyId` 或 `companySlug`，改走既有材料采购请求链路并显式提交 `supplier_profile_id`；后端验证供应商已审核/发布、按其国家落桶，后台可准确识别目标供应商且不会误生成 `/companies/<supplier-slug>` 链接。
+- **预防**：向共享表单传引用 ID 或 slug 前必须核对目标实体；不同实体类型不得复用裸引用字段，新增供应商级关联时必须使用显式 `supplier_profile_id`/`supplier_slug` 或 `(ref_id, ref_source)`。
+
+### FA-40 本地国家走查外发测试通知（2026-09-18）
+- **现象**：运行 `country-walkthrough.mjs` 后，收件人收到 `WALK VN Supplier ...@walk.local` 的测试注册邮件；测试询盘还尝试调用本地配置的 CRM inbound。
+- **根因**：本地后端沿用了可外发配置（`DEV_SKIP_EMAIL=false` 且 CRM 地址非空），走查只检查数据库环境和限流，没有在运行前验证邮件/CRM 隔离。
+- **修复**：本地环境启用 `DEV_SKIP_EMAIL=true` 并禁用 CRM inbound；走查改为自行启动和持有独立后端进程，强制本地 DB、关闭邮件并清空 CRM 配置，退出时自动终止。
+- **预防**：任何会创建注册、询盘或线索的 harness，运行前必须同时确认数据库为 localhost、真实邮件关闭、CRM/第三方 webhook 关闭；测试数据不得离开本机。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```
