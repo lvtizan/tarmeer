@@ -181,7 +181,7 @@ export default function MaterialsHub() {
         <MaterialsClient initialSuppliers={[]} embedded />
       ) : (
         <div className="mx-auto grid w-full max-w-[1920px] gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-7 lg:px-8 lg:py-8 2xl:gap-9">
-          <div className="relative lg:z-20">
+          <div className="relative lg:z-20 lg:self-start lg:sticky lg:top-24">
             <MegaMenuDirectory
               categories={mega}
               loading={megaLoading}

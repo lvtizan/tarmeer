@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import {
@@ -11,6 +11,8 @@ import {
 } from '@/lib/materialMacros';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
+import { getMegaMenuFlyoutPlacement } from '@/lib/megaMenuFlyout';
+import { shouldCloseMegaMenu, shouldReturnToCategoryFromFlyout } from '@/lib/megaMenuFocus';
 import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 import ProductPriceLine from './ProductPriceLine';
 
@@ -40,11 +42,57 @@ export default function MegaMenuDirectory({
   const [activeKey, setActiveKey] = useState<string | null>(null);
   // Mobile: which row is expanded (accordion)
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   // Hovered-category products, cached by key to avoid re-fetching
   const [products, setProducts] = useState<Record<string, MacroProduct[]>>({});
   const [productsLoading, setProductsLoading] = useState<string | null>(null);
   const fetchedRef = useRef<Set<string>>(new Set());
+  const menuRef = useRef<HTMLDivElement>(null);
+  const activeRowRef = useRef<HTMLDivElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+  const suppressNextFocusRef = useRef(false);
+  const activeCategory = categories.find((category) => category.key === activeKey) ?? null;
+  const [flyoutPlacement, setFlyoutPlacement] = useState({ top: 0, maxHeight: 0, minHeight: 0 });
+
+  const repositionActiveFlyout = useCallback(() => {
+    const row = activeRowRef.current;
+    const menuRect = menuRef.current?.getBoundingClientRect();
+    if (!row || !menuRect) return;
+    setFlyoutPlacement(getMegaMenuFlyoutPlacement({
+      menuTop: menuRect.top,
+      rowTop: row.getBoundingClientRect().top,
+      viewportHeight: window.innerHeight,
+    }));
+  }, []);
+
+  const activateCategory = (key: string, row: HTMLDivElement) => {
+    setActiveKey(key);
+    activeRowRef.current = row;
+    repositionActiveFlyout();
+  };
+
+  const closeFlyout = (isFocusMove: boolean, nextFocusWithin = false) => {
+    const hasFocusWithin = Boolean(menuRef.current?.contains(document.activeElement));
+    if (shouldCloseMegaMenu({ isFocusMove, hasFocusWithin, nextFocusWithin })) setActiveKey(null);
+  };
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia('(min-width: 1024px)');
+    const syncViewport = () => {
+      setIsDesktop(desktopQuery.matches);
+      if (!desktopQuery.matches) setActiveKey(null);
+    };
+    syncViewport();
+    desktopQuery.addEventListener('change', syncViewport);
+    return () => desktopQuery.removeEventListener('change', syncViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!activeKey || !activeRowRef.current) return;
+    window.addEventListener('resize', repositionActiveFlyout);
+    return () => window.removeEventListener('resize', repositionActiveFlyout);
+  }, [activeKey, repositionActiveFlyout]);
 
   useEffect(() => {
     if (!activeKey) return;
@@ -86,12 +134,20 @@ export default function MegaMenuDirectory({
   }
 
   return (
-    <div className="relative" onMouseLeave={() => setActiveKey(null)}>
+    <div
+      ref={menuRef}
+      className="relative"
+      onMouseLeave={() => closeFlyout(false)}
+      onBlurCapture={(event) => closeFlyout(true, event.currentTarget.contains(event.relatedTarget))}
+    >
       <div
         className="rounded-2xl border border-stone-200 bg-white p-2"
         style={{ backgroundColor: CREAM }}
       >
-        <ul className="space-y-1">
+        <ul
+          className="space-y-1 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1"
+          onScroll={repositionActiveFlyout}
+        >
           {categories.map((c) => {
             const isActive = activeKey === c.key;
             const isOpen = openKey === c.key;
@@ -102,18 +158,41 @@ export default function MegaMenuDirectory({
                 <div
                   role="button"
                   tabIndex={0}
-                  onMouseEnter={() => setActiveKey(c.key)}
+                  onMouseEnter={(event) => {
+                    if (isDesktop) activateCategory(c.key, event.currentTarget);
+                  }}
+                  onFocus={(event) => {
+                    if (!isDesktop) return;
+                    if (suppressNextFocusRef.current) {
+                      suppressNextFocusRef.current = false;
+                      return;
+                    }
+                    activateCategory(c.key, event.currentTarget);
+                  }}
                   onClick={() => {
                     onSelectCategory(c);
                     setOpenKey(isOpen ? null : c.key);
                   }}
                   onKeyDown={(e) => {
+                    if (isDesktop && e.key === 'ArrowRight') {
+                      e.preventDefault();
+                      activateCategory(c.key, e.currentTarget);
+                      requestAnimationFrame(() => flyoutRef.current?.focus());
+                      return;
+                    }
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       onSelectCategory(c);
                       setOpenKey(isOpen ? null : c.key);
                     }
+                    if (e.key === 'Escape') setActiveKey(null);
                   }}
+                  aria-expanded={isDesktop ? activeKey === c.key : isOpen}
+                  aria-controls={
+                    isDesktop
+                      ? (activeKey === c.key ? 'material-category-flyout' : undefined)
+                      : (isOpen ? `material-category-mobile-${c.key}` : undefined)
+                  }
                   className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors"
                   style={
                     isActive || selectedKey === c.key
@@ -163,24 +242,8 @@ export default function MegaMenuDirectory({
 
                 {/* Mobile accordion (below lg) */}
                 {isOpen && (
-                  <div className="lg:hidden">
+                  <div id={`material-category-mobile-${c.key}`} className="lg:hidden">
                     <MobilePanel category={c} />
-                  </div>
-                )}
-
-                {/* Desktop panel is anchored to its row so it follows the hovered category. */}
-                {isActive && (
-                  <div
-                    className="absolute left-full top-0 z-30 hidden pl-4 lg:block"
-                    onMouseEnter={() => setActiveKey(c.key)}
-                  >
-                    <div className="w-[720px] max-w-[760px] rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl">
-                      <MegaPanel
-                        category={c}
-                        products={products[`${country}:${c.key}`]}
-                        loadingProducts={productsLoading === `${country}:${c.key}`}
-                      />
-                    </div>
                   </div>
                 )}
               </li>
@@ -188,6 +251,48 @@ export default function MegaMenuDirectory({
           })}
         </ul>
       </div>
+      {/* Keep the scrollable category list separate from the desktop flyout: overflow on the
+          list must never clip the preview panel. The panel stays inside this hover boundary. */}
+      {activeCategory && (
+        <div
+          className="absolute left-full z-30 hidden pl-4 lg:block"
+          onMouseEnter={() => setActiveKey(activeCategory.key)}
+          style={{ top: flyoutPlacement.top }}
+        >
+          <div
+            ref={flyoutRef}
+            id="material-category-flyout"
+            role="region"
+            aria-label={`${activeCategory.label} category preview`}
+            tabIndex={-1}
+            className="w-[720px] max-w-[760px] overflow-y-auto rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl"
+            style={{ maxHeight: flyoutPlacement.maxHeight, minHeight: flyoutPlacement.minHeight }}
+            onKeyDown={(event) => {
+              if (shouldReturnToCategoryFromFlyout({
+                isShiftTab: event.key === 'Tab' && event.shiftKey,
+                isFlyoutRoot: event.target === event.currentTarget,
+              })) {
+                event.preventDefault();
+                setActiveKey(null);
+                suppressNextFocusRef.current = true;
+                activeRowRef.current?.focus();
+                return;
+              }
+              if (event.key !== 'Escape') return;
+              event.preventDefault();
+              setActiveKey(null);
+              suppressNextFocusRef.current = true;
+              activeRowRef.current?.focus();
+            }}
+          >
+            <MegaPanel
+              category={activeCategory}
+              products={products[`${country}:${activeCategory.key}`]}
+              loadingProducts={productsLoading === `${country}:${activeCategory.key}`}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

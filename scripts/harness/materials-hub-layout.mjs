@@ -7,9 +7,33 @@ const hub = read('src/components/materials/MaterialsHub.tsx');
 const featured = read('src/components/materials/HubFeatured.tsx');
 const search = read('src/components/materials/HubSearchResults.tsx');
 const card = read('src/components/materials/HubProductCard.tsx');
+const directory = read('src/components/materials/MegaMenuDirectory.tsx');
 
 assert.match(hub, /max-w-\[1920px\]/);
 assert.match(hub, /lg:grid-cols-\[240px_minmax\(0,1fr\)\]/);
+assert.match(hub, /lg:self-start lg:sticky lg:top-24/);
+assert.match(directory, /lg:max-h-\[calc\(100vh-8rem\)\] lg:overflow-y-auto/);
+assert.match(directory, /getMegaMenuFlyoutPlacement/);
+assert.match(directory, /absolute left-full z-30 hidden pl-4 lg:block/);
+assert.match(directory, /style=\{\{ top: flyoutPlacement\.top \}\}/);
+assert.match(directory, /maxHeight: flyoutPlacement\.maxHeight, minHeight: flyoutPlacement\.minHeight/);
+assert.match(directory, /suppressNextFocusRef\.current/);
+assert.match(directory, /onFocus=\{\(event\) => \{/);
+assert.match(directory, /if \(!isDesktop\) return;/);
+assert.match(directory, /isDesktop && e\.key === 'ArrowRight'/);
+assert.match(directory, /aria-expanded=\{isDesktop \? activeKey === c\.key : isOpen\}/);
+assert.match(directory, /material-category-mobile-\$\{c\.key\}/);
+assert.match(directory, /e\.key === 'ArrowRight'/);
+assert.match(directory, /flyoutRef\.current\?\.focus\(\)/);
+assert.match(directory, /id="material-category-flyout"/);
+assert.match(directory, /event\.key !== 'Escape'/);
+assert.match(directory, /suppressNextFocusRef\.current = true/);
+assert.match(directory, /onBlurCapture=\{\(event\) => closeFlyout\(true, event\.currentTarget\.contains\(event\.relatedTarget\)\)\}/);
+assert.match(directory, /shouldReturnToCategoryFromFlyout/);
+assert.match(directory, /event\.target === event\.currentTarget/);
+assert.match(directory, /window\.addEventListener\('resize', repositionActiveFlyout\)/);
+assert.match(directory, /window\.removeEventListener\('resize', repositionActiveFlyout\)/);
+assert.match(directory, /onScroll=\{repositionActiveFlyout\}/);
 assert.match(featured, /Product directory/);
 assert.match(featured, /font-serif text-3xl/);
 assert.match(featured, /flex flex-col items-start[^"]*sm:flex-row sm:items-end/);
@@ -42,5 +66,13 @@ execFileSync(process.execPath, ['--test', 'src/lib/materialAutoLoad.test.mjs'], 
   cwd: new URL('../..', import.meta.url),
   stdio: 'pipe',
 });
+execFileSync(process.execPath, ['--test', 'src/lib/megaMenuFlyout.test.mjs'], {
+  cwd: new URL('../..', import.meta.url),
+  stdio: 'pipe',
+});
+execFileSync(process.execPath, ['--test', 'src/lib/megaMenuFocus.test.mjs'], {
+  cwd: new URL('../..', import.meta.url),
+  stdio: 'pipe',
+});
 
-console.log('materials-hub-layout: 30/30 PASS');
+console.log('materials-hub-layout: static assertions + 2 behavior suites PASS');
