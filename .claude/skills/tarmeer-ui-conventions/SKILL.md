@@ -68,3 +68,4 @@ description: Tarmeer UI 约束与组件复用——先找现成组件再写新�
 - 验收至少记录桌面容器宽度、侧栏宽度、卡片宽度和移动端横向溢出结果，并与对应详情页的视觉尺度对照。
 - 长商品目录不得依赖用户点击 “Load more” 才暴露后续内容；使用带提前量的 `IntersectionObserver` 自动翻页，并保留加载提示、失败重试、并发锁和跨页去重。
 - 材料目录的桌面端分类导航必须在滚动时保持可达：网格侧栏容器使用 `lg:self-start lg:sticky lg:top-24`，为 64px 固定主导航留出空间；过长分类列表在视口内滚动，右侧 hover 浮层必须脱离该滚动容器以免被裁切。
+- 供应商材料库的 Collections 位于带 `overflow: clip` 的详情页上下文，桌面端须用 `FilterSidebar` 的 `desktopFixed` 模式保持可达，并传入与搜索栏错开的 `desktopFixedTop`；固定模式需在材料区结束时解除，避免进入页脚后悬浮。

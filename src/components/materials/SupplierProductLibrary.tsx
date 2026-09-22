@@ -157,6 +157,8 @@ export default function SupplierProductLibrary({ products, categoryLabel, onOpen
             clearLabel="Show all materials"
             desktopStickyTopClass="lg:top-[12.5rem]"
             desktopMaxHeightClass="lg:max-h-[calc(100vh-13.5rem)]"
+            desktopFixed
+            desktopFixedTop={200}
             mobileTriggerWrapperClass="sticky top-[11.75rem] z-30 mb-3 flex justify-end"
             closeOnMobileSelection
           />

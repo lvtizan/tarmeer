@@ -1,7 +1,8 @@
 'use client';
 
 import { X, SlidersHorizontal } from 'lucide-react';
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
+import { shouldPinDesktopSidebar } from '@/lib/fixedSidebar';
 
 interface FilterSidebarProps {
   hasActiveFilters: boolean;
@@ -11,6 +12,8 @@ interface FilterSidebarProps {
   clearLabel?: string;
   desktopStickyTopClass?: string;
   desktopMaxHeightClass?: string;
+  desktopFixed?: boolean;
+  desktopFixedTop?: number;
   mobileTriggerWrapperClass?: string;
   closeOnMobileSelection?: boolean;
 }
@@ -23,9 +26,110 @@ export default function FilterSidebar({
   clearLabel = 'Clear filters',
   desktopStickyTopClass = 'lg:top-24',
   desktopMaxHeightClass = 'max-h-[calc(100vh-7rem)]',
+  desktopFixed = false,
+  desktopFixedTop = 96,
   mobileTriggerWrapperClass = 'mb-3',
   closeOnMobileSelection = false,
 }: FilterSidebarProps) {
+  const asideRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const pinnedRef = useRef(false);
+  const anchorTopRef = useRef(0);
+  const panelStyleRef = useRef<React.CSSProperties | undefined>(undefined);
+  const [desktopPinned, setDesktopPinned] = useState(false);
+  const [desktopPanelHeight, setDesktopPanelHeight] = useState<number | null>(null);
+  const [desktopPanelStyle, setDesktopPanelStyle] = useState<React.CSSProperties | undefined>(undefined);
+
+  useEffect(() => {
+    const clearPinned = () => {
+      const wasPinned = pinnedRef.current;
+      pinnedRef.current = false;
+      anchorTopRef.current = 0;
+      panelStyleRef.current = undefined;
+      if (wasPinned) setDesktopPinned(false);
+      setDesktopPanelHeight((height) => (height === null ? height : null));
+      setDesktopPanelStyle((style) => (style === undefined ? style : undefined));
+    };
+    if (!desktopFixed) {
+      clearPinned();
+      return;
+    }
+
+    const desktopQuery = window.matchMedia('(min-width: 1024px)');
+    let frameId: number | null = null;
+    const updatePosition = () => {
+      const aside = asideRef.current;
+      const panel = panelRef.current;
+      if (!aside || !panel || !desktopQuery.matches) {
+        clearPinned();
+        return;
+      }
+
+      const asideRect = aside.getBoundingClientRect();
+      if (!pinnedRef.current) anchorTopRef.current = asideRect.top + window.scrollY;
+
+      const panelHeight = panel.getBoundingClientRect().height;
+      const parentBottom = aside.parentElement?.getBoundingClientRect().bottom ?? Number.POSITIVE_INFINITY;
+      const shouldPin = shouldPinDesktopSidebar({
+        scrollY: window.scrollY,
+        anchorTop: anchorTopRef.current,
+        parentBottom,
+        fixedTop: desktopFixedTop,
+        panelHeight,
+        viewportHeight: window.innerHeight,
+      });
+
+      if (!shouldPin) {
+        clearPinned();
+        return;
+      }
+
+      pinnedRef.current = true;
+      setDesktopPinned((pinned) => (pinned ? pinned : true));
+      setDesktopPanelHeight((height) => (height === panelHeight ? height : panelHeight));
+      const nextStyle: React.CSSProperties = {
+        position: 'fixed',
+        top: desktopFixedTop,
+        left: asideRect.left,
+        width: asideRect.width,
+        maxHeight: `calc(100vh - ${desktopFixedTop + 16}px)`,
+      };
+      const currentStyle = panelStyleRef.current;
+      const styleChanged = !currentStyle
+        || currentStyle.left !== nextStyle.left
+        || currentStyle.width !== nextStyle.width
+        || currentStyle.top !== nextStyle.top
+        || currentStyle.maxHeight !== nextStyle.maxHeight;
+      if (styleChanged) {
+        panelStyleRef.current = nextStyle;
+        setDesktopPanelStyle(nextStyle);
+      }
+    };
+    const scheduleUpdate = () => {
+      if (frameId !== null) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null;
+        updatePosition();
+      });
+    };
+
+    scheduleUpdate();
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    desktopQuery.addEventListener('change', scheduleUpdate);
+    const resizeObserver = new ResizeObserver(scheduleUpdate);
+    if (asideRef.current?.parentElement) resizeObserver.observe(asideRef.current.parentElement);
+    if (panelRef.current) resizeObserver.observe(panelRef.current);
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      desktopQuery.removeEventListener('change', scheduleUpdate);
+      resizeObserver.disconnect();
+      clearPinned();
+    };
+  }, [desktopFixed, desktopFixedTop]);
+
   return (
     <>
       {/* Mobile trigger button — rendered inline, caller positions it */}
@@ -41,8 +145,16 @@ export default function FilterSidebar({
       </div>
 
       {/* Desktop sticky sidebar */}
-      <aside className="w-60 flex-shrink-0 hidden lg:block">
-        <div className={`lg:sticky ${desktopStickyTopClass} ${desktopMaxHeightClass} overflow-y-auto custom-scrollbar`}>
+      <aside
+        ref={asideRef}
+        className="w-60 flex-shrink-0 hidden lg:block"
+        style={desktopPinned && desktopPanelHeight ? { minHeight: desktopPanelHeight } : undefined}
+      >
+        <div
+          ref={panelRef}
+          className={`lg:sticky ${desktopStickyTopClass} ${desktopMaxHeightClass} overflow-y-auto custom-scrollbar`}
+          style={desktopPanelStyle}
+        >
           <div className="bg-white rounded-[22px] border border-stone-100 p-5 shadow-sm shadow-stone-100/50 space-y-6">
             {renderFilters(false)}
           </div>

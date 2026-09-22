@@ -274,6 +274,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **修复**：桌面端侧栏设为 `lg:self-start lg:sticky lg:top-24`，避开 64px 固定主导航；过长的分类列表改为视口内滚动，hover 浮层作为滚动容器的同级绝对层，避免被裁切；移动端维持普通文档流。
 - **预防**：长内容目录的桌面筛选/分类栏必须检验滚动中的可达性；grid/flex 内使用 sticky 时先取消 stretch 对齐，滚动列表与 hover 浮层分层，并在对应 layout harness 里断言。
 
+### FA-44 供应商材料库 Collections 在滚动后失去固定定位（2026-09-22）
+- **现象**：供应商详情页浏览长材料列表时，左侧 Collections 系列导航随商品流被推走，无法持续筛选。
+- **根因**：页面外层的 `overflow-x: clip` 使浏览器中的 `position: sticky` 失效；仅依赖 sticky class 无法跨该滚动上下文保持侧栏位置。
+- **修复**：`FilterSidebar` 增加可选的桌面 fixed 滚动模式；供应商材料库滚过侧栏原始位置后以其真实左边距、宽度和顶部偏移固定，窗口尺寸变化时重算，并在材料区结束前自动解除。
+- **预防**：包含 `overflow: clip/hidden` 祖先的长页侧栏，必须在真实页面滚动中验证；sticky 失效时使用带边界的 scroll-listener + fixed，而非反复调整 sticky class。
+
 ## 归档模板（新事故追加到本文件末尾）
 
 ```
