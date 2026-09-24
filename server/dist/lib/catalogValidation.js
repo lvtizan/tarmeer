@@ -28,4 +28,9 @@ function parseChunkMeta(meta) {
         || total < 1 || total > MAX_CHUNKS || index < 0 || index >= total) return null;
     return { uploadId: uploadId.toLowerCase(), index, total };
 }
-module.exports = { MAX_CATALOG_BYTES, MAX_CHUNKS, CHUNK_BYTES, isPdfBuffer, isPdfUpload, safeCatalogFileName, parseChunkMeta };
+function isSameCatalogUploadSession(existing, next, originalName) {
+    return existing?.uploadId === next.uploadId
+        && Number(existing?.total) === next.total
+        && String(existing?.original_name || '') === originalName;
+}
+module.exports = { MAX_CATALOG_BYTES, MAX_CHUNKS, CHUNK_BYTES, isPdfBuffer, isPdfUpload, safeCatalogFileName, parseChunkMeta, isSameCatalogUploadSession };

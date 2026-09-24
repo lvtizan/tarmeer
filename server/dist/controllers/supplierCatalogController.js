@@ -16,6 +16,8 @@ const os_1 = __importDefault(require("os"));
 const crypto_1 = require("crypto");
 const supplierRedact_1 = require("../lib/supplierRedact");
 const catalogValidation_1 = require("../lib/catalogValidation");
+const catalogChunkSession_1 = require("../lib/catalogChunkSession");
+const catalogChunkLock_1 = require("../lib/catalogChunkLock");
 const catalogRenderer_1 = require("../lib/catalogRenderer");
 let catalogCleanupTask = null;
 let lastCatalogCleanupAt = 0;
@@ -163,9 +165,9 @@ async function uploadCatalogFile(req, res) {
         scheduleCatalogUploadCleanup();
         const file = req.file;
         if (!file)
-            return res.status(400).json({ error: 'No file data provided.' });
+            return res.status(400).json({ error: 'Catalog file data is missing. Please select the PDF and try again.' });
         if (!(0, catalogValidation_1.isPdfUpload)(file) || file.size > catalogValidation_1.MAX_CATALOG_BYTES) {
-            return res.status(400).json({ error: 'Catalogs must be valid PDF files up to 60 MB.' });
+            return res.status(400).json({ error: 'Catalogs must be valid PDF files up to 60 MB. Please choose a PDF within the limit and try again.' });
         }
         const fileName = await withCatalogUploadLock(userId, async () => {
             await assertUnboundCatalogQuotaForUser(userId, file.size);
@@ -180,7 +182,7 @@ async function uploadCatalogFile(req, res) {
     }
     catch (error) {
         console.error('Upload catalog file error:', error);
-        res.status(error?.statusCode || 500).json({ error: error?.statusCode ? error.message : 'Failed to upload file.' });
+        res.status(error?.statusCode || 500).json({ error: error?.statusCode ? error.message : 'Catalog upload failed before the file was saved. Please try again.' });
     }
 }
 async function uploadCatalogChunk(req, res) {
@@ -189,14 +191,14 @@ async function uploadCatalogChunk(req, res) {
         scheduleCatalogUploadCleanup();
         const file = req.file;
         if (!file)
-            return res.status(400).json({ error: 'No chunk data.' });
+            return res.status(400).json({ error: 'Catalog upload data is missing. Please select the PDF and start again.' });
         const meta = (0, catalogValidation_1.parseChunkMeta)(req.body);
         if (!meta || file.size > catalogValidation_1.CHUNK_BYTES) {
-            return res.status(400).json({ error: 'Invalid catalog upload chunk.' });
+            return res.status(400).json({ error: 'Catalog upload data is invalid. Please select the PDF and start again.' });
         }
         const original_name = typeof req.body.original_name === 'string' ? req.body.original_name : '';
         if (!/\.pdf$/i.test(original_name || file.originalname || '')) {
-            return res.status(400).json({ error: 'Catalogs must be PDF files.' });
+            return res.status(400).json({ error: 'Catalogs must be PDF files. Please choose a PDF and start again.' });
         }
         // Client ids are only tokens, never path segments.  Namespace by owner
         // and validate before any write/remove so a chunk cannot escape /tmp.
@@ -206,51 +208,26 @@ async function uploadCatalogChunk(req, res) {
         const chunkDir = path_1.default.join(chunkRoot, 'active');
         const assemblingDir = path_1.default.join(chunkRoot, `${meta.uploadId}.assembling`);
         if (!chunkDir.startsWith(`${chunkRoot}${path_1.default.sep}`)) {
-            return res.status(400).json({ error: 'Invalid catalog upload session.' });
+            return res.status(400).json({ error: 'Catalog upload session is invalid. Please select the PDF and start again.' });
         }
+        let storedChunk;
         try {
-            await promises_1.default.access(assemblingDir);
-            return res.status(409).json({ error: 'Catalog upload is already being assembled.' });
+            storedChunk = await (0, catalogChunkLock_1.withCatalogChunkLock)(database_1.default, userId, () => (0, catalogChunkSession_1.storeCatalogChunk)({ chunkRoot, meta, originalName: original_name, buffer: file.buffer, staleMs: CATALOG_UPLOAD_LOCK_STALE_MS }));
         }
-        catch { /* no active assembler */ }
-        await promises_1.default.mkdir(chunkRoot, { recursive: true, mode: 0o700 });
-        if (meta.index === 0) {
-            // A browser refresh must not lock the supplier out for a day. Only
-            // reclaim a session whose heartbeat stopped for the lock TTL.
-            try {
-                const sessionPath = path_1.default.join(chunkDir, 'session.json');
-                if (Date.now() - (await promises_1.default.stat(sessionPath)).mtimeMs > CATALOG_UPLOAD_LOCK_STALE_MS) {
-                    const abandoned = path_1.default.join(chunkRoot, `${meta.uploadId}.abandoned-${(0, crypto_1.randomUUID)()}`);
-                    await promises_1.default.rename(chunkDir, abandoned);
-                    await promises_1.default.rm(abandoned, { recursive: true, force: true });
-                }
-            }
-            catch { /* no prior session, or another request reclaimed it */ }
-            try {
-                await promises_1.default.mkdir(chunkDir, { mode: 0o700 });
-                await promises_1.default.writeFile(path_1.default.join(chunkDir, 'session.json'), JSON.stringify({ uploadId: meta.uploadId, total: meta.total, original_name }), { flag: 'wx', mode: 0o600 });
-            }
-            catch (error) {
-                if (error.code !== 'EEXIST') throw error;
-            }
+        catch (error) {
+            if (error?.statusCode) return res.status(error.statusCode).json({ error: error.message });
+            throw error;
         }
-        let sessionMeta;
-        try { sessionMeta = JSON.parse(await promises_1.default.readFile(path_1.default.join(chunkDir, 'session.json'), 'utf8')); }
-        catch { return res.status(409).json({ error: 'Start the catalog upload again.' }); }
-        if (sessionMeta.uploadId !== meta.uploadId || Number(sessionMeta.total) !== meta.total || String(sessionMeta.original_name || '') !== original_name)
-            return res.status(409).json({ error: 'Catalog upload session metadata changed.' });
-        await promises_1.default.writeFile(path_1.default.join(chunkDir, `chunk_${meta.index}`), file.buffer, { flag: 'w', mode: 0o600 });
-        const now = new Date();
-        await promises_1.default.utimes(path_1.default.join(chunkDir, 'session.json'), now, now).catch(() => {});
         const idx = meta.index;
         const total = meta.total;
         if (idx < total - 1) {
             return res.json({ done: false });
         }
-        // Last chunk received — atomically take ownership of this session so two
-        // concurrent final requests cannot assemble or delete each other's data.
-        try { await promises_1.default.rename(chunkDir, assemblingDir); }
-        catch { return res.status(409).json({ error: 'Catalog upload is already being assembled.' }); }
+        // The helper claims active -> assembling while holding the per-user
+        // database advisory lock, so a fresh index-0 request cannot be renamed here.
+        if (storedChunk.assemblingDir !== assemblingDir) {
+            return res.status(409).json({ error: 'Catalog upload could not enter the assembly phase. Please start again.' });
+        }
         let assembledBytes = 0;
         for (let i = 0; i < total; i++) {
             try {
@@ -261,12 +238,12 @@ async function uploadCatalogChunk(req, res) {
             }
             catch {
                 await promises_1.default.rename(assemblingDir, chunkDir).catch(() => {});
-                return res.status(409).json({ error: 'Catalog upload is incomplete. Retry the missing chunks.' });
+                return res.status(409).json({ error: 'Catalog upload is incomplete. Please select the PDF and start again.' });
             }
         }
         if (assembledBytes > catalogValidation_1.MAX_CATALOG_BYTES) {
             await promises_1.default.rm(assemblingDir, { recursive: true, force: true });
-            return res.status(400).json({ error: 'Catalog exceeds the 60 MB limit.' });
+            return res.status(400).json({ error: 'Catalog exceeds the 60 MB limit. Please compress or split the PDF and try again.' });
         }
         const fileName = `${userId}-${(0, crypto_1.randomUUID)()}.pdf`;
         const uploadDir = path_1.default.join(process.cwd(), 'private', 'catalogs');
@@ -298,7 +275,7 @@ async function uploadCatalogChunk(req, res) {
         if (finalStat.size > catalogValidation_1.MAX_CATALOG_BYTES) {
             await promises_1.default.rm(finalPath, { force: true });
             await promises_1.default.rm(assemblingDir, { recursive: true, force: true });
-            return res.status(400).json({ error: 'Catalog exceeds the 60 MB limit.' });
+            return res.status(400).json({ error: 'Catalog exceeds the 60 MB limit. Please compress or split the PDF and try again.' });
         }
         const handle = await promises_1.default.open(finalPath, 'r');
         const signature = Buffer.alloc(5);
@@ -311,7 +288,7 @@ async function uploadCatalogChunk(req, res) {
         if (!(0, catalogValidation_1.isPdfBuffer)(signature)) {
             await promises_1.default.rm(finalPath, { force: true });
             await promises_1.default.rm(assemblingDir, { recursive: true, force: true });
-            return res.status(400).json({ error: 'Catalog must be a valid PDF file.' });
+            return res.status(400).json({ error: 'Catalog is not a valid PDF. Please export it as a new PDF and try again.' });
         }
         await promises_1.default.rm(assemblingDir, { recursive: true, force: true });
         const baseName = original_name ? path_1.default.basename(original_name, path_1.default.extname(original_name)) : '';
@@ -319,7 +296,7 @@ async function uploadCatalogChunk(req, res) {
     }
     catch (error) {
         console.error('Upload catalog chunk error:', error);
-        res.status(error?.statusCode || 500).json({ error: error?.statusCode ? error.message : 'Failed to process chunk.' });
+        res.status(error?.statusCode || 500).json({ error: error?.statusCode ? error.message : 'Catalog upload failed while processing the file. Please try again.' });
     }
 }
 async function listCatalogs(req, res) {
@@ -415,7 +392,7 @@ async function uploadCatalog(req, res) {
     }
     catch (error) {
         console.error('Upload catalog error:', error);
-        res.status(error?.statusCode || 500).json({ error: error?.statusCode ? error.message : 'Failed to upload catalog.' });
+        res.status(error?.statusCode || 500).json({ error: error?.statusCode ? error.message : 'Catalog could not be saved. Please try again.' });
     }
 }
 async function deleteCatalog(req, res) {

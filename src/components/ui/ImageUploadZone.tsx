@@ -6,6 +6,7 @@ import { getDroppedFiles } from '@/lib/dropFiles';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { prepareImageForUpload } from '@/lib/uploadImageCompression';
 import { createPasteZoneRegistry, getPasteFiles, isWithinFileLimit } from '@/lib/uploadPasteRouting';
+import { getUploadResponseError } from '@/lib/uploadResponseError';
 
 // A page can contain a product form behind a project dialog. Pasting must still
 // work without first focusing a zone, but exactly one (the latest mounted) zone
@@ -48,17 +49,18 @@ function xhrPost(url: string, headers: Record<string, string>, formData: FormDat
     Object.keys(headers).forEach(k => xhr.setRequestHeader(k, headers[k]));
     if (onProgress) xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100)); };
     xhr.onload = () => {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error(getUploadResponseError(xhr.status, xhr.responseText)));
+        return;
+      }
       try {
         const res = JSON.parse(xhr.responseText);
-        if (xhr.status >= 200 && xhr.status < 300) resolve(res);
-        else reject(new Error((res as { error?: string }).error || 'Upload failed'));
+        resolve(res);
       } catch {
-        reject(new Error(xhr.status === 413
-          ? '图片文件过大，正在自动压缩失败，请换一张图片后重试。'
-          : `上传服务返回异常（HTTP ${xhr.status || '未知'}）。`));
+        reject(new Error('上传成功响应格式异常，未能读取文件地址，请重新上传。'));
       }
     };
-    xhr.onerror = () => reject(new Error('Upload failed'));
+    xhr.onerror = () => reject(new Error('网络连接失败，文件未上传，请检查网络后重试。'));
     xhr.send(formData);
   });
 }
@@ -153,7 +155,7 @@ export default function ImageUploadZone({
     if (valid.length === 0) {
       const oversized = files.find(file => maxFileBytesRef.current !== undefined && file.size > maxFileBytesRef.current);
       if (oversized && maxFileBytesRef.current !== undefined) {
-        setErr(`${oversized.name}（文件超过 ${Math.floor(maxFileBytesRef.current / 1024 / 1024)} MB 限制）`);
+        setErr(`${oversized.name}（超过 ${Math.floor(maxFileBytesRef.current / 1024 / 1024)} MB 限制，请压缩或拆分文件后重试）`);
       } else if (files.length > 0) {
         setErr('不支持该文件类型。');
       }
@@ -168,7 +170,7 @@ export default function ImageUploadZone({
       // 顺序上传且逐项容错：一张失败不阻断文件夹中其余图片。
       const failures: string[] = rejected.map(file => {
         if (maxFileBytesRef.current !== undefined && file.size > maxFileBytesRef.current) {
-          return `${file.name}（文件超过 ${Math.floor(maxFileBytesRef.current / 1024 / 1024)} MB 限制）`;
+          return `${file.name}（超过 ${Math.floor(maxFileBytesRef.current / 1024 / 1024)} MB 限制，请压缩或拆分文件后重试）`;
         }
         return `${file.name}（类型不支持）`;
       });
@@ -176,7 +178,7 @@ export default function ImageUploadZone({
         setProgress(0);
         try {
           const data = await uploadOne(file);
-          if (!data.url) throw new Error('Upload failed');
+          if (!data.url) throw new Error('上传服务未返回文件地址，请重新上传。');
           const merged = [...valueRef.current, data.url];
           valueRef.current = merged;
           onUpload(merged);
