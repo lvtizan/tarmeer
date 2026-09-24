@@ -23,7 +23,9 @@ assert.doesNotMatch(page, /Image URL \(e\.g\./, '后台不得再要求管理员�
 assert.match(zone, /prepareImageForUpload/, '公共组件必须先自动压缩超体积图片');
 assert.match(zone, /getDroppedFiles/, '公共组件必须递归读取拖入文件夹');
 assert.match(zone, /document\.addEventListener\('paste'/, '公共组件必须支持粘贴截图');
-assert.match(zone, /activePasteZone/, '多个上传区并存时，粘贴只能交给当前操作的上传区');
+assert.match(zone, /createPasteZoneRegistry/, '多个上传区并存时必须维护挂载顺序，避免粘贴广播');
+assert.match(zone, /pasteZoneRegistry\.isCurrent\(zoneIdRef\.current\)/, '无焦点粘贴必须只交给最新挂载的上传区，不能广播给全部表单');
+assert.match(zone, /pasteZoneRegistry\.unmount\(zoneIdRef\.current\)/, '弹窗上传区卸载后必须回退到前一个上传区');
 assert.match(zone, /const failures: string\[\]/, '批量上传必须逐项收集失败，不能首错即停');
 assert.match(zone, /showPreviews/, '已有图库预览的后台项目页可以仅复用上传交互');
 
@@ -39,4 +41,4 @@ assert.match(controller, /MAX_ADMIN_PROJECT_IMAGES = 200/, '项目图片必须�
 assert.match(controller, /supplier_product_image_upload/, '后台产品图片上传必须写入审计日志');
 assert.match(controller, /projects\/\$\{ts\}_\$\{\(0, crypto_1\.randomUUID\)\(\)\}/, '项目图片文件名必须带 UUID，防止同毫秒上传互相覆盖');
 
-console.log('admin-supplier-image-upload-reuse: 24/24 PASS');
+console.log('admin-supplier-image-upload-reuse: 25/25 PASS');

@@ -131,6 +131,9 @@ export default function SupplierCatalogsPage() {
               chunkUploadUrl={`${API_BASE}/suppliers/me/upload-catalog-chunk`}
               getHeaders={() => ({ Authorization: `Bearer ${getToken()}` })}
               accept="application/pdf"
+              maxFileBytes={60 * 1024 * 1024}
+              activatePasteOnMount
+              acceptClipboardFiles
               label={t('Click or drag a PDF to upload', '点击或拖入 PDF 上传')}
               sublabel="PDF · up to 60 MB"
               onFileMeta={({ original_name }) => {

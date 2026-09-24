@@ -5,10 +5,13 @@ import { Paperclip, X, FileText } from 'lucide-react';
 import { getDroppedFiles } from '@/lib/dropFiles';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { prepareImageForUpload } from '@/lib/uploadImageCompression';
+import { createPasteZoneRegistry, getPasteFiles, isWithinFileLimit } from '@/lib/uploadPasteRouting';
 
-// All mounted zones share one paste owner. A page can contain a hidden product
-// form behind a project dialog, so per-instance booleans are not sufficient.
+// A page can contain a product form behind a project dialog. Pasting must still
+// work without first focusing a zone, but exactly one (the latest mounted) zone
+// may consume an image clipboard event.
 let activePasteZone: symbol | null = null;
+const pasteZoneRegistry = createPasteZoneRegistry();
 
 interface ImageUploadZoneProps {
   value: string[];
@@ -26,6 +29,12 @@ interface ImageUploadZoneProps {
   showPreviews?: boolean;
   disabled?: boolean;
   onUploadStateChange?: (uploading: boolean) => void;
+  /** Optional client-side ceiling for endpoints with a stricter file limit. */
+  maxFileBytes?: number;
+  /** Use when a page has one unambiguous upload target that should accept clipboard files immediately. */
+  activatePasteOnMount?: boolean;
+  /** Opt in to non-image clipboard files; defaults retain image-only paste handling. */
+  acceptClipboardFiles?: boolean;
 }
 
 function isPdf(url: string) { return url.toLowerCase().includes('.pdf'); }
@@ -68,6 +77,9 @@ export default function ImageUploadZone({
   showPreviews = true,
   disabled = false,
   onUploadStateChange,
+  maxFileBytes,
+  activatePasteOnMount = false,
+  acceptClipboardFiles = false,
 }: ImageUploadZoneProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -85,6 +97,8 @@ export default function ImageUploadZone({
   const zoneIdRef = useRef(Symbol('image-upload-zone'));
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
+  const maxFileBytesRef = useRef(maxFileBytes);
+  maxFileBytesRef.current = maxFileBytes;
 
   const acceptMatchers = accept.split(',').map(s => s.trim());
   const fileExt = (name: string) => { const m = /\.([a-z0-9]+)$/i.exec(name || ''); return m ? m[1].toLowerCase() : ''; };
@@ -134,10 +148,15 @@ export default function ImageUploadZone({
 
   const uploadMany = async (files: File[]) => {
     if (disabledRef.current || uploadingRef.current) return; // 上传进行中/父表单保存中不接受新文件
-    const valid = files.filter(matchesAccept);
-    const rejected = files.filter(file => !matchesAccept(file));
+    const valid = files.filter(file => matchesAccept(file) && isWithinFileLimit(file, maxFileBytesRef.current));
+    const rejected = files.filter(file => !matchesAccept(file) || !isWithinFileLimit(file, maxFileBytesRef.current));
     if (valid.length === 0) {
-      if (files.length > 0) setErr('不支持该文件类型。');
+      const oversized = files.find(file => maxFileBytesRef.current !== undefined && file.size > maxFileBytesRef.current);
+      if (oversized && maxFileBytesRef.current !== undefined) {
+        setErr(`${oversized.name}（文件超过 ${Math.floor(maxFileBytesRef.current / 1024 / 1024)} MB 限制）`);
+      } else if (files.length > 0) {
+        setErr('不支持该文件类型。');
+      }
       return;
     }
     uploadingRef.current = true;
@@ -147,7 +166,12 @@ export default function ImageUploadZone({
     setErr('');
     try {
       // 顺序上传且逐项容错：一张失败不阻断文件夹中其余图片。
-      const failures: string[] = rejected.map(file => `${file.name}（类型不支持）`);
+      const failures: string[] = rejected.map(file => {
+        if (maxFileBytesRef.current !== undefined && file.size > maxFileBytesRef.current) {
+          return `${file.name}（文件超过 ${Math.floor(maxFileBytesRef.current / 1024 / 1024)} MB 限制）`;
+        }
+        return `${file.name}（类型不支持）`;
+      });
       for (const file of valid) {
         setProgress(0);
         try {
@@ -173,13 +197,24 @@ export default function ImageUploadZone({
   uploadManyRef.current = (files: File[]) => uploadMany(files);
 
   useEffect(() => {
+    pasteZoneRegistry.mount(zoneIdRef.current);
+    if (activatePasteOnMount && !disabledRef.current) activePasteZone = zoneIdRef.current;
     const handler = (e: ClipboardEvent) => {
-      if (disabledRef.current || activePasteZone !== zoneIdRef.current) return;
-      const item = Array.from(e.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'));
-      if (item) {
-        const file = item.getAsFile();
-        if (file) uploadManyRef.current([file]);
+      if (disabledRef.current) return;
+      const items = Array.from(e.clipboardData?.items ?? []);
+      // Image paste has historically worked anywhere on a page. Do not require a
+      // prior click/focus. The latest mounted zone wins so hidden forms cannot
+      // consume the same image as an open dialog.
+      if (!acceptClipboardFiles) {
+        const files = getPasteFiles(items, { acceptClipboardFiles, isCurrent: pasteZoneRegistry.isCurrent(zoneIdRef.current) });
+        if (files.length > 0) uploadManyRef.current(files);
+        return;
       }
+      // Non-image clipboard files are opt-in. A dedicated one-zone page can opt
+      // into immediate handling; otherwise retain the explicit active-zone guard.
+      if (!activatePasteOnMount && activePasteZone !== zoneIdRef.current) return;
+      const files = getPasteFiles(items, { acceptClipboardFiles, isCurrent: true });
+      if (files.length > 0) uploadManyRef.current(files);
     };
     const deactivateOutside = (e: PointerEvent) => {
       if (!zoneRef.current?.contains(e.target as Node) && activePasteZone === zoneIdRef.current) activePasteZone = null;
@@ -190,8 +225,9 @@ export default function ImageUploadZone({
       document.removeEventListener('paste', handler);
       document.removeEventListener('pointerdown', deactivateOutside);
       if (activePasteZone === zoneIdRef.current) activePasteZone = null;
+      pasteZoneRegistry.unmount(zoneIdRef.current);
     };
-  }, []);
+  }, [acceptClipboardFiles, activatePasteOnMount]);
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
