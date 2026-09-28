@@ -8,7 +8,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowUp, ArrowLeft, X,
   ArrowRight,
-  Package, Layers, MapPin,
+  Package, Layers, MapPin, Globe2,
   Maximize2, Banknote,
 } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
@@ -23,6 +23,7 @@ import { buildSupplierProjectGallery } from '@/lib/supplierProjectGallery';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { normalizeMaterialVideoUrl } from '@/lib/materialVideo';
 import SupplierProductLibrary from './SupplierProductLibrary';
+import SupplierVrShowroom from './SupplierVrShowroom';
 
 // PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
 const CatalogReader = dynamic(() => import('./CatalogReader'), {
@@ -38,6 +39,9 @@ const CatalogReader = dynamic(() => import('./CatalogReader'), {
 });
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
+const SUPPLIER_VR_SHOWROOMS: Readonly<Record<string, string>> = {
+  'supplier-1127': 'https://realsee.ai/lq22JMMX',
+};
 
 export interface SupplierProfile {
   id: number;
@@ -105,6 +109,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   const originTab = searchParams.get('from') === 'products' ? 'products' : 'suppliers';
   const country = countryFromLang(useSiteLocale().lang);
   const requestIdentity = `${country.code}:${slug}`;
+  const vrShowroomUrl = country.code === 'ae' ? SUPPLIER_VR_SHOWROOMS[slug] : undefined;
   const [supplier, setSupplier] = useState<SupplierProfile | null>(initialSupplier);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -138,7 +143,8 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   const reduceMotion = useReducedMotion();
   const productsRef = useRef<HTMLDivElement>(null);
   const projectsRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState<'products' | 'projects'>('products');
+  const vrShowroomRef = useRef<HTMLDivElement>(null);
+  const [activeSection, setActiveSection] = useState<'vr' | 'products' | 'projects'>(vrShowroomUrl ? 'vr' : 'products');
   const hydratedIdentityRef = useRef(requestIdentity);
   const requestGuardRef = useRef(createSupplierIdentityGuard(requestIdentity));
   const [loadedIdentity, setLoadedIdentity] = useState(requestIdentity);
@@ -167,7 +173,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
       setLightbox(null);
       setLogoError(false);
       setInquiryOpen(false);
-      setActiveSection('products');
+      setActiveSection(vrShowroomUrl ? 'vr' : 'products');
       setLoading(true);
     }
     Promise.all([
@@ -259,6 +265,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   useEffect(() => {
     if (!supplier) return;
     const sections = [
+      ...(vrShowroomUrl ? [{ ref: vrShowroomRef, key: 'vr' as const }] : []),
       { ref: productsRef, key: 'products' as const },
       { ref: projectsRef, key: 'projects' as const },
     ];
@@ -275,7 +282,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
     );
     sections.forEach(s => { if (s.ref.current) observer.observe(s.ref.current); });
     return () => observer.disconnect();
-  }, [supplier]);
+  }, [supplier, vrShowroomUrl]);
 
   const handleBack = () => router.push(`/materials?tab=${originTab}`);
 
@@ -314,8 +321,9 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   if (catalogs.length > 0) statItems.push({ label: 'Catalogs', count: catalogs.length });
 
   // 没上传内容的模块整块隐藏，对应 tab 也不显示（下方 map 里按 count 跳过，避免点了滚动到空白）
-  // 画册不在 tab 里（已移到 hero 区展示）；tab 仅产品/项目
+  // 画册不在 tab 里（已移到 hero 区展示）；VR 仅在已配置的供应商页显示。
   const tabItems = [
+    { key: 'vr' as const, label: 'VR Showroom', icon: Globe2, count: vrShowroomUrl ? 1 : 0, ref: vrShowroomRef },
     { key: 'products' as const, label: 'Products', icon: Package, count: products.length, ref: productsRef },
     { key: 'projects' as const, label: 'Projects', icon: Layers, count: projects.length, ref: projectsRef },
   ];
@@ -449,6 +457,12 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
           </div>
         </div>
       </div>
+
+      {vrShowroomUrl && (
+        <div ref={vrShowroomRef} id="section-vr-showroom" className="scroll-mt-28">
+          <SupplierVrShowroom url={vrShowroomUrl} />
+        </div>
+      )}
 
       {/* Products use a dedicated full-width material-library layout. Keeping it
           outside the legacy content/inquiry columns prevents overlap on wide screens. */}
