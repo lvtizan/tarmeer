@@ -288,6 +288,12 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 
 ## 归档模板（新事故追加到本文件末尾）
 
+### FA-46 供应商详情移动端标签栏滚动抖动（2026-09-30）
+- **现象**：移动端浏览供应商详情页时，Products / Projects 吸顶标签栏在滚动过程中反复上下抽动。
+- **根因**：标签栏使用 `position: sticky`，但它与 `body` 之间的详情页布局祖先设置了 `overflow-x: clip`，形成会破坏移动端 Safari sticky 定位的额外滚动/裁切上下文；移动端同时启用 `backdrop-filter`，进一步触发滚动合成重绘。
+- **修复**：移除详情页非根布局祖先的 `overflow-x: clip`（保留 `html/body` 的站点级横向防溢出规则）；吸顶栏在所有断点改用不透明纯色背景，不再启用背景模糊。
+- **预防**：移动端 sticky 元素到 `body` 之间不得新增带 `overflow: clip/hidden` 的非根布局祖先；吸顶导航优先使用稳定纯色合成层，并用 `supplier-mobile-sticky-tabs.mjs` 守护。
+
 ```
 ### FA-N 标题（日期）
 - **现象**：用户看到了什么 / 什么功能失效

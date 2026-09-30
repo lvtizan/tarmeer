@@ -329,7 +329,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   ];
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] overflow-x-clip">
+    <div className="min-h-screen bg-[#faf9f7]">
       {/* ========== Hero ========== */}
       <div className="relative overflow-hidden">
         {heroImage ? (
@@ -425,7 +425,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
       {/* About 区已移除：公开去标识后简介为遮蔽星号、地址隐藏；Hero 已用品类导语承载 */}
 
       {/* ========== Sticky Tab Strip ========== */}
-      <div className="sticky top-14 sm:top-16 z-40 bg-[#faf9f7]/95 backdrop-blur-sm">
+      <div data-testid="supplier-section-tabs" className="sticky top-14 z-40 bg-[#faf9f7] sm:top-16">
         <div className="overflow-x-auto scrollbar-none">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-1">
             {tabItems.map(({ key, label, icon: Icon, count, ref }) => count === 0 ? null : (
