@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1898,
+    "supplier_id": 235,
+    "country": "ae",
+    "before_description_sha256": "c1b8247946de4b1698930b11595b1ac35463e7c125a82a38da5b48dfab36539c",
+    "before_translated": "成品类家具柜",
+    "after": "Ready-made furniture cabinet. Please contact Tarmeer to confirm available models, dimensions and finishes."
+  },
+  {
+    "id": 1903,
+    "supplier_id": 156,
+    "country": "ae",
+    "before_description_sha256": "f0366fd35fc27a820a418dcd49678472e6e0f263fb796cddc97f1f9456461373",
+    "before_translated": "定制类产品",
+    "after": "Made-to-order product. Please contact Tarmeer to confirm dimensions, materials and the available customization options."
+  },
+  {
+    "id": 1915,
+    "supplier_id": 159,
+    "country": "ae",
+    "before_description_sha256": "dc15413839b06c90f711b2dc6df5d7a326c493fad9b993380df14d34e1fd04fc",
+    "before_translated": "定制产品",
+    "after": "Made-to-order product. Please contact Tarmeer to confirm specifications and customization options."
+  },
+  {
+    "id": 1923,
+    "supplier_id": 236,
+    "country": "ae",
+    "before_description_sha256": "dcd59b8ddb5be09bf1d5a12bdcdd98fd9bc4d1a71d9beb6bfec1e926f9f1055b",
+    "before_translated": null,
+    "after": "Smart toilet, model ZD9760-SA-CJM000.\n\nSupplier-listed features include automatic lid opening and flushing, washing and drying functions, deodorization, UV sterilization, and app or voice control.\n\nPlease confirm the exact configuration, installation requirements and supporting product documentation before ordering."
+  },
+  {
+    "id": 1924,
+    "supplier_id": 236,
+    "country": "ae",
+    "before_description_sha256": "de71fb6e0d64f0347e7168a9a97dc6990d6689b9617d15d41163d94559381fc0",
+    "before_translated": null,
+    "after": "Smart toilet, model ZD6450-SA-CJM400.\n\nSupplier-listed features include automatic lid opening, a foot sensor, automatic flushing, washing functions, deodorization, a removable nozzle and app control.\n\nPlease confirm the exact configuration, installation requirements and supporting product documentation before ordering."
+  },
+  {
+    "id": 1925,
+    "supplier_id": 237,
+    "country": "ae",
+    "before_description_sha256": "630c020749156375e69031649b3e29db0bc66ca305ea97de1a7e76f1d4cf618a",
+    "before_translated": null,
+    "after": "Modern interior wooden door with a minimalist design and wood-grain finish, offered for residential, apartment and hotel projects.\n\nCustom sizes, colours, finishes and hardware options are available. Please confirm the selected door configuration and any required moisture-resistance or acoustic performance documentation with Tarmeer."
+  },
+  {
+    "id": 1926,
+    "supplier_id": 238,
+    "country": "ae",
+    "before_description_sha256": "d777249a246ac8be05eea9aa173c9d590105b3aa210f643d64138a6b110cd3dd",
+    "before_translated": null,
+    "after": "All-aluminium bathroom vanity cabinet with a washbasin and smart mirror cabinet combination. Customization is offered.\n\nPlease contact Tarmeer to confirm dimensions, finish, basin and mirror configuration, and which components are included in the quotation."
+  },
+  {
+    "id": 1927,
+    "supplier_id": 238,
+    "country": "ae",
+    "before_description_sha256": "674dd2ca42712c98b7a7d208f74b65a63a2a01426e00ee5b7c333ca80c2fcaa5",
+    "before_translated": null,
+    "after": "Welded all-aluminium bathroom cabinet with a smart mirror cabinet combination. Customization is offered.\n\nPlease contact Tarmeer to confirm dimensions, finish, mirror functions and the components included in the quotation."
+  },
+  {
+    "id": 1928,
+    "supplier_id": 239,
+    "country": "ae",
+    "before_description_sha256": "de20ccce6bda884fc4fa27544853a6615e8be8d6f9eadf6739263deb9e7d2561",
+    "before_translated": null,
+    "after": "Water-repellent expanded perlite granules made from natural perlite with a surface treatment intended to reduce water absorption.\n\nThe supplier describes applications in building insulation, industrial insulation and horticultural mixtures.\n\nParticle size, bulk density, thermal conductivity, water absorption and any required fire-test classification should be confirmed against the product data sheet for the selected grade."
+  },
+  {
+    "id": 1929,
+    "supplier_id": 239,
+    "country": "ae",
+    "before_description_sha256": "c64d02b6b287b4fa71fd436e30962cd6e526fb5bef7df81f0a15459c4309a64c",
+    "before_translated": null,
+    "after": "Water-repellent perlite insulation board made from expanded perlite and an inorganic binder, with a surface treatment intended to reduce water absorption.\n\nThe supplier describes applications in roof and external-wall insulation.\n\nPlease confirm board dimensions, thickness, density, installation requirements and supporting thermal and fire-test documentation for the selected product."
+  },
+  {
+    "id": 1930,
+    "supplier_id": 239,
+    "country": "ae",
+    "before_description_sha256": "bafb0272186b9cb5d4ed25ee956b0d31ca675a95b6bd64dc339d5f9d4eb4472f",
+    "before_translated": null,
+    "after": "Expanded perlite for horticultural growing media and soil mixtures. The listed particle-size range is 1–3 mm.\n\nPlease confirm particle grading, packaging and the required quantity with Tarmeer."
+  },
+  {
+    "id": 1931,
+    "supplier_id": 239,
+    "country": "ae",
+    "before_description_sha256": "d29c01bfa6c3a19cff0da07a76eb68683016fa19350ea0ef63ddf00ff1d385db",
+    "before_translated": null,
+    "after": "Steel wire mesh reinforced perlite composite board intended for lightweight partition walls.\n\nThe supplier describes use in residential buildings, hotels and steel-frame construction.\n\nPlease confirm panel dimensions, thickness, density, fixing details and supporting fire-resistance and acoustic test reports for the intended project."
+  },
+  {
+    "id": 1932,
+    "supplier_id": 239,
+    "country": "ae",
+    "before_description_sha256": "79439cd1d1de3d63e521f5577c3071d887d933e9d564bffab7d40234150ce08b",
+    "before_translated": null,
+    "after": "Perlite filter aid for filtration applications.\n\nPlease contact Tarmeer to confirm the grade, particle size and compatibility with the intended liquid and filtration process. Food-contact suitability requires supporting documentation for the selected grade."
+  },
+  {
+    "id": 1933,
+    "supplier_id": 240,
+    "country": "ae",
+    "before_description_sha256": "4b83c373eb1180adbc63c3858cce1d7234976c22c61b50e49f6fcdaa0f14a1b0",
+    "before_translated": null,
+    "after": "Structural pillow. Detailed material, dimensions and construction information have not been provided. Please contact Tarmeer for the product specifications."
+  },
+  {
+    "id": 2038,
+    "supplier_id": 237,
+    "country": "ae",
+    "before_description_sha256": "6fcb0eb48640cea117e92e972aa88e42ab049bf0777aaa0ded4addc9c344e983",
+    "before_translated": null,
+    "after": "Custom built-in wardrobe with configurable dimensions, colours, internal layout and door styles.\n\nPlease contact Tarmeer to confirm materials, finishes, hardware, installation scope and the quotation for the selected wardrobe design."
+  }
+]
