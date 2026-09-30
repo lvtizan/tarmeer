@@ -213,7 +213,7 @@ async function getPageMeta(pathname, country) {
         },
         '/materials': {
             title: `Material Suppliers in ${COUNTRY_NAME} — Furniture, Stone, Lighting | Tarmeer`,
-            description: `Browse verified building material suppliers. Furniture, marble, lighting, flooring and more for ${COUNTRY_NAME} renovation projects.`,
+            description: `Browse building materials with supplier sourcing coordinated by Tarmeer. Furniture, marble, lighting, flooring and more for ${COUNTRY_NAME} renovation projects.`,
             canonical: `${BASE_URL}/materials`,
             ogImage: DEFAULT_IMAGE,
             jsonLd: {
@@ -380,13 +380,13 @@ async function getPageMeta(pathname, country) {
     const supplierMatch = pathname.match(/^\/materials\/suppliers\/([a-z0-9-]+)$/);
     if (supplierMatch) {
         const slug = supplierMatch[1];
-        const [rows] = await database_1.default.execute("SELECT categories FROM supplier_profiles WHERE slug = ? AND status IN ('approved', 'active') LIMIT 1", [slug]);
+        const [rows] = await database_1.default.execute("SELECT id, categories FROM supplier_profiles WHERE slug = ? AND country = ? AND status = 'approved' AND is_published = 1 LIMIT 1", [slug, country]);
         const sup = rows[0];
         if (sup) {
             // 公开去标识：厂家名/logo/地址一律不注入，用品类做通用标题(藏身份+保 SEO 品类关键词)
             const { supplierPublicTitle } = require('./supplierRedact');
-            const name = supplierPublicTitle(sup.categories);
-            const desc = `${name} in ${COUNTRY_NAME} — browse verified products and catalogs on Tarmeer.`;
+            const name = `Tarmeer sourcing partner #${sup.id} — ${supplierPublicTitle(sup.categories)}`;
+            const desc = `${name} in ${COUNTRY_NAME} — browse products and catalogs with supplier sourcing coordinated by Tarmeer.`;
             return {
                 title: `${name} in ${COUNTRY_NAME} | Tarmeer`,
                 description: desc,
@@ -433,7 +433,7 @@ function injectMeta(html, meta) {
     upsertHeadTag(/<meta name="twitter:image"[^>]*>/, `<meta name="twitter:image" content="${ogImage}" />`);
     // Inject JSON-LD if present
     if (meta.jsonLd) {
-        const jsonLd = `<script type="application/ld+json">${JSON.stringify(meta.jsonLd)}</script>`;
+        const jsonLd = `<script type="application/ld+json">${JSON.stringify(meta.jsonLd).replace(/</g, '\\u003c')}</script>`;
         result = result.replace('</head>', `${jsonLd}\n</head>`);
     }
     return result;

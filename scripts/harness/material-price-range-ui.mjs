@@ -3,6 +3,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { buildProductPriceLabel } from '../../src/lib/productPriceDisplay.ts';
 
 const root = path.resolve(fileURLToPath(import.meta.url), '../../..');
 const read = (file) => readFileSync(path.join(root, file), 'utf8');
@@ -14,7 +16,7 @@ const publicPrice = readOptional('src/components/materials/ProductPriceLine.tsx'
 const publicPriceDisplay = readOptional('src/lib/productPriceDisplay.ts');
 const supplierDetail = read('src/components/materials/SupplierDetailClient.tsx');
 const supplierLibrary = read('src/components/materials/SupplierProductLibrary.tsx');
-const serviceInquiry = read('src/components/services/ServiceInquiryCard.tsx');
+const serviceInquiry = read('src/components/sourcing/SourcingRequestForm.tsx');
 const publicSurfaces = [
   ['material product card', read('src/components/materials/MaterialProductCard.tsx')],
   ['material search results', read('src/components/materials/MaterialSearchResults.tsx')],
@@ -109,7 +111,7 @@ for (const [label, source] of [['supplier portal', supplier], ['admin detail', a
 }
 
 check('supplier: edit dirty state is passed into shared builder', has(supplier, /dirty:\s*priceDirty/));
-check('supplier: async profile preserves explicit or user-selected currency', has(supplier, /!currencyTouchedRef\.current\s*&&\s*\(editingIdRef\.current\s*==\s*null\s*\|\|\s*editingExplicitCurrencyRef\.current\s*==\s*null\)\)\s*setNewCurrency\(cur\)/) && has(supplier, /currencyTouchedRef\.current\s*=\s*true;\s*setNewCurrency\(value\)/));
+check('supplier: async profile never assigns quote currency and edits preserve explicit values', !has(supplier, /setNewCurrency\((?:cur|currency)\)/) && has(supplier, /setNewCurrency\(explicitCurrency \|\| ''\)/) && has(supplier, /newCurrency !== \(originalPriceFields\.price_currency \|\| ''\)/));
 check('supplier: unit selector exposes field-specific error', has(supplier, /id="supplier-price-unit"[\s\S]{0,500}aria-describedby=\{displayedPriceErrorField === 'unit'/));
 check('admin detail: add/edit both use shared builder', (adminDetail.match(/buildProductPriceSubmission\(/g) || []).length >= 2);
 check('admin modal: add/edit both use shared builder', (adminModal.match(/buildProductPriceSubmission\(/g) || []).length >= 2);
@@ -124,9 +126,9 @@ for (const [label, source, ids] of [
   check(`${label}: price errors are announced`, has(source, /role="alert"|aria-live="(?:polite|assertive)"/));
 }
 for (const [label, source, fields] of [
-  ['supplier portal', supplier, [['supplier-price-min', 'supplier-price-error'], ['supplier-price-max', 'supplier-price-error'], ['supplier-price-unit', 'supplier-price-error']]],
-  ['admin detail', adminDetail, [['admin-product-price-min', 'admin-product-price-error'], ['admin-product-price-max', 'admin-product-price-error'], ['admin-product-price-unit', 'admin-product-price-error'], ['admin-new-product-price-min', 'admin-new-product-price-error'], ['admin-new-product-price-max', 'admin-new-product-price-error'], ['admin-new-product-price-unit', 'admin-new-product-price-error']]],
-  ['admin modal', adminModal, [['quick-add-product-price-min', 'quick-add-product-price-error'], ['quick-add-product-price-max', 'quick-add-product-price-error'], ['quick-add-product-price-unit', 'quick-add-product-price-error'], ['quick-edit-product-price-min', 'quick-edit-product-price-error'], ['quick-edit-product-price-max', 'quick-edit-product-price-error'], ['quick-edit-product-price-unit', 'quick-edit-product-price-error']]],
+  ['supplier portal', supplier, [['supplier-price-min', 'supplier-price-error'], ['supplier-price-max', 'supplier-price-error'], ['supplier-price-unit', 'supplier-price-error'], ['supplier-price-currency', 'supplier-price-error']]],
+  ['admin detail', adminDetail, [['admin-product-price-min', 'admin-product-price-error'], ['admin-product-price-max', 'admin-product-price-error'], ['admin-product-price-unit', 'admin-product-price-error'], ['admin-new-product-price-min', 'admin-new-product-price-error'], ['admin-new-product-price-max', 'admin-new-product-price-error'], ['admin-new-product-price-unit', 'admin-new-product-price-error'], ['admin-product-price-currency', 'admin-product-price-error'], ['admin-new-product-price-currency', 'admin-new-product-price-error']]],
+  ['admin modal', adminModal, [['quick-add-product-price-min', 'quick-add-product-price-error'], ['quick-add-product-price-max', 'quick-add-product-price-error'], ['quick-add-product-price-unit', 'quick-add-product-price-error'], ['quick-edit-product-price-min', 'quick-edit-product-price-error'], ['quick-edit-product-price-max', 'quick-edit-product-price-error'], ['quick-edit-product-price-unit', 'quick-edit-product-price-error'], ['quick-add-product-price-currency', 'quick-add-product-price-error'], ['quick-edit-product-price-currency', 'quick-edit-product-price-error']]],
 ]) {
   for (const [id, errorId] of fields) check(`${label}: ${id} exposes its error relationship`, controlHasErrorAria(source, id, errorId));
 }
@@ -152,16 +154,20 @@ check('admin modal preview has one correctly wired formatter call', hasSingleFor
 
 check('public price display uses the shared formatter with all five product price fields', hasSingleFormatterWithArgs(publicPriceDisplay, [
   [0, 'product.price'],
-  [1, 'product.price_unit'],
+  [1, 'unit'],
   [2, 'product.price_from'],
-  [3, 'product.price_currency || fallbackCurrency'],
+  [3, 'product.price_currency'],
   [4, 'product.price_max'],
   [5, "'en'"],
 ]));
-check('public price line derives fallback currency from current site locale',
-  has(publicPrice, /countryFromLang\(useSiteLocale\(\)\.lang\)/) && has(publicPrice, /fallbackCurrency(?:=\{|:)\s*country\.currency/));
-check('public price display renders nothing when formatter is empty',
-  has(publicPriceDisplay, /if\s*\(!label\)\s*return\s+null/));
+check('public numeric price requires explicit currency and unit; locale never invents currency',
+  buildProductPriceLabel({ price: 50, price_unit: 'PCS', price_currency: null }, 'AED') === 'Request a quote'
+  && buildProductPriceLabel({ price: 50, price_unit: null, price_currency: 'USD' }, 'AED') === 'Request a quote');
+check('missing prices show an actionable quote status', buildProductPriceLabel({price: null}, 'AED') === 'Request a quote');
+check('public prices normalize units and retain source currency',
+  buildProductPriceLabel({price: 50, price_unit: 'PCS', price_currency: 'USD'}, 'AED') === 'USD 50 / piece'
+  && buildProductPriceLabel({price: 50, price_unit: 'SQM', price_currency: 'AED'}, 'USD') === 'AED 50 / m²'
+  && buildProductPriceLabel({price: 150, price_unit: '元/㎡', price_currency: 'CNY'}, 'AED') === 'CNY 150 / m²');
 check('public price display has stable branded-gold typography when present',
   has(publicPriceDisplay, /min-h-/) && has(publicPriceDisplay, /text-\[#b8864a\]/));
 for (const [label, source] of publicSurfaces) {
@@ -221,37 +227,45 @@ check('supplier inquiry preserves draft while closed and resets it for a new sup
 check('supplier inquiry respects reduced-motion preferences',
   has(supplierDetail, /useReducedMotion\(\)/)
   && (supplierDetail.match(/reduceMotion \? \{ duration: 0 \}/g) || []).length >= 2);
-check('shared inquiry fields expose accessible names and announced errors',
-  ['Your name', 'Phone number', 'Project area in square metres', 'Message (optional)'].every((label) =>
-    serviceInquiry.includes(`aria-label="${label}"`))
-  && has(serviceInquiry, /aria-label=\{isVn \? 'Chọn thành phố' : 'Select city'\}/)
-  && has(serviceInquiry, /role="alert"/)
-  && has(serviceInquiry, /aria-live="assertive"/));
-check('supplier inquiry exposes expanded state and required form fields',
+check('sourcing fields bind visible labels and announce errors',
+  has(serviceInquiry, /htmlFor=\{`\$\{id\}-\$\{field\}`\}/)
+  && ['name', 'phone', 'city', 'message'].every(field => new RegExp(`label\\(["']${field}["']`).test(serviceInquiry))
+  && has(serviceInquiry, /role="alert"/));
+check('supplier inquiry exposes expanded state, explicit required contact and optional quantity',
   has(supplierDetail, /aria-expanded=\{inquiryOpen\}/)
-  && (serviceInquiry.match(/aria-required="true"/g) || []).length >= 4
-  && (serviceInquiry.match(/\brequired\b/g) || []).length >= 4);
-check('supplier inquiry uses the current country city list and mobile safe-area spacing',
-  has(supplierDetail, /isVn=\{country\.code === 'vn'\}/)
+  && has(serviceInquiry, /phoneOk/) && has(serviceInquiry, /form\.name\.trim\(\)/)
+  && has(serviceInquiry, /quantityOk/) && has(serviceInquiry, /unknownQuantity/));
+check('supplier inquiry uses locale country and mobile safe-area spacing',
+  has(serviceInquiry, /countryFromLang\(useSiteLocale\(\)\.lang\)/)
+  && has(serviceInquiry, /country\.cities\.map/)
+  && has(serviceInquiry, /["']x-country["']:\s*country\.code/)
   && (supplierDetail.match(/env\(safe-area-inset-bottom\)/g) || []).length >= 3
-  && has(supplierDetail, /document\.body\.style\.paddingBottom = mobile\.matches/)
   && has(supplierDetail, /document\.body\.style\.paddingBottom = previousPaddingBottom/));
 check('supplier inquiry uses the explicit supplier sourcing target instead of company fields',
   !has(supplierDetail, /companyId=\{supplier\.id\}/)
   && !has(supplierDetail, /companySlug=\{supplier\.slug\}/)
-  && has(supplierDetail, /supplierProfileId=\{supplier\.id\}/)
-  && has(serviceInquiry, /if \(supplierProfileId\)/)
-  && has(serviceInquiry, /api\.post\('\/sourcing-requests'/)
-  && has(serviceInquiry, /supplier_profile_id: supplierProfileId/)
-  && has(serviceInquiry, /`supplier:\$\{supplierProfileId\}`/)
-  && has(supplierDetail, /leadTag="Material Inquiry"/));
-check('inquiry success is announced and receives focus after submission',
-  has(serviceInquiry, /role="status"/)
-  && has(serviceInquiry, /aria-live="polite"/)
-  && has(serviceInquiry, /successRef\.current\?\.focus\(\)/));
-check('shared inquiry inputs use the required white field background',
-  !has(serviceInquiry, /bg-stone-50/)
-  && (serviceInquiry.match(/bg-white/g) || []).length >= 4);
+  && has(supplierDetail, /supplierId=\{supplier\.id\}/)
+  && has(supplierDetail, /<SourcingRequestForm/)
+  && has(serviceInquiry, /supplier_profile_id:\s*supplierId/)
+  && has(serviceInquiry, /sourcing-requests\?country=/));
+check('inquiry receipt is announced and receives focus after submission',
+  has(serviceInquiry, /role="status"/) && has(serviceInquiry, /successRef\.current\?\.focus\(\)/));
+check('shared inquiry inputs use the required white field background', !has(serviceInquiry, /bg-stone-50/) && has(serviceInquiry, /bg-white/));
+check('sourcing workflow behavior: quantity, retry, country and deduplication', (() => {
+  try { execFileSync(process.execPath, ['--test', 'src/components/sourcing/SourcingRequestForm.test.mjs'], { cwd: root, stdio: 'pipe' }); return true; }
+  catch(error) { console.error(error.stdout?.toString()); return false; }
+})());
+
+for (const [label, source] of [['supplier', supplier], ['admin detail', adminDetail], ['admin modal', adminModal]]) {
+  check(`${label}: save boundary reports a currency-specific error`, has(source, /priceSubmission.field === 'currency'/));
+  check(`${label}: currency selector never offers an inferred country value`, !has(source, /By country|按国家/) && has(source, /Select currency|请选择币种/));
+}
+for (const [label, source] of [['admin detail', adminDetail], ['admin modal', adminModal]]) {
+  check(`${label}: separate original and English fields persist reviewed English names`,
+    has(source, /English product name/) && has(source, /原名称 \/ 中文名称/)
+    && (source.match(/title_translated:/g) || []).length >= 2
+    && has(source, /title_translated: titleEn.trim\(\) \|\| null/));
+}
 
 let passed = 0;
 for (const item of checks) {

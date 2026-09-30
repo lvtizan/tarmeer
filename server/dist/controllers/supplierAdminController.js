@@ -50,16 +50,7 @@ function validProjectImageList(images) {
     return Array.isArray(images) && images.length <= MAX_ADMIN_PROJECT_IMAGES
         && images.every((url) => typeof url === 'string' && url.length > 0 && url.length <= 500);
 }
-async function supplierImagePathIsOwned(profile, imageUrl, folder) {
-    if (typeof imageUrl !== 'string' || imageUrl.includes('..') || imageUrl.includes('\\') || imageUrl.includes('%') || imageUrl.includes('?') || imageUrl.includes('#')) return false;
-    const slug = (profile.slug || `id${profile.id}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-    if (!new RegExp(`^/uploads/suppliers/${slug}/${folder}/\\d+_[0-9a-f-]{36}\\.webp$`, 'i').test(imageUrl)) return false;
-    const base = path_1.default.resolve(process.cwd(), 'public/uploads/suppliers', slug, folder);
-    const candidate = path_1.default.resolve(process.cwd(), 'public', imageUrl.replace(/^\//, ''));
-    if (path_1.default.dirname(candidate) !== base) return false;
-    try { return (await promises_1.default.stat(candidate)).isFile(); }
-    catch { return false; }
-}
+const {supplierImagePathIsOwned} = require('../lib/supplierImageOwnership');
 // 合作方来源不是管理员创建：该合作方同步的供应商统一归属为业务来源“蓝鲸”。
 // 使用虚拟 ID，确保报表聚合不与普通“未记录/系统导入”混在一起。
 const BLUEWHALE_PARTNER_KEY = 'pk_9fada27f38';
@@ -590,6 +581,10 @@ async function updateSupplierStatus(req, res) {
         if (!['pending', 'approved', 'rejected'].includes(status)) {
             return res.status(400).json({ error: 'Invalid status.' });
         }
+        if (status === 'approved') {
+            const error = await require('../lib/materialProcurement').validateSupplierPublication(database_1.default, id);
+            if (error) return res.status(400).json({error});
+        }
         await database_1.default.execute('UPDATE supplier_profiles SET status = ? WHERE id = ?', [status, id]);
         await logSupplierAction(req, 'supplier_status_update', id, `供应商#${id} 状态→${status}`);
         res.json({ message: 'Status updated.' });
@@ -603,6 +598,10 @@ async function updateSupplier(req, res) {
     try {
         const { id } = req.params;
         const fields = req.body;
+        if (fields.status === 'approved') {
+            const error = await require('../lib/materialProcurement').validateSupplierPublication(database_1.default, id);
+            if (error) return res.status(400).json({error});
+        }
         const allowed = [
             'company_name', 'name_zh', 'description', 'origin', 'categories', 'has_physical_store',
             'store_address', 'store_lat', 'store_lng', 'google_maps_url',
@@ -681,9 +680,11 @@ async function deleteSupplier(req, res) {
 async function adminAddProduct(req, res) {
     try {
         const { id } = req.params;
-        const [profileRows] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [id]);
+        const [profileRows] = await database_1.default.execute('SELECT id, slug, country FROM supplier_profiles WHERE id = ?', [id]);
         if (profileRows.length === 0)
             return res.status(404).json({ error: 'Supplier not found.' });
+        const validationError = await require('../lib/materialProcurement').validateProduct(database_1.default, req.body, {country:profileRows[0].country});
+        if (validationError) return res.status(400).json({error: validationError});
         const { title, description, category, image_url, sort_order, specs, certifications, application_scenes } = req.body;
         if (!image_url)
             return res.status(400).json({ error: 'image_url is required.' });
@@ -700,10 +701,12 @@ async function adminAddProduct(req, res) {
         const boundsError = (0, productPriceRange_1.validateProductPriceRange)(parsedPrice, parsedPriceMax);
         if (boundsError)
             return res.status(400).json({ error: boundsError });
+        const contextError = require('../lib/materialProcurement').validatePriceContext(req.body);
+        if (contextError) return res.status(400).json({error:contextError});
         const priceCurrency = req.body.price_currency === undefined || req.body.price_currency === null
             ? null
             : SUPPORTED_PRICE_CURRENCIES.includes(req.body.price_currency) ? req.body.price_currency : null;
-        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order, price, price_max, price_unit, price_currency, price_from, specs, certifications, application_scenes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0, parsedPrice.kind === 'valid' ? parsedPrice.value : null, parsedPriceMax.kind === 'valid' ? parsedPriceMax.value : null, req.body.price_unit || null, priceCurrency, req.body.price_from ? 1 : 0, jarr(specs), jarr(certifications), jarr(application_scenes)]);
+        const [result] = await database_1.default.execute('INSERT INTO supplier_products (supplier_profile_id, title, description, category, image_url, sort_order, price, price_max, price_unit, price_currency, price_from, specs, certifications, application_scenes, title_translated, description_translated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, title || null, description || null, category || null, image_url, sort_order ?? 0, parsedPrice.kind === 'valid' ? parsedPrice.value : null, parsedPriceMax.kind === 'valid' ? parsedPriceMax.value : null, req.body.price_unit || null, priceCurrency, req.body.price_from ? 1 : 0, jarr(specs), jarr(certifications), jarr(application_scenes), req.body.title_translated || null, req.body.description_translated || null]);
         // Admin-assisted uploads follow the same first-product listing rule as supplier self-service uploads.
         await database_1.default.execute('UPDATE supplier_profiles SET first_product_at = COALESCE(first_product_at, NOW()) WHERE id = ?', [id]);
         const [created] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ?', [result.insertId]);
@@ -738,28 +741,34 @@ async function adminUpdateProduct(req, res) {
         await connection.beginTransaction();
         // Controller-level harness hooks; Express clients cannot populate request object properties.
         await req.priceRangeTestHooks?.beforeLock?.();
-        const [rows] = await connection.execute('SELECT id, price, price_max FROM supplier_products WHERE id = ? AND supplier_profile_id = ? FOR UPDATE', [productId, id]);
+        const [rows] = await connection.execute('SELECT id, title, title_translated, price, price_max, price_currency, price_unit FROM supplier_products WHERE id = ? AND supplier_profile_id = ? FOR UPDATE', [productId, id]);
         await req.priceRangeTestHooks?.afterLock?.();
         if (rows.length === 0) {
             await connection.rollback();
             return res.status(404).json({ error: 'Product not found.' });
         }
         const body = req.body || {};
+        const [supplierRows] = await connection.execute('SELECT country FROM supplier_profiles WHERE id = ?', [id]);
+        const validationError = await require('../lib/materialProcurement').validateProduct(connection, body, {partial:true, existing:rows[0], country:supplierRows[0]?.country});
+        if (validationError) { await connection.rollback(); return res.status(400).json({error:validationError}); }
         // 部分更新:只改本次传了 key 的字段。避免其它入口(如 SupplierEditModal 只传 title/category)清空 description/price 等。
         // 列名为硬编码白名单,仅值走参数化,无注入风险。
         const has = (k) => Object.prototype.hasOwnProperty.call(body, k);
+        const hasPriceGroup = ['price','price_max','price_currency','price_unit','price_from'].some(has);
+        const contextError = hasPriceGroup ? require('../lib/materialProcurement').validatePriceContext({...rows[0],...body}) : null;
+        if (contextError) { await connection.rollback(); return res.status(400).json({error:contextError}); }
         const sets = [];
         const params = [];
         const effectivePriceValue = has('price') ? body.price : rows[0].price;
         const effectiveMaxValue = has('price_max') ? body.price_max : rows[0].price_max;
         const parsedPrice = (0, productPriceRange_1.parseProductPrice)(effectivePriceValue, 'price', { allowClear: true });
         const parsedPriceMax = (0, productPriceRange_1.parseProductPrice)(effectiveMaxValue, 'price_max', { allowClear: true });
-        if (parsedPrice.kind === 'invalid' || parsedPriceMax.kind === 'invalid') {
+        if (hasPriceGroup && (parsedPrice.kind === 'invalid' || parsedPriceMax.kind === 'invalid')) {
             await connection.rollback();
             return res.status(400).json({ error: parsedPrice.error || parsedPriceMax.error });
         }
         const boundsError = (0, productPriceRange_1.validateProductPriceRange)(parsedPrice, parsedPriceMax);
-        if (boundsError) {
+        if (hasPriceGroup && boundsError) {
             await connection.rollback();
             return res.status(400).json({ error: boundsError });
         }
@@ -770,6 +779,9 @@ async function adminUpdateProduct(req, res) {
         if (has('category')) {
             sets.push('category = ?');
             params.push(body.category || null);
+        }
+        for (const field of ['title_translated','description_translated']) {
+            if (has(field)) { sets.push(`${field} = ?`); params.push(typeof body[field] === 'string' ? body[field].trim() || null : null); }
         }
         if (has('description')) {
             sets.push('description = ?');
@@ -1012,6 +1024,8 @@ async function toggleSupplierPublished(req, res) {
         const { id } = req.params;
         const { is_published } = req.body;
         if (is_published) {
+            const error = await require('../lib/materialProcurement').validateSupplierPublication(database_1.default, id);
+            if (error) return res.status(400).json({error});
             // 首次上架记录 published_at；再次上架(曾下架)保留首次时间,不覆盖(COALESCE)
             await database_1.default.execute('UPDATE supplier_profiles SET is_published = 1, published_at = COALESCE(published_at, NOW()) WHERE id = ?', [id]);
         }

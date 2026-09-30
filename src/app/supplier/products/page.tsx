@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, ImagePlus, X, Pencil } from 'lucide-react';
 import AdminSelect from '@/components/ui/AdminSelect';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -74,9 +74,6 @@ export default function SupplierProductsPage() {
   const [adding, setAdding] = useState(false);
   // null = 新增；非空 = 正在编辑该产品(走弹层 + PUT)
   const [editingId, setEditingId] = useState<number | null>(null);
-  const editingIdRef = useRef<number | null>(null);
-  const editingExplicitCurrencyRef = useRef<string | null>(null);
-  const currencyTouchedRef = useRef(false);
 
   // new product form
   const [newTitle, setNewTitle] = useState('');
@@ -90,13 +87,13 @@ export default function SupplierProductsPage() {
   const [newPriceMax, setNewPriceMax] = useState('');
   const [originalPriceFields, setOriginalPriceFields] = useState<Pick<Product, 'price' | 'price_max' | 'price_unit' | 'price_currency' | 'price_from'> | null>(null);
   const [priceError, setPriceError] = useState('');
-  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
+  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | 'currency' | null>(null);
   const [newUnit, setNewUnit] = useState('');          // '' = 未选；'__custom__' = 自定义
   const [newUnitCustom, setNewUnitCustom] = useState('');
   const [newPriceFrom, setNewPriceFrom] = useState(false);
   /** 站点默认币种（由供应商所属国家决定），作为新产品的初始值和旧产品的兜底展示 */
   const [currency, setCurrency] = useState('AED');
-  const [newCurrency, setNewCurrency] = useState('AED');
+  const [newCurrency, setNewCurrency] = useState('');
   const [newTitleEn, setNewTitleEn] = useState('');
   const [newDescEn, setNewDescEn] = useState('');
   const [translating, setTranslating] = useState<'title' | 'desc' | null>(null);
@@ -114,11 +111,10 @@ export default function SupplierProductsPage() {
       .then(r => r.json())
       .then(data => {
         if (!data?.profile?.country) return;
-        // 国家币种未必在报价白名单内（将来加国家时）→ 兜底到白名单首项，避免提交被后端 400
+        // 国家币种仅用于后台旧价格预览；保存表单必须由用户显式选择币种。
         const raw = getCountry(data.profile.country).currency;
         const cur = isValidCurrency(raw) ? raw : PRODUCT_CURRENCIES[0];
         setCurrency(cur);
-        if (!currencyTouchedRef.current && (editingIdRef.current == null || editingExplicitCurrencyRef.current == null)) setNewCurrency(cur);
       })
       .catch(() => {});
   }, []);
@@ -129,7 +125,7 @@ export default function SupplierProductsPage() {
     { value: '__custom__', label: t('Custom…', '自定义…') },
   ];
 
-  const CURRENCY_OPTIONS = PRODUCT_CURRENCIES.map(c => ({ value: c, label: c }));
+  const CURRENCY_OPTIONS = [{ value: '', label: t('Select currency', '请选择币种') }, ...PRODUCT_CURRENCIES.map(c => ({ value: c, label: c }))];
 
   const priceRange = parseProductPriceRange(newPrice, newPriceMax);
   const priceHint = priceRange.ok || (!newPrice.trim() && !newPriceMax.trim()) ? ''
@@ -144,16 +140,16 @@ export default function SupplierProductsPage() {
   const resetForm = () => {
     setNewTitle(''); setNewDesc(''); setNewCat(''); setNewImageUrls([]);
     setNewPrice(''); setNewPriceMax(''); setOriginalPriceFields(null); setPriceError(''); setPriceErrorField(null); setNewUnit(''); setNewUnitCustom(''); setNewPriceFrom(false);
-    setNewCurrency(currency);
+    setNewCurrency('');
     setNewTitleEn(''); setNewDescEn('');
     setMsg('');
   };
 
   // 关闭表单(新增面板 / 编辑弹层通用)
-  const closeForm = () => { setAdding(false); editingIdRef.current = null; editingExplicitCurrencyRef.current = null; currencyTouchedRef.current = false; setEditingId(null); resetForm(); };
+  const closeForm = () => { setAdding(false); setEditingId(null); resetForm(); };
 
   // 打开新增(内联面板)
-  const openAdd = () => { resetForm(); editingIdRef.current = null; editingExplicitCurrencyRef.current = null; currencyTouchedRef.current = false; setEditingId(null); setNewCurrency(currency); setAdding(true); };
+  const openAdd = () => { resetForm(); setEditingId(null); setNewCurrency(''); setAdding(true); };
 
   // 打开编辑弹层：用产品当前数据预填(含已有图片，支持加图/换图)
   const openEdit = (p: Product) => {
@@ -172,13 +168,10 @@ export default function SupplierProductsPage() {
     else if (unit) { setNewUnit('__custom__'); setNewUnitCustom(unit); }
     else { setNewUnit(''); setNewUnitCustom(''); }
     setNewPriceFrom(!!p.price_from);
-    const explicitCurrency = p.price_currency && isValidCurrency(p.price_currency) ? p.price_currency : null;
-    editingExplicitCurrencyRef.current = explicitCurrency;
-    currencyTouchedRef.current = false;
-    setNewCurrency(explicitCurrency || currency);
+    const explicitCurrency = p.price_currency || null;
+    setNewCurrency(explicitCurrency || '');
     setMsg('');
     setAdding(false);
-    editingIdRef.current = p.id;
     setEditingId(p.id);
   };
 
@@ -216,7 +209,7 @@ export default function SupplierProductsPage() {
       || newPrice !== (originalPriceFields.price != null ? String(originalPriceFields.price) : '')
       || newPriceMax !== (originalPriceFields.price_max != null ? String(originalPriceFields.price_max) : '')
       || unitVal !== (originalPriceFields.price_unit || '')
-      || newCurrency !== (originalPriceFields.price_currency || currency)
+      || newCurrency !== (originalPriceFields.price_currency || '')
       || newPriceFrom !== !!originalPriceFields.price_from;
     const priceSubmission = buildProductPriceSubmission({
       min: newPrice, max: newPriceMax, unit: unitVal, currency: newCurrency, from: newPriceFrom, dirty: priceDirty,
@@ -226,6 +219,8 @@ export default function SupplierProductsPage() {
         ? t('Enter a minimum price greater than 0 with up to 2 decimal places.', '请填写大于 0、最多两位小数的最低价。')
         : priceSubmission.field === 'unit'
           ? t('Please select or enter a unit.', '请选择或填写单位。')
+        : priceSubmission.field === 'currency'
+          ? t('Please select a valid currency.', '请选择有效币种。')
         : priceSubmission.reason === 'below_min'
           ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
           : t('Enter a maximum price greater than 0 with up to 2 decimal places, or leave it blank.', '最高价请填写大于 0、最多两位小数的数字，或留空。'));
@@ -327,7 +322,7 @@ export default function SupplierProductsPage() {
             {/* 币种可选：中国供应商常按人民币报价，站点币种只作默认值 */}
             <div className="w-[104px] shrink-0">
               <label htmlFor="supplier-price-currency" className="sr-only">{t('Currency', '币种')}</label>
-              <AdminSelect id="supplier-price-currency" options={CURRENCY_OPTIONS} value={newCurrency} onChange={(value) => { currencyTouchedRef.current = true; setNewCurrency(value); }} />
+              <AdminSelect id="supplier-price-currency" options={CURRENCY_OPTIONS} value={newCurrency} onChange={(value) => { setNewCurrency(value); setPriceError(''); setPriceErrorField(null); }} aria-invalid={displayedPriceErrorField === 'currency'} aria-describedby={displayedPriceErrorField === 'currency' ? 'supplier-price-error' : undefined} />
             </div>
             <div className="grid flex-1 grid-cols-2 gap-2">
               <div>

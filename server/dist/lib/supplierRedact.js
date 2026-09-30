@@ -95,7 +95,14 @@ function redactPublicSupplier(row) {
     if (row.name_zh)
         desc = maskSupplierMentions(desc, row.name_zh);
     return {
-        ...row,
+        id: row.id,
+        slug: row.slug,
+        origin: row.origin,
+        country: row.country,
+        categories: row.categories,
+        cover_image_url: row.cover_image_url || null,
+        first_product_image: row.first_product_image || null,
+        ...(typeof row.product_count === 'number' ? { product_count: row.product_count } : {}),
         company_name: maskSupplierName(name),
         name_zh: null,
         description: desc,

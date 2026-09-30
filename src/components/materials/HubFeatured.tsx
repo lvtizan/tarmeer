@@ -13,27 +13,36 @@ import {
   observeAutoLoad,
   requestAutoLoadPage,
 } from '@/lib/materialAutoLoad';
+import { materialsPositionKey, restoreDirectoryPages, type ProcurementFilters } from '@/lib/materialsProcurement';
 import HubProductCard from './HubProductCard';
 
 const MATERIAL_PAGE_SIZE = 24;
+const directoryCache = new Map<string, { products: PublicMaterialProduct[]; total: number; page: number; hasMore: boolean; time: number }>();
 
-function buildProductRequest(page: number, category?: string) {
+function buildProductRequest(page: number, category?: string, filters: ProcurementFilters = {}) {
   return {
     page,
     limit: MATERIAL_PAGE_SIZE,
     category,
-    balanced: !category,
+    balanced: !category && !Object.keys(filters).length,
+    ...filters,
   };
 }
 
 export default function HubFeatured({
   selectedCategory,
   onShowAll,
+  filters = {},
+  returnTo,
 }: {
   selectedCategory: MegaCategory | null;
   onShowAll: () => void;
+  filters?: ProcurementFilters;
+  returnTo?: string;
 }) {
+  const filterKey = JSON.stringify(filters);
   const country = countryFromLang(useSiteLocale().lang).code;
+  const cacheKey = `${country}:${filterKey}`;
   const [products, setProducts] = useState<PublicMaterialProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,6 +53,7 @@ export default function HubFeatured({
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [displayedCategory, setDisplayedCategory] = useState<MegaCategory | null>(null);
+  const [displayedFilterKey, setDisplayedFilterKey] = useState(filterKey);
   const [displayedCountry, setDisplayedCountry] = useState(country);
   const [retryNonce, setRetryNonce] = useState(0);
   const requestVersionRef = useRef(0);
@@ -52,15 +62,21 @@ export default function HubFeatured({
 
   const hasVisibleProducts = displayedCountry === country && products.length > 0;
   const hidesStaleCountryProducts = displayedCountry !== country;
-  const displayedMatchesSelection = displayedCountry === country && displayedCategory?.key === selectedCategory?.key;
+  const displayedMatchesSelection = displayedFilterKey === filterKey && displayedCountry === country && displayedCategory?.key === selectedCategory?.key;
   const canLoadMore = hasVisibleProducts && displayedMatchesSelection && !refreshing && !error;
-  const productRequest = buildProductRequest(1, selectedCategory?.key);
 
   useEffect(() => {
     let on = true;
+    const cached = directoryCache.get(cacheKey);
+    if (cached && Date.now() - cached.time < 300000 && retryNonce === 0) {
+      setProducts(cached.products); setTotal(cached.total); setPage(cached.page); setHasMore(cached.hasMore);
+      setDisplayedFilterKey(filterKey); setDisplayedCountry(country); setDisplayedCategory(selectedCategory); setLoading(false); setRefreshing(false); setError(null);
+      requestVersionRef.current += 1; loadMoreGuardRef.current.reset(); setLoadingMore(false); setLoadMoreError(null);
+      return () => { on = false; };
+    }
     const requestVersion = requestVersionRef.current + 1;
     requestVersionRef.current = requestVersion;
-    const canKeepVisibleProducts = displayedCountry === country && products.length > 0;
+    const canKeepVisibleProducts = false;
     setLoading(!canKeepVisibleProducts);
     setRefreshing(canKeepVisibleProducts);
     setLoadingMore(false);
@@ -74,14 +90,25 @@ export default function HubFeatured({
       setDisplayedCategory(null);
       setDisplayedCountry(country);
     }
-    fetchMaterialProducts(productRequest, country).then((result) => {
+    let restorePage = 1;
+    try {
+      if (sessionStorage.getItem(materialsPositionKey(window.location.search)) !== null) {
+        restorePage = Number(sessionStorage.getItem(`materials-pages:${cacheKey}`)) || 1;
+      }
+    } catch { /* Storage is optional; ordinary first-page loading still works. */ }
+    restoreDirectoryPages(
+      nextPage => fetchMaterialProducts(buildProductRequest(nextPage, selectedCategory?.key, filters), country),
+      restorePage,
+      () => on && requestVersionRef.current === requestVersion,
+    ).then((result) => {
       if (on && requestVersionRef.current === requestVersion) {
         setError(result.error ?? null);
         if (!result.error) {
           setProducts(result.products);
           setTotal(result.pagination.total);
           setHasMore(result.pagination.page < result.pagination.totalPages);
-          setPage(1);
+          setPage(result.pagination.page);
+          setDisplayedFilterKey(filterKey);
           setDisplayedCategory(selectedCategory);
           setDisplayedCountry(country);
         }
@@ -92,8 +119,21 @@ export default function HubFeatured({
     return () => {
       on = false;
     };
-  }, [country, selectedCategory?.key, retryNonce]);
+  }, [country, selectedCategory?.key, filterKey, retryNonce]);
 
+  useEffect(() => {
+    if (!loading && !refreshing && !error && displayedCountry === country && displayedFilterKey === filterKey && products.length) {
+      directoryCache.set(cacheKey, { products, total, page, hasMore, time: Date.now() });
+      try { sessionStorage.setItem(`materials-pages:${cacheKey}`, String(page)); } catch { /* optional storage */ }
+      if (directoryCache.size > 12) directoryCache.delete(directoryCache.keys().next().value!);
+    }
+  }, [products, total, page, hasMore, loading, refreshing, error, country, displayedCountry, displayedFilterKey, filterKey, cacheKey]);
+  useEffect(() => {
+    if (loading || refreshing || error || !products.length) return;
+    let y = 0;
+    try { y = Number(sessionStorage.getItem(materialsPositionKey(window.location.search))); sessionStorage.removeItem(materialsPositionKey(window.location.search)); } catch { return; }
+    if (y > 0) requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' }));
+  }, [loading, refreshing, error, products.length]);
   const loadMore = useCallback(async () => {
     if (!canLoadMore || !hasMore) return;
     const nextPage = page + 1;
@@ -104,7 +144,7 @@ export default function HubFeatured({
         setLoadMoreError(null);
       },
       load: () => fetchMaterialProducts(
-        buildProductRequest(nextPage, selectedCategory?.key),
+        buildProductRequest(nextPage, selectedCategory?.key, filters),
         country,
       ),
     });
@@ -126,7 +166,7 @@ export default function HubFeatured({
       setLoadMoreError('Products could not be loaded.');
     }
     if (outcome.status !== 'busy' && outcome.lockReleased) setLoadingMore(false);
-  }, [canLoadMore, country, hasMore, page, selectedCategory]);
+  }, [canLoadMore, country, hasMore, page, selectedCategory, filterKey]);
 
   const shouldLoadMore = canLoadMore && hasMore;
 
@@ -138,13 +178,13 @@ export default function HubFeatured({
 
   return (
     <div className="relative">
-      <div className="mb-6 flex flex-col items-start justify-between gap-3 border-b border-stone-200/80 pb-5 sm:flex-row sm:items-end sm:gap-6">
+      <div className="mb-3 flex flex-col items-start justify-between gap-3 border-b border-stone-200/80 pb-3 sm:flex-row sm:items-end sm:gap-6">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#a8773e]">Product directory</p>
           <h2 className="mt-1.5 break-words font-serif text-3xl leading-none text-[#1c1917] sm:text-[2rem]">
             {displayedCategory ? displayedCategory.label : 'All products'}
             {!loading && !hidesStaleCountryProducts && (
-              <span className="ml-2 align-middle font-sans text-sm font-normal text-stone-400">({total})</span>
+              <span className="ml-2 align-middle font-sans text-sm font-normal text-stone-600">({total})</span>
             )}
           </h2>
         </div>
@@ -153,7 +193,7 @@ export default function HubFeatured({
             Show all products
           </button>
         ) : (
-          <span className="hidden text-[13px] text-stone-400 sm:block">Curated from verified suppliers</span>
+          <span className="hidden text-[13px] text-stone-600 sm:block">Supplier sourcing coordinated by Tarmeer</span>
         )}
       </div>
 
@@ -162,8 +202,9 @@ export default function HubFeatured({
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#b8864a]/30 border-t-[#b8864a]" />
         </div>
       ) : !hasVisibleProducts ? (
-        <div className="py-12 text-center text-sm text-stone-400">
-          <p>{error ? 'Products could not be loaded.' : 'No products yet.'}</p>
+        <div className="py-12 text-center text-sm text-stone-600">
+          <p>{error ? 'Products could not be loaded.' : 'No matching products. Try a broader search or clear your filters.'}</p>
+          {!error && <button type="button" onClick={onShowAll} className="mt-3 font-semibold text-[#92652e] underline">Clear filters and show all</button>}
           {error && (
             <button type="button" onClick={() => setRetryNonce((value) => value + 1)} className="mt-3 font-semibold text-[#b8864a] hover:text-[#a07640]">
               Retry
@@ -178,7 +219,7 @@ export default function HubFeatured({
             </div>
           )}
           <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-            {products.map((product) => <HubProductCard key={product.id} product={product} />)}
+            {products.map((product) => <HubProductCard key={product.id} product={product} returnTo={returnTo} />)}
           </div>
           {shouldLoadMore && !loadMoreError && (
             <div

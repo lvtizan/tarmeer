@@ -63,7 +63,7 @@ export default function HubSearchResults({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={img}
-                      alt={s.company_name}
+                      alt={`Tarmeer sourcing partner #${s.id}`}
                       className="aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
@@ -78,7 +78,8 @@ export default function HubSearchResults({
                   </span>
                 </div>
                 <div className="p-3">
-                  <p className="line-clamp-1 text-sm font-medium text-[#1c1917]">{s.company_name}</p>
+                  <p className="text-sm font-medium text-[#1c1917]">Tarmeer sourcing partner #{s.id}</p>
+                  <p className="mt-1 line-clamp-1 text-xs text-stone-600">{s.company_name}</p>
                 </div>
               </Link>
             );

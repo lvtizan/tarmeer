@@ -1,251 +1,476 @@
-'use client';
+"use client";
+import { trackMaterialEvent } from '@/lib/materialsAnalytics';
 
-// 采购线索统一表单 — 四变体：sample(样品申请) / visit(到店预约) / sourcing(采购咨询) / designer_partner(设计师合作)
-// 契约见 docs/plans/china-materials-revamp-spec.md §3.2。
-// 表单配色铁律：输入框 bg-white；主按钮金色 bg-[#b8864a] hover:bg-[#a07640]，disabled 只降透明度。
+import { useEffect, useId, useRef, useState } from "react";
+import { api } from "@/lib/api";
+import { trackContact, trackLead } from "@/lib/analytics";
+import { countryFromLang } from "@/lib/country";
+import { useSiteLocale } from "@/contexts/SiteLocaleContext";
+import {
+  validatePhone,
+  isPhoneComplete,
+  phoneDigitCount,
+} from "@/lib/phoneValidation";
 
-import { useState } from 'react';
-import { api } from '@/lib/api';
-import { trackContact, trackLead } from '@/lib/analytics';
-import { COUNTRY } from '@/lib/country';
-import { validatePhone, isPhoneComplete, phoneDigitCount } from '@/lib/phoneValidation';
-
-export type SourcingRequestVariant = 'sample' | 'visit' | 'sourcing' | 'designer_partner';
-
+export type SourcingRequestVariant =
+  | "quote"
+  | "sample"
+  | "visit"
+  | "sourcing"
+  | "designer_partner";
 interface SourcingRequestFormProps {
   variant: SourcingRequestVariant;
-  /** sample 变体必传：申请样品的产品 */
   productId?: number;
   productTitle?: string;
+  productModel?: string;
+  quantityUnit?: string;
   supplierId?: number;
   title?: string;
   subtitle?: string;
   submitLabel?: string;
   className?: string;
-  /** 无边框卡片模式（嵌入既有容器时用） */
   inline?: boolean;
 }
-
-const VARIANT_COPY: Record<SourcingRequestVariant, { title: string; subtitle: string; submitLabel: string; successTitle: string; successBody: string }> = {
-  sample: {
-    title: 'Request a Sample',
-    subtitle: 'We deliver material samples across the UAE.',
-    submitLabel: 'Request Sample',
-    successTitle: 'Sample request received!',
-    successBody: 'Our material consultant will contact you to arrange delivery.',
-  },
-  visit: {
-    title: 'Book a Showroom Visit',
-    subtitle: 'See the latest materials from China at our selection center.',
-    submitLabel: 'Book a Visit',
-    successTitle: 'Visit booked!',
-    successBody: 'We will confirm your appointment shortly.',
-  },
+const COPY: Record<
+  SourcingRequestVariant,
+  { title: string; submitLabel: string }
+> = {
+  quote: { title: "Request a quote", submitLabel: "Send quote request" },
+  sample: { title: "Request a sample", submitLabel: "Request sample" },
+  visit: { title: "Request a showroom visit", submitLabel: "Request visit" },
   sourcing: {
-    title: 'Plan Your China Sourcing',
-    subtitle: 'Tell us about your project and material needs.',
-    submitLabel: 'Get Started',
-    successTitle: 'Request received!',
-    successBody: 'A sourcing specialist will reach out within one business day.',
+    title: "Discuss your sourcing needs",
+    submitLabel: "Send inquiry",
   },
   designer_partner: {
-    title: 'Become a Material Partner',
-    subtitle: 'Trade pricing, exclusive first looks and sourcing support for designers.',
-    submitLabel: 'Apply to Join',
-    successTitle: 'Application received!',
-    successBody: 'Our partnerships team will contact you soon.',
+    title: "Become a material partner",
+    submitLabel: "Apply to join",
   },
 };
-
 const inputCls =
-  'h-12 w-full rounded-lg border border-stone-200 bg-white px-4 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/30 outline-none transition-colors placeholder:text-stone-400';
+  "h-12 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-[#2c2c2c] focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/30 outline-none transition-colors";
 
-export default function SourcingRequestForm({
+export default function SourcingRequestForm(props: SourcingRequestFormProps) {
+  const country = countryFromLang(useSiteLocale().lang);
+  // Remount between targets/countries so a pending request can never acknowledge another product.
+  return (
+    <RequestForm
+      key={`${country.code}:${props.variant}:${props.productId ?? ""}:${props.supplierId ?? ""}`}
+      {...props}
+    />
+  );
+}
+
+function RequestForm({
   variant,
   productId,
   productTitle,
+  productModel,
+  quantityUnit,
   supplierId,
   title,
   subtitle,
   submitLabel,
-  className = '',
+  className = "",
   inline = false,
 }: SourcingRequestFormProps) {
-  const copy = VARIANT_COPY[variant];
-  const cities = COUNTRY.ae.cities;
-  // 手机号铁律：validatePhone + isPhoneComplete（页面为 AE 专属，固定 +971 前缀，对齐 UnifiedInquiryForm expert 变体）
-  const phoneCode = COUNTRY.ae.phoneCode;
+  const country = countryFromLang(useSiteLocale().lang);
+  const copy = COPY[variant];
+  const id = useId();
+  const pending = useRef(false);
+  const inquiryStarted = useRef(false);
+  const requestKey = useRef<string | null>(null);
+  const successRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState({
-    name: '',
-    phoneDigits: '',
-    email: '',
-    companyName: '',
-    city: '',
-    message: '',
-    preferredDate: '',
+    name: "",
+    phoneDigits: "",
+    email: "",
+    companyName: "",
+    city: "",
+    message: "",
+    preferredDate: "",
+    quantity: "",
+    unit: quantityUnit || "",
+    area: "",
   });
+  const [unknownQuantity, setUnknownQuantity] = useState(true);
+  const [wholeProject, setWholeProject] = useState(false);
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
-
-  const needsEmail = variant === 'designer_partner';
-  const needsCompany = variant === 'designer_partner';
-  const needsCity = variant === 'sample' || variant === 'sourcing';
-  const needsDate = variant === 'visit';
-
-  const phoneError = phoneTouched ? validatePhone(form.phoneDigits, phoneCode) : null;
-  const phoneOk = isPhoneComplete(form.phoneDigits, phoneCode) && !validatePhone(form.phoneDigits, phoneCode);
-
+  const [receipt, setReceipt] = useState<number | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (receipt) successRef.current?.focus();
+  }, [receipt]);
+  const needsEmail = variant === "designer_partner";
+  const needsQuantity = variant === "quote" || variant === "sample";
+  const phoneError = phoneTouched
+    ? validatePhone(form.phoneDigits, country.phoneCode)
+    : null;
+  const phoneOk =
+    isPhoneComplete(form.phoneDigits, country.phoneCode) &&
+    !validatePhone(form.phoneDigits, country.phoneCode);
+  const quantityOk =
+    !needsQuantity ||
+    unknownQuantity ||
+    (Number.isFinite(Number(form.quantity)) &&
+      Number(form.quantity) > 0 &&
+      Boolean(form.unit.trim()));
+  const areaOk =
+    !wholeProject ||
+    !form.area ||
+    (Number.isFinite(Number(form.area)) && Number(form.area) > 0);
   const canSubmit = Boolean(
     form.name.trim() &&
-    phoneOk &&
-    (!needsEmail || form.email.trim()) &&
-    (!needsCompany || form.companyName.trim())
+      phoneOk &&
+      (!needsEmail || (form.email.trim() && form.companyName.trim())) &&
+      quantityOk &&
+      areaOk &&
+      (!needsQuantity || productId),
+  );
+  const set =
+    (key: keyof typeof form) =>
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
+    ) => {
+      const value = e.currentTarget.value;
+      setForm((prev) => ({ ...prev, [key]: value }));
+    };
+  const label = (field: string, text: string) => (
+    <label
+      htmlFor={`${id}-${field}`}
+      className="mb-1 block text-xs font-medium text-stone-700"
+    >
+      {text}
+    </label>
   );
 
-  const set = (key: keyof typeof form) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit || submitting) return;
+    if (!canSubmit || pending.current || receipt) return;
+    pending.current = true;
     setSubmitting(true);
-    setError('');
+    setError("");
     try {
-      await api.post('/sourcing-requests', {
-        request_type: variant,
-        name: form.name.trim(),
-        phone: phoneCode + form.phoneDigits,
-        email: form.email.trim() || undefined,
-        company_name: form.companyName.trim() || undefined,
-        city: form.city || undefined,
-        message: form.message.trim() || undefined,
-        preferred_date: form.preferredDate || undefined,
-        product_id: productId || undefined,
-        supplier_profile_id: supplierId || undefined,
-        source_page: typeof window !== 'undefined' ? window.location.href : undefined,
-      });
-      setSubmitted(true);
-      const content = productTitle || copy.title;
-      trackContact({ content_name: content, content_id: String(productId ?? variant) });
-      trackLead({ content_name: content, content_id: String(productId ?? variant) });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to submit. Please try again.');
+      requestKey.current ??= crypto.randomUUID();
+      const result = await api.request(
+        `/sourcing-requests?country=${country.code}`,
+        {
+          method: "POST",
+          headers: { "x-country": country.code },
+          body: JSON.stringify({
+            request_type: variant,
+            country: country.code,
+            request_key: requestKey.current,
+            name: form.name.trim(),
+            phone: country.phoneCode + form.phoneDigits,
+            email: form.email.trim() || undefined,
+            company_name: form.companyName.trim() || undefined,
+            city: form.city || undefined,
+            message: form.message.trim() || undefined,
+            preferred_date: form.preferredDate || undefined,
+            product_id: productId || undefined,
+            product_model: productModel || undefined,
+            supplier_profile_id: supplierId || undefined,
+            quantity:
+              needsQuantity && !unknownQuantity
+                ? Number(form.quantity)
+                : undefined,
+            quantity_unit:
+              needsQuantity && !unknownQuantity ? form.unit.trim() : undefined,
+            quantity_unknown: needsQuantity ? unknownQuantity : undefined,
+            project_area:
+              wholeProject && form.area ? Number(form.area) : undefined,
+            source_page: window.location.origin + window.location.pathname,
+          }),
+        },
+      );
+      if (!Number.isInteger(Number(result.id)) || Number(result.id) <= 0)
+        throw new Error(
+          "No request receipt was returned. Please retry to confirm your request.",
+        );
+      setReceipt(Number(result.id));
+      if (!result.duplicate) {
+        if (productId) trackMaterialEvent('materials_inquiry_success', country.code, productId);
+        const event = {
+          content_name: variant,
+          content_id: String(productId ?? variant),
+        };
+        trackContact(event);
+        trackLead(event);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error && "status" in err && err.status === 409
+          ? "Your earlier request may already have been received. Restore its original details and retry to retrieve the receipt, or contact Tarmeer before submitting another request."
+          : err instanceof Error
+            ? err.message
+            : "Unable to send. Your details are saved here; please try again.",
+      );
     } finally {
+      pending.current = false;
       setSubmitting(false);
     }
-  };
+  }
 
-  const cardCls = inline ? '' : 'border border-stone-200 rounded-xl p-5 bg-white';
-
-  if (submitted) {
+  const cardCls = inline
+    ? ""
+    : "border border-stone-200 rounded-xl p-5 bg-white";
+  if (receipt)
     return (
-      <div className={['w-full', className].filter(Boolean).join(' ')}>
-        <div className={cardCls}>
-          <div className="text-center py-4">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-sm font-semibold text-[#1c1917]">{copy.successTitle}</p>
-            <p className="text-xs text-stone-500 mt-1">{copy.successBody}</p>
-          </div>
+      <div className={`w-full ${className}`}>
+        <div className={cardCls} ref={successRef} role="status" aria-live="polite" tabIndex={-1}>
+          <p className="font-semibold text-stone-900">
+            Request received by Tarmeer
+          </p>
+          <p className="mt-2 text-sm text-stone-700">Receipt #{receipt}</p>
+          <p className="mt-2 text-sm text-stone-600">
+            Tarmeer will review your requirements and contact you using the
+            details provided. Pricing, availability and any arrangements remain
+            subject to confirmation.
+          </p>
         </div>
       </div>
     );
-  }
 
   return (
-    <div className={['w-full', className].filter(Boolean).join(' ')}>
+    <div className={`w-full ${className}`}>
       <div className={cardCls}>
-        <p className="text-sm font-semibold text-[#1c1917] mb-1">{title ?? copy.title}</p>
-        <p className="text-xs text-stone-500 mb-4">{subtitle ?? copy.subtitle}</p>
-        {variant === 'sample' && productTitle && (
-          <p className="text-xs text-stone-600 bg-stone-50 border border-stone-100 rounded-lg px-3 py-2 mb-3">
-            Sample: <span className="font-medium text-[#1c1917]">{productTitle}</span>
-          </p>
+        <p className="mb-1 text-sm font-semibold text-stone-900">
+          {title ?? copy.title}
+        </p>
+        <p className="mb-4 text-xs leading-relaxed text-stone-600">
+          {subtitle ??
+            "Tarmeer receives this inquiry and coordinates with the supplier. Pricing and availability will be confirmed after review."}
+        </p>
+        {productId && (
+          <div className="mb-3 rounded-lg border border-stone-200 p-3 text-sm">
+            <p className="text-xs text-stone-500">
+              Selected product #{productId}
+            </p>
+            <p className="font-medium text-stone-900">
+              {productTitle || `Product #${productId}`}
+            </p>
+            {productModel && (
+              <p className="mt-1 text-xs text-stone-600">
+                Model: {productModel}
+              </p>
+            )}
+          </div>
         )}
-        <form className="space-y-3" onSubmit={handleSubmit}>
-          {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-          <input type="text" placeholder="Your name" value={form.name} onChange={set('name')} className={inputCls} />
-          <div>
-            <div className="flex gap-2">
-              <span className="inline-flex items-center h-12 px-3 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-500 shrink-0">
-                {phoneCode}
-              </span>
+        <form
+          className="space-y-3"
+          onFocus={() => { if (productId && !inquiryStarted.current) { inquiryStarted.current = true; trackMaterialEvent('materials_inquiry_start', country.code, productId); } }}
+          onSubmit={handleSubmit}
+          aria-busy={submitting}
+        >
+          {error && (
+            <p
+              role="alert"
+              className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700"
+            >
+              {error}
+            </p>
+          )}
+          <fieldset disabled={submitting} className="space-y-3">
+            <div>
+              {label("name", "Your name *")}
               <input
-                type="tel"
-                inputMode="numeric"
-                placeholder={'0'.repeat(phoneDigitCount(phoneCode))}
-                maxLength={phoneDigitCount(phoneCode)}
-                value={form.phoneDigits}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, phoneDigits: e.target.value.replace(/\D/g, '') }))
-                }
-                onBlur={() => setPhoneTouched(true)}
-                className={`${inputCls} ${phoneError ? 'border-red-300 focus:border-red-400 focus:ring-red-200' : ''}`}
+                id={`${id}-name`}
+                required
+                autoComplete="name"
+                maxLength={120}
+                value={form.name}
+                onChange={set("name")}
+                className={inputCls}
               />
             </div>
-            {phoneError && <p className="text-xs text-red-600 mt-1">{phoneError}</p>}
-          </div>
-          {needsEmail && (
-            <input type="email" placeholder="Email" value={form.email} onChange={set('email')} className={inputCls} />
-          )}
-          {needsCompany && (
-            <input
-              type="text"
-              placeholder="Studio / company name"
-              value={form.companyName}
-              onChange={set('companyName')}
-              className={inputCls}
-            />
-          )}
-          {needsCity && (
-            <div className="relative">
-              <select value={form.city} onChange={set('city')} className={`${inputCls} appearance-none cursor-pointer pr-10`}>
-                <option value="">Select city (optional)</option>
-                {cities.map((city) => (
+            <div>
+              {label("phone", "Phone number *")}
+              <div className="flex gap-2">
+                <span className="inline-flex h-12 items-center rounded-lg border border-stone-200 px-3 text-sm text-stone-600">
+                  {country.phoneCode}
+                </span>
+                <input
+                  id={`${id}-phone`}
+                  type="tel"
+                  autoComplete="tel-national"
+                  required
+                  inputMode="numeric"
+                  placeholder={"0".repeat(phoneDigitCount(country.phoneCode))}
+                  maxLength={phoneDigitCount(country.phoneCode)}
+                  value={form.phoneDigits}
+                  onChange={(e) => {
+                    const phoneDigits = e.currentTarget.value.replace(/\D/g, "");
+                    setForm((prev) => ({ ...prev, phoneDigits }));
+                  }}
+                  onBlur={() => setPhoneTouched(true)}
+                  aria-invalid={Boolean(phoneError)}
+                  aria-describedby={
+                    phoneError ? `${id}-phone-error` : undefined
+                  }
+                  className={inputCls}
+                />
+              </div>
+              {phoneError && (
+                <p
+                  id={`${id}-phone-error`}
+                  className="mt-1 text-xs text-red-700"
+                >
+                  {phoneError}
+                </p>
+              )}
+            </div>
+            <div>
+              {label("city", "Delivery / project city (optional)")}
+              <select
+                id={`${id}-city`}
+                value={form.city}
+                onChange={set("city")}
+                className={inputCls}
+              >
+                <option value="">Select city</option>
+                {country.cities.map((city) => (
                   <option key={city} value={city}>
                     {city}
                   </option>
                 ))}
               </select>
-              <svg
-                className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#b8864a]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
             </div>
-          )}
-          {needsDate && (
-            <input
-              type="date"
-              value={form.preferredDate}
-              onChange={set('preferredDate')}
-              className={inputCls}
-              min={new Date().toISOString().slice(0, 10)}
-              aria-label="Preferred visit date"
-            />
-          )}
-          <textarea
-            placeholder={variant === 'designer_partner' ? 'Tell us about your studio & projects (optional)' : 'Message (optional)'}
-            rows={3}
-            value={form.message}
-            onChange={set('message')}
-            className="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm text-[#2c2c2c] resize-none focus:border-[#b8864a] focus:ring-2 focus:ring-[#b8864a]/30 outline-none transition-colors placeholder:text-stone-400"
-          />
+            {needsEmail && (
+              <>
+                <div>
+                  {label("email", "Email *")}
+                  <input
+                    id={`${id}-email`}
+                    type="email"
+                    autoComplete="email"
+                    required
+                    maxLength={200}
+                    value={form.email}
+                    onChange={set("email")}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  {label("company", "Studio / company name *")}
+                  <input
+                    id={`${id}-company`}
+                    required
+                    maxLength={200}
+                    autoComplete="organization"
+                    value={form.companyName}
+                    onChange={set("companyName")}
+                    className={inputCls}
+                  />
+                </div>
+              </>
+            )}
+            {needsQuantity && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={unknownQuantity}
+                    onChange={(e) => setUnknownQuantity(e.target.checked)}
+                    className="accent-[#b8864a]"
+                  />
+                  Quantity not decided yet
+                </label>
+                {!unknownQuantity && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      {label("quantity", "Quantity *")}
+                      <input
+                        id={`${id}-quantity`}
+                        type="number"
+                        min="0.001"
+                        step="any"
+                        required
+                        value={form.quantity}
+                        onChange={set("quantity")}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      {label("unit", "Unit *")}
+                      <input
+                        id={`${id}-unit`}
+                        required
+                        maxLength={40}
+                        placeholder="e.g. piece, m², set"
+                        value={form.unit}
+                        onChange={set("unit")}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {variant === "sourcing" && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={wholeProject}
+                    onChange={(e) => setWholeProject(e.target.checked)}
+                    className="accent-[#b8864a]"
+                  />
+                  This is a whole-project inquiry
+                </label>
+                {wholeProject && (
+                  <div>
+                    {label("area", "Project area in m² (optional)")}
+                    <input
+                      id={`${id}-area`}
+                      type="number"
+                      min="0.001"
+                      step="any"
+                      value={form.area}
+                      onChange={set("area")}
+                      className={inputCls}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            {variant === "visit" && (
+              <div>
+                {label(
+                  "date",
+                  "Preferred visit date (subject to confirmation)",
+                )}
+                <input
+                  id={`${id}-date`}
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={form.preferredDate}
+                  onChange={set("preferredDate")}
+                  className={inputCls}
+                />
+              </div>
+            )}
+            <div>
+              {label("message", "Requirements / message (optional)")}
+              <textarea
+                id={`${id}-message`}
+                rows={3}
+                maxLength={3000}
+                value={form.message}
+                onChange={set("message")}
+                className={`${inputCls} h-auto py-3`}
+              />
+            </div>
+          </fieldset>
           <button
             type="submit"
             disabled={!canSubmit || submitting}
-            className="w-full h-12 bg-[#b8864a] hover:bg-[#a07640] text-white text-sm font-semibold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-12 w-full rounded-lg bg-[#b8864a] text-sm font-semibold text-white transition hover:bg-[#a07640] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {submitting ? 'Sending...' : submitLabel ?? copy.submitLabel}
+            {submitting ? "Sending…" : (submitLabel ?? copy.submitLabel)}
           </button>
         </form>
       </div>

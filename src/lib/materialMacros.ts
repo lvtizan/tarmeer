@@ -19,6 +19,7 @@ export type MacroCategory = {
 };
 
 export type MacroProduct = ProductPriceFields & {
+  supplier_id: number;
   id: number;
   title: string;
   image_url: string;
@@ -89,7 +90,7 @@ export async function fetchMacroProducts(
 
 // ── 搜索 Hub 数据层（mega-menu 左目录/浮层 + 全文搜索）──
 export type MegaSub = { tag: string; label: string; count: number };
-export type MegaSupplier = { slug: string; name: string; image: string };
+export type MegaSupplier = { id: number; slug: string; name: string; image: string };
 export type MegaCategory = {
   key: string;
   label: string;

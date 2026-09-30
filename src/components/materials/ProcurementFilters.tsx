@@ -1,0 +1,28 @@
+'use client';
+import { useState } from 'react';
+import { PRODUCT_UNITS } from '@/lib/supplierProductUnits';
+import type { ProcurementFilters as Filters } from '@/lib/materialsProcurement';
+const LABELS: Record<string, string> = { q: 'Search', category: 'Category', currency: 'Currency', unit: 'Unit', origin: 'Supplier location', availability: 'Availability', material: 'Material', spec: 'Specification', lead_time_max: 'Maximum lead time', price_min: 'Minimum price', price_max: 'Maximum price', sort: 'Sort' };
+export default function ProcurementFilters({ filters, onChange, onClear }: { filters: Filters; onChange: (changes: Filters) => void; onClear: () => void }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const select = (key: keyof Filters, label: string, options: [string, string][]) => <label className="flex min-w-0 flex-col gap-1 text-xs text-stone-700">{label}<select value={filters[key] || ''} onChange={e => onChange({ [key]: e.target.value, ...(['currency', 'unit'].includes(key) ? { sort: '' } : {}) })} className="min-w-0 rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm"><option value="">Any</option>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>;
+  return <div className="mb-4 rounded-xl border border-stone-200 bg-white p-3">
+    <button type="button" aria-expanded={mobileOpen} aria-controls="procurement-controls" onClick={() => setMobileOpen(value => !value)} className="flex w-full items-center justify-between text-sm font-semibold text-stone-800 sm:hidden">Filters &amp; sort <span aria-hidden="true">{mobileOpen ? '−' : '+'}</span></button>
+    <div id="procurement-controls" className={mobileOpen ? 'mt-3 sm:mt-0' : 'hidden sm:block'}>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+      {select('origin', 'Supplier location', [['dubai', 'UAE'], ['china', 'China']])}
+      {select('availability', 'Availability (recorded)', [['uae_stock', 'UAE stock'], ['china_order', 'China order']])}
+      {select('currency', 'Price currency', [['AED', 'AED'], ['USD', 'USD'], ['CNY', 'CNY'], ['VND', 'VND']])}
+      {select('unit', 'Price unit', PRODUCT_UNITS.map(unit => [unit.value, unit.en.replace('pcs', 'piece').replace('㎡', 'm²')]))}
+      <label className="flex flex-col gap-1 text-xs text-stone-700">Sort<select value={filters.sort || 'relevance'} onChange={e => onChange({ sort: e.target.value })} className="rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm"><option value="relevance">Recommended / relevance</option><option value="newest">Newest</option><option value="price_asc" disabled={!filters.currency || !filters.unit}>Price: low to high</option><option value="price_desc" disabled={!filters.currency || !filters.unit}>Price: high to low</option></select></label>
+    </div>
+    <details className="mt-3 text-sm text-stone-700"><summary className="cursor-pointer font-medium">Material, budget &amp; lead time</summary><form className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4" key={JSON.stringify(filters)} onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); onChange(Object.fromEntries(['material', 'spec', 'price_min', 'price_max', 'lead_time_max'].map(k => [k, String(data.get(k) || '').trim()]))); }}>
+      <label className="text-xs">Material<input name="material" defaultValue={filters.material || ''} placeholder={filters.category === 'stone' ? 'e.g. marble' : filters.category === 'furniture' ? 'e.g. oak' : 'Recorded material'} className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-sm" /></label>
+      {filters.category && <label className="text-xs">{filters.category === 'lighting' ? 'Power / colour temperature' : filters.category === 'stone' || filters.category === 'boards' ? 'Dimensions / finish' : filters.category === 'furniture' ? 'Size / finish' : 'Recorded specification'}<input name="spec" defaultValue={filters.spec || ''} maxLength={120} placeholder="Search supplied specifications" className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-sm" /></label>}
+      {(['price_min' , 'price_max', 'lead_time_max'] as const).map(key => <label key={key} className="text-xs">{LABELS[key]}{key === 'lead_time_max' ? ' (days)' : ''}<input name={key} type="number" min="0" step={key === 'lead_time_max' ? '1' : '0.01'} defaultValue={filters[key] || ''} disabled={key !== 'lead_time_max' && (!filters.currency || !filters.unit)} className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-sm disabled:opacity-40" /></label>)}
+      <button className="rounded-lg bg-[#b8864a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a07640]">Apply</button>
+    </form><p className="mt-2 text-xs text-stone-600">Choose currency and unit before comparing prices. Prices stay in their original currency; no exchange conversion is applied. Availability and lead-time filters include only recorded information.</p></details>
+    </div>
+    {Object.keys(filters).length > 0 && <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Selected filters">{Object.entries(filters).map(([key, value]) => <button key={key} onClick={() => onChange({ [key]: '', ...(key === 'category' ? { spec: '' } : {}), ...(['currency', 'unit'].includes(key) ? { sort: '', price_min: '', price_max: '' } : {}) })} className="max-w-full truncate rounded-full bg-[#f5f0e8] px-3 py-1 text-xs text-stone-800" aria-label={`Remove ${LABELS[key] || key} filter`}>{LABELS[key] || key}: {value} ×</button>)}<button onClick={onClear} className="text-xs font-semibold text-[#92652e] underline">Clear all</button></div>}
+  </div>;
+}

@@ -1,72 +1,32 @@
 'use client';
-
 import Link from 'next/link';
 import { ArrowRight, Play } from 'lucide-react';
-import { resolveImageUrl } from '@/lib/imageUrl';
 import { supplierFromProductsHref } from '@/lib/materialsNavigation';
+import { materialProductTitle, recordMaterialsPosition } from '@/lib/materialsProcurement';
 import type { ProductPriceFields } from '@/lib/supplierProductUnits';
 import ProductPriceLine from './ProductPriceLine';
-
+import MaterialImage from './MaterialImage';
 type HubProduct = ProductPriceFields & {
-  id: number;
-  title: string | null;
-  image_url: string;
-  supplier_slug: string | null;
-  supplier_name: string | null;
-  video_url?: string | null;
+  id: number; title: string | null; image_url: string; supplier_slug: string | null; supplier_name: string | null;
+  category?: string | null; video_url?: string | null; model?: string | null; material?: string | null; availability?: string | null; lead_time_days?: number | null;
 };
-
-function isValidSupplierSlug(slug: string | null): slug is string {
-  return typeof slug === 'string' && /^[a-zA-Z0-9_-]+$/.test(slug);
-}
-
-export default function HubProductCard({ product }: { product: HubProduct }) {
-  const title = product.title?.trim() || 'Material';
-  const supplierSlug = isValidSupplierSlug(product.supplier_slug) ? product.supplier_slug : null;
-  const supplierName = product.supplier_name?.trim() || null;
-  const card = (
-    <>
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-stone-200 bg-[#efede8] transition-colors group-hover:border-[#c99a5f]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={resolveImageUrl(product.image_url)}
-          alt={`${title}${supplierName ? ` — ${supplierName}` : ''}`}
-          loading="lazy"
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]"
-        />
-        {product.video_url && (
-          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
-            <Play className="h-3 w-3 fill-current" /> Video
-          </span>
-        )}
-      </div>
-      <div className="pt-3">
-        <p className="line-clamp-1 min-h-5 text-[15px] font-medium leading-5 text-[#1c1917] transition-colors group-hover:text-[#a87335]">
-          {title}
-        </p>
-        <div className="min-h-6 min-w-0 overflow-hidden [&>p]:truncate">
-          <ProductPriceLine product={product} />
-        </div>
-        <div className="mt-1.5 flex min-h-5 min-w-0 items-center justify-between gap-3">
-          {supplierName && <p className="min-w-0 flex-1 truncate text-[12px] text-stone-500">{supplierName}</p>}
-          {supplierSlug && (
-            <span className="inline-flex shrink-0 items-center gap-1 text-[12px] font-semibold text-[#a87335] transition group-hover:text-[#855a29]">
-              View supplier <ArrowRight className="h-3 w-3" />
-            </span>
-          )}
-        </div>
-      </div>
-    </>
-  );
-  const className = 'group block min-w-0 [content-visibility:auto] [contain-intrinsic-size:auto_320px]';
-
-  if (supplierSlug) {
-    return (
-      <Link href={supplierFromProductsHref(supplierSlug)} className={`${className} cursor-pointer`}>
-        {card}
-      </Link>
-    );
-  }
-
-  return <div className={className}>{card}</div>;
+export default function HubProductCard({ product, returnTo }: { product: HubProduct; returnTo?: string }) {
+  const title = materialProductTitle(product);
+  const href = `/materials/products/${product.id}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`;
+  const slug = product.supplier_slug && /^[a-zA-Z0-9_-]+$/.test(product.supplier_slug) ? product.supplier_slug : null;
+  return <article className="group min-w-0">
+    <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-stone-200 bg-white">
+      <MaterialImage key={product.image_url} src={product.image_url} alt={title} />
+      <Link href={href} onClick={recordMaterialsPosition} aria-label={`View ${title}`} className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-[#b8864a]" />
+      {product.video_url && <span className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/75 px-2 py-1 text-[10px] font-semibold text-white"><Play className="h-3 w-3" />Video</span>}
+    </div>
+    <Link href={href} onClick={recordMaterialsPosition} className="mt-2 block hover:text-[#92652e]"><h3 className="line-clamp-2 min-h-10 text-sm font-medium leading-5 text-stone-900">{title}</h3></Link>
+    <p className="mt-1 truncate text-xs text-stone-600">{product.model ? `Model: ${product.model}` : product.material || 'Specifications to confirm'}</p>
+    <ProductPriceLine product={product} />
+    <p className="mt-1 text-xs text-stone-600">{product.availability === 'uae_stock' ? 'UAE stock · confirm quantity' : product.availability === 'china_order' ? 'Order from China' : 'Availability to confirm'}{product.lead_time_days != null ? ` · ${product.lead_time_days} days` : ''}</p>
+    <div className="mt-2 flex flex-wrap items-center justify-between gap-1 border-t border-stone-200 pt-2 text-xs">
+      <span className="text-stone-600">Via Tarmeer</span>
+      {slug && <Link href={supplierFromProductsHref(slug)} className="inline-flex items-center gap-1 font-semibold text-[#92652e]">View supplier<ArrowRight className="h-3 w-3" /></Link>}
+    </div>
+  </article>;
 }

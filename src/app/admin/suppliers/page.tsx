@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
 import { Spinner } from '@/components/ui/Spinner';
@@ -374,6 +375,7 @@ export default function AdminSuppliersPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Suppliers', '供应商')}</h1>
+          <Link href="/admin/suppliers/product-review" className="text-sm font-semibold text-[#92652e] underline">{t('Product review', '商品资料审核')}</Link>
           {partnerCount > 0 && (
             <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full bg-[#f5ecdf] text-[#a07640] text-xs font-medium">
               {t('Partner-synced', '合作方同步')} {partnerCount}

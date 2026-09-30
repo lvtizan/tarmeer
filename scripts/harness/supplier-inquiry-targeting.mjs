@@ -40,7 +40,7 @@ const invokeAdminList = async (country) => {
   const response = { statusCode: 200, body: null };
   response.status = (code) => { response.statusCode = code; return response; };
   response.json = (payload) => { response.body = payload; return response; };
-  await controller.adminListSourcingRequests({ country, query: { country, page: '1', limit: '100' } }, response);
+  await controller.adminListSourcingRequests({ country, admin: { role: 'super_admin', country }, query: { country, page: '1', limit: '100' } }, response);
   return response;
 };
 

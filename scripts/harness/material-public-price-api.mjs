@@ -70,13 +70,17 @@ try {
     createdProfileIds.push(profileId);
     fixtureIds[country] = {};
     const fixtures = country === 'ae' ? [
-      ['range', 120, 200, 'SQM', null, 1],
+      ['range', 120, 200, 'SQM', 'AED', 1],
       ['from', 80, null, 'PCS', 'USD', 1],
       ['none', null, null, null, null, 0],
+      ['missing_currency', 55, null, 'PCS', null, 0],
+      ['missing_unit', 55, null, null, 'USD', 0],
     ] : [
-      ['range', 50000, 75000, 'PCS', null, 0],
+      ['range', 50000, 75000, 'PCS', 'VND', 0],
       ['from', 90000, null, 'PCS', 'VND', 1],
       ['none', null, null, null, null, 0],
+      ['missing_currency', 55, null, 'PCS', null, 0],
+      ['missing_unit', 55, null, null, 'USD', 0],
     ];
     for (const [kind, price, priceMax, unit, currency, from] of fixtures) {
       const [productResult] = await pool.execute(
@@ -116,9 +120,9 @@ try {
   for (const country of ['ae', 'vn']) {
     const fallbackCurrency = country === 'ae' ? 'AED' : 'VND';
     const expected = country === 'ae'
-      ? { range: 'AED 120–200 / ㎡', from: 'USD 80 (from) / pcs' }
-      : { range: 'VND 50,000–75,000 / pcs', from: 'VND 90,000 (from) / pcs' };
-    for (const kind of ['range', 'from', 'none']) {
+      ? { range: 'AED 120–200 / m²', from: 'USD 80 (from) / piece' }
+      : { range: 'VND 50,000–75,000 / piece', from: 'VND 90,000 (from) / piece' };
+    for (const kind of ['range', 'from', 'none', 'missing_currency', 'missing_unit']) {
       const feedRaw = feeds.find((entry) => entry.country === country)?.response.body?.products
         ?.find((item) => item.id === fixtureIds[country][kind]);
       const feedMapped = { ...feedRaw, ...normalizeProductPriceFields(feedRaw) };
@@ -131,9 +135,9 @@ try {
       const mapped = { ...raw, ...normalizeProductPriceFields(raw) };
       const label = buildProductPriceLabel(mapped, fallbackCurrency);
       const html = renderToStaticMarkup(createElement(ProductPriceText, { product: mapped, fallbackCurrency }));
-      if (kind === 'none') {
-        check(`${country} ${kind} feed→mapper hides DOM`, feedRaw && feedLabel === '' && feedHtml === '', `${feedLabel} ${feedHtml}`);
-        check(`${country} no-price mapper hides DOM`, response.statusCode === 200 && raw && label === '' && html === '', `${response.statusCode} ${label} ${html}`);
+      if (['none', 'missing_currency', 'missing_unit'].includes(kind)) {
+        check(`${country} ${kind} feed→mapper shows quote status`, feedRaw && feedLabel === 'Request a quote' && feedHtml.includes('>Request a quote</p>'), `${feedLabel} ${feedHtml}`);
+        check(`${country} incomplete-price mapper shows quote status`, response.statusCode === 200 && raw && label === 'Request a quote' && html.includes('>Request a quote</p>'), `${response.statusCode} ${label} ${html}`);
       } else {
         check(`${country} ${kind} feed→mapper→DOM exact`,
           feedRaw && feedLabel === expected[kind] && feedHtml.includes(`>${expected[kind]}</p>`) && feedHtml.includes('text-[#b8864a]'),

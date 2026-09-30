@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Grid2X2, LayoutGrid, PackageSearch, Play, Search, X } from 'lucide-react';
-import SmartImage from '@/components/ui/SmartImage';
+import { Grid2X2, LayoutGrid, PackageSearch, Play, Search, X, ZoomIn } from 'lucide-react';
+import MaterialImage from './MaterialImage';
+import { materialProductTitle } from '@/lib/materialsProcurement';
 import FilterSidebar from '@/components/shared/FilterSidebar';
 import { sanitizeDescription } from '@/lib/materialDescription';
 import {
@@ -16,11 +17,12 @@ type Density = 'comfortable' | 'compact';
 
 interface SupplierProductLibraryProps {
   products: Product[];
+  enableProductDetails: boolean;
   categoryLabel: (category: string) => string;
   onOpenProduct: (product: Product) => void;
 }
 
-export default function SupplierProductLibrary({ products, categoryLabel, onOpenProduct }: SupplierProductLibraryProps) {
+export default function SupplierProductLibrary({ products, categoryLabel, onOpenProduct, enableProductDetails }: SupplierProductLibraryProps) {
   const [query, setQuery] = useState('');
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [density, setDensity] = useState<Density>('comfortable');
@@ -185,39 +187,21 @@ export default function SupplierProductLibrary({ products, categoryLabel, onOpen
               }`}>
                 {visibleProducts.map((product) => {
                   const series = seriesByProductId.get(product.id)!;
+                  const title = materialProductTitle({ ...product, title: product.title_translated || product.title });
                   return (
                     <article
                       key={product.id}
                       className="group min-w-0 [content-visibility:auto] [contain-intrinsic-size:auto_210px] sm:[contain-intrinsic-size:auto_280px] lg:[contain-intrinsic-size:auto_320px]"
                     >
-                      <button
-                        type="button"
-                        onClick={() => onOpenProduct(product)}
-                        className="block w-full overflow-hidden rounded-xl border border-stone-200 bg-[#efede8] text-left transition-colors hover:border-[#c99a5f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8864a] focus-visible:ring-offset-2"
-                      >
-                        <div className="relative aspect-[4/3] overflow-hidden">
-                          <SmartImage
-                            src={product.image_url}
-                            variant="thumb"
-                            alt={product.title_translated || product.title || 'Material'}
-                            loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.025]"
-                          />
-                          {product.video_url && (
-                            <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
-                              <Play className="h-3 w-3 fill-current" /> Video
-                            </span>
-                          )}
-                        </div>
-                      </button>
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-stone-200 bg-white">
+                        <MaterialImage key={product.image_url} src={product.image_url} alt={title} />
+                        {enableProductDetails ? <Link href={`/materials/products/${product.id}`} aria-label={`View ${title}`} className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-[#b8864a]" /> : <button type="button" onClick={() => onOpenProduct(product)} aria-label={`View ${title}`} className="absolute inset-0" />}
+                        <button type="button" onClick={() => onOpenProduct(product)} aria-label={`Enlarge ${title}`} className="absolute right-2 top-2 rounded-full bg-white/95 p-2 text-stone-800 shadow-sm"><ZoomIn className="h-4 w-4" /></button>
+                        {product.video_url && <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[10px] font-semibold text-white"><Play className="h-3 w-3 fill-current" /> Video</span>}
+                      </div>
                       <div className="pt-2.5">
                         <p className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a8773e]">{series}</p>
-                        <Link
-                          href={`/materials/products/${product.id}`}
-                          className="mt-0.5 block truncate rounded-sm text-sm font-medium text-stone-800 transition-colors hover:text-[#b8864a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8864a]"
-                        >
-                          {product.title_translated || product.title || 'Material'}
-                        </Link>
+                        {enableProductDetails ? <Link href={`/materials/products/${product.id}`} className="mt-0.5 block line-clamp-2 rounded-sm text-sm font-medium text-stone-800 hover:text-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]">{title}</Link> : <button type="button" onClick={() => onOpenProduct(product)} className="mt-0.5 block text-left text-sm font-medium text-stone-800">{title}</button>}
                         {density === 'comfortable' && (() => {
                           const description = sanitizeDescription(product.description_translated || product.description);
                           return description ? <p className="mt-1 line-clamp-1 text-xs text-stone-500">{description}</p> : null;

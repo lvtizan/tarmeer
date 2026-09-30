@@ -2,6 +2,7 @@
 // 契约见 docs/plans/china-materials-revamp-spec.md（§2.3 / §3.1）
 // SSR 与客户端解析方式对齐 publicApi.ts：country 同时走 query + x-country header。
 import { normalizeProductPriceFields, type ProductPriceFields } from '@/lib/supplierProductUnits';
+import type { ProcurementFilters } from '@/lib/materialsProcurement';
 import { sanitizeDescription } from '@/lib/materialDescription';
 import { normalizeMaterialVideoUrl } from '@/lib/materialVideo';
 export { sanitizeDescription } from '@/lib/materialDescription';
@@ -46,6 +47,12 @@ export interface PublicMaterialProduct extends ProductPriceFields {
   supplier_name: string;
   supplier_origin: 'china' | 'dubai';
   supplier_logo: string | null;
+  model?: string | null;
+  material?: string | null;
+  availability?: string | null;
+  lead_time_days?: number | null;
+  price_basis?: string | null;
+  quality_flags?: string[];
 }
 
 export interface MaterialProductsPage {
@@ -126,6 +133,12 @@ export function toMaterialProduct(row: any): PublicMaterialProduct {
     supplier_name: String(row.supplier_name || ''),
     supplier_origin: row.supplier_origin === 'dubai' ? 'dubai' : 'china',
     supplier_logo: row.supplier_logo ?? null,
+    model: row.model ?? null,
+    material: row.material ?? null,
+    availability: row.availability ?? null,
+    lead_time_days: row.lead_time_days ?? null,
+    price_basis: row.price_basis ?? null,
+    quality_flags: normalizeStringArray(row.quality_flags),
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -150,7 +163,7 @@ async function request<T>(endpoint: string, country?: string): Promise<T> {
 }
 
 export async function fetchMaterialProducts(
-  params: { page?: number; limit?: number; category?: string; scene?: string; q?: string; balanced?: boolean },
+  params: { page?: number; limit?: number; scene?: string; balanced?: boolean } & ProcurementFilters,
   country: string
 ): Promise<MaterialProductsPage> {
   const qs = new URLSearchParams();
@@ -160,6 +173,9 @@ export async function fetchMaterialProducts(
   if (params.scene) qs.set('scene', params.scene);
   if (params.q) qs.set('q', params.q);
   if (params.balanced) qs.set('balanced', '1');
+  for (const key of ['currency', 'unit', 'origin', 'availability', 'material', 'spec', 'lead_time_max', 'price_min', 'price_max', 'sort'] as const) {
+    if (params[key]) qs.set(key, params[key]);
+  }
   const suffix = qs.toString() ? `?${qs.toString()}` : '';
   try {
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */

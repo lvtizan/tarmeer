@@ -36,7 +36,7 @@ function FloatingTip({ icon, children }: { icon?: React.ReactNode; children: Rea
   );
 }
 
-type RequestType = 'sample' | 'visit' | 'sourcing' | 'designer_partner';
+type RequestType = 'quote' | 'sample' | 'visit' | 'sourcing' | 'designer_partner';
 type RequestStatus = 'new' | 'contacted' | 'completed' | 'rejected';
 type TypeFilter = 'all' | RequestType;
 type StatusFilter = 'all' | RequestStatus;
@@ -55,11 +55,36 @@ interface SourcingRequestRecord {
   supplier_profile_id: number | null;
   /** 后端 JOIN 带出（国家一致性条件保护，跨国引用时为 null） */
   product_title: string | null;
+  product_model?: string | null;
+  request_context?: Record<string, unknown> | string | null;
   supplier_name: string | null;
   source_page: string | null;
   country: string;
   status: RequestStatus;
   created_at: string;
+}
+
+function parseRequestContext(request: SourcingRequestRecord): Record<string, unknown> {
+  let context: Record<string, unknown> = {};
+  try {
+    const raw = typeof request.request_context === 'string' ? JSON.parse(request.request_context) : request.request_context;
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) context = raw;
+  } catch { /* Older records may not have structured context. */ }
+  return context;
+}
+
+function RequestContextSummary({ request }: { request: SourcingRequestRecord }) {
+  const context = parseRequestContext(request);
+  const model = typeof context.product_model === 'string' ? context.product_model : request.product_model;
+  const quantity = typeof context.quantity === 'number' || typeof context.quantity === 'string' ? String(context.quantity) : '';
+  const unit = typeof context.quantity_unit === 'string' ? context.quantity_unit : '';
+  const area = typeof context.project_area === 'number' ? context.project_area : null;
+  return <div className="mb-1 space-y-0.5 text-[11px] text-stone-600">
+    {model && <p>型号：{model}</p>}
+    {context.quantity_unknown === true ? <p>数量：待确定</p> : quantity && <p>数量：{quantity} {unit}</p>}
+    {area !== null && <p>整项目面积：{area} m²</p>}
+    {typeof context.recipient === 'string' && context.recipient.toLowerCase() === 'tarmeer' && <p>接收方：Tarmeer 平台采购团队</p>}
+  </div>;
 }
 
 interface StatusCounts {
@@ -71,6 +96,7 @@ interface StatusCounts {
 
 const TYPE_TABS: { value: TypeFilter; label: string }[] = [
   { value: 'all', label: '全部' },
+  { value: 'quote', label: '商品询价' },
   { value: 'sample', label: '样品申请' },
   { value: 'visit', label: '到店预约' },
   { value: 'sourcing', label: '采购咨询' },
@@ -78,6 +104,7 @@ const TYPE_TABS: { value: TypeFilter; label: string }[] = [
 ];
 
 const TYPE_BADGE: Record<RequestType, string> = {
+  quote: 'bg-orange-100 text-orange-700',
   sample: 'bg-blue-100 text-blue-700',
   visit: 'bg-purple-100 text-purple-700',
   sourcing: 'bg-amber-100 text-amber-700',
@@ -85,6 +112,7 @@ const TYPE_BADGE: Record<RequestType, string> = {
 };
 
 const TYPE_LABEL: Record<RequestType, string> = {
+  quote: '商品询价',
   sample: '样品申请',
   visit: '到店预约',
   sourcing: '采购咨询',
@@ -117,7 +145,7 @@ const COUNTRY_FLAG: Record<string, string> = { ae: '🇦🇪', vn: '🇻🇳', s
 const PAGE_SIZE = 20;
 
 function isTypeFilter(v: string | null): v is TypeFilter {
-  return v === 'all' || v === 'sample' || v === 'visit' || v === 'sourcing' || v === 'designer_partner';
+  return v === 'all' || v === 'quote' || v === 'sample' || v === 'visit' || v === 'sourcing' || v === 'designer_partner';
 }
 function isStatusFilter(v: string | null): v is StatusFilter {
   return v === 'all' || v === 'new' || v === 'contacted' || v === 'completed' || v === 'rejected';
@@ -143,8 +171,10 @@ export default function AdminSourcingRequestsPage() {
   });
   const [error, setError] = useState('');
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const loadSequence = useRef(0);
 
   const loadRequests = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     setLoading(true);
     setError('');
     try {
@@ -152,18 +182,22 @@ export default function AdminSourcingRequestsPage() {
       if (typeFilter !== 'all') query.set('type', typeFilter);
       if (statusFilter !== 'all') query.set('status', statusFilter);
       const result = await adminApi.request(`/sourcing-requests?${query.toString()}`);
-      setRequests(result.requests || []);
+      if (sequence !== loadSequence.current) return;
+      setRequests((result.requests || []).map((request: SourcingRequestRecord) => {
+        const context = parseRequestContext(request);
+        return { ...request, product_title: typeof context.product_title === 'string' && context.product_title ? context.product_title : request.product_title };
+      }));
       setTotal(result.pagination?.total ?? 0);
       setCounts(result.counts || {});
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '加载采购线索失败');
+      if (sequence === loadSequence.current) setError(err instanceof Error ? err.message : '加载采购线索失败');
     } finally {
-      setLoading(false);
+      if (sequence === loadSequence.current) setLoading(false);
     }
   }, [page, typeFilter, statusFilter, country]);
 
   // country 切换必须重置分页（国家隔离铁律）
-  useEffect(() => { setPage(1); }, [country]);
+  useEffect(() => { ++loadSequence.current; setRequests([]); setCounts({}); setTotal(0); setPage(1); }, [country]);
 
   useEffect(() => { loadRequests(); }, [loadRequests]);
 
@@ -302,6 +336,7 @@ export default function AdminSourcingRequestsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-stone-600 max-w-[200px]">
+                    <RequestContextSummary request={req} />
                     {req.message ? (
                       <span className="inline-flex items-center gap-1 max-w-full">
                         <span className="truncate max-w-[160px]">{req.message}</span>

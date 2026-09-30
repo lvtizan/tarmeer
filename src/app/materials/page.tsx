@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: `Materials & Suppliers — Interior Design Showrooms | Tarmeer ${c.name}`,
       description:
-        'Explore Tarmeer\'s verified suppliers for premium building materials — furniture, stone, lighting, flooring, and more.',
+        'Explore Tarmeer\'s supplier sourcing directory for premium building materials — furniture, stone, lighting, flooring, and more.',
       images: [{ url: `${c.baseUrl}/images/tarmeer_logo.svg` }],
       url: `${c.baseUrl}/materials`,
       type: 'website',
@@ -71,7 +71,7 @@ export default async function MaterialsPage() {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: `Material Suppliers in ${c.name} — Tarmeer`,
-    description: `Verified building material suppliers from China and ${c.defaultCity} for renovation projects in ${c.name}.`,
+    description: `Supplier sourcing coordinated by Tarmeer from China and ${c.defaultCity} for renovation projects in ${c.name}.`,
     url: `${c.baseUrl}/materials`,
     publisher: {
       '@type': 'Organization',

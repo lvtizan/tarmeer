@@ -12,7 +12,7 @@ import {
   Maximize2, Banknote,
 } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
-import ServiceInquiryCard from '@/components/services/ServiceInquiryCard';
+import SourcingRequestForm from '@/components/sourcing/SourcingRequestForm';
 import { sanitizeDescription } from '@/lib/materialDescription';
 import { ORIGIN_LABEL, ORIGIN_HERO_BADGE_CLASS, supplierPublicTitle } from '@/lib/supplierConstants';
 import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
@@ -376,7 +376,8 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h1 className="text-xl sm:text-2xl font-bold text-white">{publicTitle}</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-white">Tarmeer sourcing partner #{supplier.id}</h1>
+                    <p className="mt-1 text-sm text-white/90">{publicTitle}</p>
                     <span className={`text-[11px] font-semibold px-3 py-1 rounded-full backdrop-blur-sm ${ORIGIN_HERO_BADGE_CLASS[supplier.origin]}`}>
                       {ORIGIN_LABEL[supplier.origin]}
                     </span>
@@ -394,7 +395,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
 
                   {/* 公开去标识：不渲染带星号的自填简介,改用品类导语 */}
                   <p className="mt-3 text-sm text-white/60 leading-relaxed line-clamp-2 max-w-xl">
-                    Verified {publicTitle.toLowerCase()} on Tarmeer — browse products, projects and catalogs below.
+                    Explore {publicTitle.toLowerCase()} through Tarmeer — we coordinate product inquiries with the supplier.
                   </p>
                 </div>
               </div>
@@ -476,6 +477,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
             </h2>
           </div>
           <SupplierProductLibrary
+            enableProductDetails={country.code === 'ae'}
             products={products}
             categoryLabel={catLabel}
             onOpenProduct={openProductMedia}
@@ -649,7 +651,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#b8864a]">Material sourcing</p>
                   <h2 id="supplier-inquiry-title" className="mt-1 text-xl font-semibold text-[#1c1917]">Send an inquiry</h2>
-                  <p className="mt-1 text-sm text-stone-500">Keep browsing—we’ll send your request to this supplier.</p>
+                  <p className="mt-1 text-sm text-stone-500">Tarmeer receives your inquiry and coordinates with the supplier.</p>
                 </div>
                 <button
                   type="button"
@@ -660,16 +662,14 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <ServiceInquiryCard
+              <SourcingRequestForm
                 key={requestIdentity}
                 inline
-                title="Project details"
-                subtitle="Share a few details and our team will follow up shortly."
+                variant="sourcing"
+                title="Your sourcing requirements"
+                subtitle="Share your requirements with Tarmeer. Pricing, availability and delivery are subject to confirmation."
                 submitLabel="Send inquiry"
-                leadTag="Material Inquiry"
-                companyName={publicTitle}
-                supplierProfileId={supplier.id}
-                isVn={country.code === 'vn'}
+                supplierId={supplier.id}
               />
             </motion.div>
       </motion.div>

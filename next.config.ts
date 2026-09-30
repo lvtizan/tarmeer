@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 
+const devApiOrigin = process.env.DEV_API_ORIGIN || 'http://localhost:3002';
 const isDev = process.env.NODE_ENV !== 'production';
 
 const nextConfig: NextConfig = {
@@ -8,8 +9,8 @@ const nextConfig: NextConfig = {
     return [
       // In development, proxy /api/* and /uploads/* to Express backend on port 3002
       ...(isDev ? [
-        { source: "/api/:path*", destination: "http://localhost:3002/api/:path*" },
-        { source: "/uploads/:path*", destination: "http://localhost:3002/uploads/:path*" },
+        { source: "/api/:path*", destination: `${devApiOrigin}/api/:path*` },
+        { source: "/uploads/:path*", destination: `${devApiOrigin}/uploads/:path*` },
       ] : []),
     ];
   },

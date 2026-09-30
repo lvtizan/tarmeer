@@ -24,7 +24,7 @@ const FLOOR_KEYWORDS = [
 // 后端 500 / 网络错误 → throw（交给 Next 错误边界渲染可重试的 500），绝不误判成硬 404。
 async function resolveCategoryLabel(key: string, country: string): Promise<string | null> {
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
+    process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
   const res = await fetch(
     `${API_BASE}/suppliers/macro-categories/${encodeURIComponent(key)}/products?country=${country}&limit=1`,
     { headers: { 'x-country': country } },
@@ -47,8 +47,8 @@ export async function generateMetadata({
   const { key } = await params;
   const label = await resolveCategoryLabel(key, c.code);
   if (!label) notFound();
-  const title = `${label} from China for the UAE | Tarmeer`;
-  const description = `Source ${label.toLowerCase()} from vetted China suppliers, delivered across the UAE. See products and specify with Tarmeer's Dubai material selection center.`;
+  const title = `${label} for UAE Projects | Tarmeer`;
+  const description = `Browse ${label.toLowerCase()} and request supplier sourcing through Tarmeer for UAE projects. Prices, availability and delivery are confirmed in your quote.`;
   return {
     title,
     description,
@@ -93,7 +93,7 @@ export default async function MaterialCategoryPage({
             {label}
           </h1>
           <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70">
-            {`${label} sourced from China for UAE projects.`}
+            {`Browse ${label.toLowerCase()} for UAE projects. Tarmeer coordinates supplier inquiries and confirms sourcing options.`}
           </p>
         </div>
       </section>

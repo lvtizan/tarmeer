@@ -6,7 +6,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Play, ZoomIn } from 'lucide-react';
-import SmartImage from '@/components/ui/SmartImage';
+import MaterialImage from './MaterialImage';
+import { materialProductTitle } from '@/lib/materialsProcurement';
 import Lightbox, { type LightboxShot } from '@/components/flooring/Lightbox';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
@@ -18,7 +19,7 @@ export default function MaterialProductCard({ product }: { product: PublicMateri
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const catLabel = useProductCategoryLabels();
-  const title = product.title || 'Material';
+  const title = materialProductTitle(product);
 
   // 图廊用该材料的多图（image_urls），解析成可直接 <img> 的绝对/静态路径
   const images = (product.image_urls.length ? product.image_urls : product.image_url ? [product.image_url] : [])
@@ -32,21 +33,16 @@ export default function MaterialProductCard({ product }: { product: PublicMateri
 
   return (
     <div className="group relative">
-      <Link href={`/materials/products/${product.id}`} className="block">
-        <div className="aspect-video overflow-hidden rounded-2xl border border-stone-200 bg-stone-100">
-          <SmartImage
-            src={product.image_url}
-            variant="thumb"
-            alt={title}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+        <div className="relative aspect-video overflow-hidden rounded-2xl border border-stone-200 bg-stone-100">
+          <MaterialImage key={product.image_url} src={product.image_url} alt={title} />
+          <Link href={`/materials/products/${product.id}`} aria-label={`View ${title}`} className="absolute inset-0" />
           {product.video_url && (
             <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
               <Play className="h-3 w-3 fill-current" /> Video
             </span>
           )}
         </div>
+      <Link href={`/materials/products/${product.id}`} className="block">
         {product.category && (
           <p className="mt-3 text-[10px] font-medium uppercase tracking-wider text-[#b8864a]">
             {catLabel(product.category)}
@@ -58,7 +54,7 @@ export default function MaterialProductCard({ product }: { product: PublicMateri
         <ProductPriceLine product={product} />
         {product.supplier_name && (
           <div className="mt-1.5 flex min-w-0 items-center gap-2">
-            <span className="truncate text-xs text-stone-500">{product.supplier_name}</span>
+            <span className="truncate text-xs text-stone-500">Via Tarmeer · Supplier #{product.supplier_id}</span>
             <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${ORIGIN_BADGE_CLASS[product.supplier_origin]}`}>
               {ORIGIN_LABEL[product.supplier_origin]}
             </span>

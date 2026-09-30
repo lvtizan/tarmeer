@@ -9,7 +9,7 @@ import { resolveImageUrl } from '@/lib/imageUrl';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 import { supplierPublicTitle } from '@/lib/supplierConstants';
 
-const API_BASE_STATIC = process.env.NEXT_PUBLIC_API_URL?.trim() ?? process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
+const API_BASE_STATIC = process.env.API_INTERNAL_URL?.trim() || 'http://localhost:3002/api';
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   try {
@@ -27,6 +27,7 @@ interface PageProps {
 }
 
 interface SupplierBasic {
+  id: number;
   company_name: string;
   description: string;
   logo_url?: string | null;
@@ -41,7 +42,7 @@ interface SupplierBasic {
 }
 
 async function fetchSupplierBasic(slug: string, country: string): Promise<SupplierBasic | null> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
+  const API_BASE = API_BASE_STATIC;
   try {
     // 国家隔离铁律：SSR 出站 fetch 必须显式带国家（?country= 入缓存键防跨国缓存污染 + x-country 头供后端过滤），
     // 否则 VN 站 SSR 默认 ae → 渲染 AE 供应商页（P0 串域）。后端 detail 对错国家 slug 返回 404 → notFound。
@@ -60,7 +61,7 @@ async function fetchSupplierBasic(slug: string, country: string): Promise<Suppli
 // SSR 版：一次取回 supplier + products（detail 端点内联返回 products），用于把首屏内容渲进服务端 HTML（消除软 404）。
 // 与 fetchSupplierBasic 同源同缓存键（?country= + x-country），国家隔离一致。
 async function fetchSupplierWithProducts(slug: string, country: string): Promise<{ supplier: SupplierBasic; products: unknown[] } | null> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || process.env.API_URL?.trim() || 'http://localhost:3002/api';
+  const API_BASE = API_BASE_STATIC;
   try {
     const res = await fetch(`${API_BASE}/suppliers/detail/${slug}?country=${country}`, {
       next: { revalidate: 3600 },
@@ -81,13 +82,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const supplier = await fetchSupplierBasic(slug, c.code);
 
   if (!supplier) {
-    return { title: 'Supplier Not Found | Tarmeer' };
+    notFound();
   }
 
   // 公开去标识：用品类通用标题，不用真实/遮蔽后的厂家名（避免 title 变一串 ****，同时保 SEO 品类关键词）
   const pubTitle = supplierPublicTitle(supplier.categories);
-  const title = `${pubTitle} in ${c.name}`; // root layout 模板会自动追加 " | Tarmeer"
-  const description = `Browse verified products and catalogs from a ${pubTitle.toLowerCase()} in ${c.name} on Tarmeer.`;
+  const title = `Tarmeer sourcing partner #${supplier.id} — ${pubTitle} in ${c.name}`; // root layout 模板会自动追加 " | Tarmeer"
+  const description = `Browse products and catalogs for sourcing partner #${supplier.id}. Tarmeer receives inquiries and coordinates with the supplier for projects in ${c.name}.`;
 
   return {
     title,
@@ -138,7 +139,7 @@ export default async function SupplierDetailPage({ params }: PageProps) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: c.baseUrl },
       { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name: pubTitle, item: supplierUrl },
+      { '@type': 'ListItem', position: 3, name: `Tarmeer sourcing partner #${supplier.id}`, item: supplierUrl },
     ],
   };
 
@@ -167,7 +168,7 @@ export default async function SupplierDetailPage({ params }: PageProps) {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     '@id': `${supplierUrl}#business`,
-    name: pubTitle,
+    name: `Tarmeer sourcing partner #${supplier.id}`,
     url: supplierUrl,
     ...(image ? { image } : {}),
     ...(supplier.contact_phone ? { telephone: supplier.contact_phone } : {}),
@@ -189,7 +190,7 @@ export default async function SupplierDetailPage({ params }: PageProps) {
       />
       {supplier && (
         <div className="sr-only">
-          <h1>{pubTitle}</h1>
+          <p>{pubTitle} · Tarmeer sourcing partner #{supplier.id}</p>
         </div>
       )}
       <SupplierDetailClient

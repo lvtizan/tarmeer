@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { countryFromLang } from '@/lib/country';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { MapPin, Clock, Package, Search, X, ArrowRight } from 'lucide-react';
@@ -90,7 +92,7 @@ function SupplierCard({ s }: { s: Supplier }) {
       <div className="flex-1 min-w-0 flex flex-col justify-start gap-2 py-1">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-[17px] font-semibold text-[#1c1917] group-hover:text-[#b8864a] transition-colors">
-            {publicTitle}
+            Tarmeer sourcing partner #{s.id}
           </h3>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ORIGIN_BADGE_CLASS[s.origin]}`}>
             {ORIGIN_LABEL[s.origin]}
@@ -100,11 +102,11 @@ function SupplierCard({ s }: { s: Supplier }) {
         <p className="text-[13px] text-stone-500">
           {typeof s.product_count === 'number' && s.product_count > 0 && (
             <>
-              <span className="font-semibold text-[#b8864a]">{s.product_count} products</span>
+              <span className="font-semibold text-[#b8864a]">{s.product_count} product{s.product_count === 1 ? '' : 's'}</span>
               <span className="mx-1.5 text-stone-300">·</span>
             </>
           )}
-          Sourced from {s.origin === 'china' ? 'China' : 'Dubai'}
+          {publicTitle} · Sourced from {s.origin === 'china' ? 'China' : 'Dubai'}
         </p>
         {/* 公开去标识：不显示遮蔽星号简介,品类 chips 承载信息 */}
         <div className="flex flex-wrap gap-1.5">
@@ -159,6 +161,14 @@ interface MaterialsClientProps {
 }
 
 export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntry, embedded }: MaterialsClientProps) {
+  const country = countryFromLang(useSiteLocale().lang);
+  const currentCountry = useRef(country.code);
+  currentCountry.current = country.code;
+  const previousCountry = useRef(country.code);
+  const [loadedCountry, setLoadedCountry] = useState(country.code);
+  const [error, setError] = useState('');
+  const [categoriesError, setCategoriesError] = useState('');
+  const [retryNonce, setRetryNonce] = useState(0);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
@@ -184,34 +194,69 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
   }
 
   useEffect(() => {
-    // 统一走 product_categories 子类(与迁移后的数据 + 供应商编辑弹层同一套真源)
-    fetch(`${API_BASE}/suppliers/product-categories`)
-      .then(r => r.json())
+    if (previousCountry.current === country.code) return;
+    previousCountry.current = country.code;
+    setSuppliers([]);
+    setLoadedCountry(country.code);
+    setCategoryOptions(CATEGORY_OPTIONS_FALLBACK);
+    setSearchInput('');
+    setError('');
+    setCategoriesError('');
+    const params = new URLSearchParams(searchParams.toString());
+    for (const key of ['origin', 'category', 'search']) params.delete(key);
+    router.replace(`/materials?${params.toString()}`, { scroll: false });
+  }, [country.code, router, searchParams]);
+
+  useEffect(() => {
+    let active = true;
+    const requestCountry = country.code;
+    const controller = new AbortController();
+    const isCurrent = () => active && currentCountry.current === requestCountry;
+    setCategoriesError('');
+    fetch(`${API_BASE}/suppliers/product-categories?country=${requestCountry}`, {
+      headers: { 'x-country': requestCountry }, signal: controller.signal,
+    })
+      .then(r => { if (!r.ok) throw new Error('Could not load supplier categories.'); return r.json(); })
       .then(data => {
-        // API returns { categories: [{value, label, label_zh, parent_value}] }（仅启用子类）
+        if (!isCurrent()) return;
         const flat: { value: string; label: string }[] = Array.isArray(data.categories)
           ? data.categories.map((c: { value: string; label: string }) => ({ value: c.value, label: c.label }))
           : [];
-        if (flat.length) setCategoryOptions(flat);
+        setCategoryOptions(flat.length ? flat : CATEGORY_OPTIONS_FALLBACK);
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => { if (isCurrent()) setCategoriesError('Could not load supplier categories. Please retry.'); });
+    return () => { active = false; controller.abort(); };
+  }, [country.code, retryNonce]);
 
   useEffect(() => {
+    let active = true;
+    const requestCountry = country.code;
+    const controller = new AbortController();
+    const isCurrent = () => active && currentCountry.current === requestCountry;
     setLoading(true);
-    const params = new URLSearchParams();
+    setError('');
+    const params = new URLSearchParams({ country: requestCountry, limit: '200', order: 'list' });
     if (originFilter) params.set('origin', originFilter);
     if (categoryFilter) params.set('category', categoryFilter);
-    // 一次加载全部符合条件的供应商（当前 ~55 家），前端本地按名字过滤——不再被旧的 limit=50 静默截断
-    params.set('limit', '200');
-    params.set('order', 'list');
 
-    fetch(`${API_BASE}/suppliers?${params}`)
-      .then(r => r.json())
-      .then(data => setSuppliers(data.suppliers || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [originFilter, categoryFilter]);
+    fetch(`${API_BASE}/suppliers?${params}`, {
+      headers: { 'x-country': requestCountry }, signal: controller.signal,
+    })
+      .then(r => { if (!r.ok) throw new Error('Could not load suppliers.'); return r.json(); })
+      .then(data => {
+        if (!isCurrent()) return;
+        setSuppliers(Array.isArray(data.suppliers) ? data.suppliers : []);
+        setLoadedCountry(requestCountry);
+      })
+      .catch(() => {
+        if (!isCurrent()) return;
+        setSuppliers([]);
+        setLoadedCountry(requestCountry);
+        setError('Could not load suppliers. Your filters are saved; please retry.');
+      })
+      .finally(() => { if (isCurrent()) setLoading(false); });
+    return () => { active = false; controller.abort(); };
+  }, [originFilter, categoryFilter, country.code, retryNonce]);
 
   // 输入防抖后镜像到 URL（仅为可分享/可后退；实际过滤走本地即时计算，见下方 visibleSuppliers）
   useEffect(() => {
@@ -225,7 +270,7 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput]);
+  }, [searchInput, country.code]);
 
   // 反向同步：URL 的 ?search= 变化（浏览器后退/前进、深链）回填输入框，避免输入框与 URL/列表不一致
   useEffect(() => {
@@ -234,12 +279,13 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
 
   // 本地即时过滤：厂家名已遮蔽,改按品类通用名/品类关键词匹配(如搜 "windows" 命中 system_windows)
   const q = searchInput.trim().toLowerCase();
+  const sameCountrySuppliers = loadedCountry === country.code ? suppliers : [];
   const visibleSuppliers = q
-    ? suppliers.filter(s => {
+    ? sameCountrySuppliers.filter(s => {
         const hay = `${supplierPublicTitle(s.categories)} ${parseCategories(s.categories).join(' ')}`.toLowerCase();
         return hay.includes(q);
       })
-    : suppliers;
+    : sameCountrySuppliers;
 
   return (
     <div className={embedded ? '' : 'min-h-screen bg-[#faf9f7]'}>
@@ -258,18 +304,18 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_75%_at_15%_-5%,rgba(184,134,74,0.22),transparent_60%)]" />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
           <p className="text-sm font-semibold text-[#c6a065] uppercase tracking-wider">
-            Verified Material Suppliers
+            Material Supplier Directory
           </p>
           <h1 className="font-serif text-[28px] sm:text-[36px] text-white font-medium leading-tight mt-3 mb-2">
-            Find Premium Material Suppliers in UAE
+            Find material suppliers for {country.name}
           </h1>
           <p className="text-white/60 text-[15px]">
-            Verified suppliers from China and Dubai — furniture, stone, lighting, and more.
+            Tarmeer coordinates supplier sourcing for {country.name}. Send your inquiry to our team.
           </p>
 
           {/* 搜索条 + 供应商登录：整体居中同排（对齐公司列表页风格）；AE 站额外带新材料页入口（M2 union：改版侧 showNewMaterialsEntry） */}
           <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
-            {showNewMaterialsEntry && (
+            {country.code === 'ae' && showNewMaterialsEntry && (
               <Link
                 href="/materials/new-materials"
                 className="btn-primary inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap px-6"
@@ -353,8 +399,8 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
               </div>
             </div>
 
-            {/* Showroom Infobox */}
-            <div className="mt-4 bg-white rounded-2xl border border-stone-200 shadow-sm p-4 space-y-3">
+            {/* The Sharjah showroom is an AE service, never a VN contact block. */}
+            {country.code === 'ae' && <div className="mt-4 bg-white rounded-2xl border border-stone-200 shadow-sm p-4 space-y-3">
               <h4 className="text-xs font-medium text-[#1c1917] uppercase tracking-wider">Our Showroom</h4>
               <div className="space-y-2 text-xs text-stone-500">
                 <span className="flex items-center gap-2">
@@ -375,7 +421,7 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
               >
                 <MapPin className="w-3 h-3" /> View on Map
               </a>
-            </div>
+            </div>}
           </div>
         </aside>
 
@@ -412,10 +458,11 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
             />
           </div>
 
+          {categoriesError && <p role="alert" className="mb-3 text-sm text-red-700">{categoriesError} <button type="button" className="underline" onClick={() => setRetryNonce(n => n + 1)}>Retry categories</button></p>}
           {/* Result count */}
-          {!loading && visibleSuppliers.length > 0 && (
+          {!loading && !error && visibleSuppliers.length > 0 && (
             <p className="text-sm text-stone-500 mb-4">
-              {visibleSuppliers.length} verified supplier{visibleSuppliers.length !== 1 ? 's' : ''}
+              {visibleSuppliers.length} supplier{visibleSuppliers.length !== 1 ? 's' : ''}
               {q && ` · matching “${searchInput.trim()}”`}
               {originFilter && ` · ${originFilter === 'china' ? '🇨🇳 China' : '🇦🇪 Dubai'}`}
               {categoryFilter && ` · ${categoryOptions.find(o => o.value === categoryFilter)?.label}`}
@@ -423,8 +470,10 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
           )}
 
           {/* List */}
-          {loading ? (
+          {loading || loadedCountry !== country.code ? (
             <div className="py-20 text-center text-stone-400">Loading suppliers...</div>
+          ) : error ? (
+            <div role="alert" className="py-12 text-center text-sm text-red-700"><p>{error}</p><button type="button" onClick={() => setRetryNonce(n => n + 1)} className="mt-3 rounded-lg bg-[#b8864a] px-4 py-2 font-semibold text-white hover:bg-[#a07640]">Retry suppliers</button></div>
           ) : visibleSuppliers.length === 0 ? (
             <div className="py-16 text-center">
               <Package className="w-10 h-10 text-stone-300 mx-auto mb-3" />

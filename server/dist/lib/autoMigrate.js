@@ -5,7 +5,7 @@
  * 设计原则：
  *   1. 幂等：重复执行不会报错（先检查再操作）
  *   2. 只增不删：只添加字段/索引，不删除任何现有结构
- *   3. 非阻塞：迁移失败只打日志，不影响服务启动
+ *   3. 生产启动严格模式：必需迁移失败时拒绝启动监听
  */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -589,6 +589,8 @@ async function runAutoMigrate(options = {}) {
             await database_1.default.execute(tbl.sql);
             console.log(`${TAG} Ensured table exists: ${tbl.name}`);
         }
+        // Procurement receipt/idempotency columns are required before accepting traffic.
+        await require('./sourcingRequestSchema').ensureSourcingRequestSchema(database_1.default);
         // 1. 添加缺失的字段
         for (const col of REQUIRED_COLUMNS) {
             const exists = await columnExists(col.table, col.column);

@@ -5,10 +5,10 @@
 // 铁律：主图/相关卡 aspect-video；无内容模块（specs/certifications/related）整块隐藏；
 // 表单桌面 sticky 侧栏 + 移动端内容底部双位置（参照专家页模式）。
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { BadgeCheck, ArrowRight, ArrowLeft, ChevronRight, PlayCircle } from 'lucide-react';
+import { BadgeCheck, ArrowLeft, ChevronRight, PlayCircle } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
 import SourcingRequestForm from '@/components/sourcing/SourcingRequestForm';
 import MaterialProductCard from './MaterialProductCard';
@@ -16,6 +16,12 @@ import { ORIGIN_LABEL, ORIGIN_BADGE_CLASS } from '@/lib/supplierConstants';
 import { APPLICATION_SCENES, type PublicMaterialProduct, type SupplierCatalog } from '@/lib/materialsApi';
 import { useProductCategoryLabels } from '@/lib/useProductCategoryLabels';
 import { supplierFromProductsHref } from '@/lib/materialsNavigation';
+import { materialProductTitle, safeMaterialsReturn } from '@/lib/materialsProcurement';
+import Lightbox from '@/components/flooring/Lightbox';
+import MaterialImage from './MaterialImage';
+import { trackMaterialEvent } from '@/lib/materialsAnalytics';
+import { countryFromLang } from '@/lib/country';
+import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import ProductPriceLine from './ProductPriceLine';
 import { resolveImageUrl } from '@/lib/imageUrl';
 
@@ -34,6 +40,7 @@ interface ProductDetailClientProps {
   product: PublicMaterialProduct;
   related: PublicMaterialProduct[];
   catalogs?: SupplierCatalog[];
+  returnTo?: string;
 }
 
 function sceneLabel(slug: string): string {
@@ -58,10 +65,10 @@ function SupplierCard({ product }: { product: PublicMaterialProduct }) {
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-medium text-stone-400 uppercase tracking-wider">Supplier</p>
+        <p className="text-[10px] font-medium text-stone-600 uppercase tracking-wider">Sourcing reference</p>
         <div className="flex items-center gap-2 min-w-0">
           <p className="text-sm font-semibold text-[#1c1917] truncate group-hover:text-[#b8864a] transition-colors">
-            {product.supplier_name}
+            Supplier #{product.supplier_id} · via Tarmeer
           </p>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${ORIGIN_BADGE_CLASS[product.supplier_origin]}`}>
             {ORIGIN_LABEL[product.supplier_origin]}
@@ -83,10 +90,9 @@ function SupplierCard({ product }: { product: PublicMaterialProduct }) {
 }
 
 /** 品名 + category/scene 标签（桌面侧栏与移动头部两处复用） */
-function ProductHeading({ product, asH1 }: { product: PublicMaterialProduct; asH1?: boolean }) {
+function ProductHeading({ product }: { product: PublicMaterialProduct }) {
   const catLabel = useProductCategoryLabels();
-  const name = product.title || 'New Material';
-  const Tag = asH1 ? 'h1' : 'p';
+  const name = materialProductTitle(product);
   return (
     <div>
       {product.category && (
@@ -94,10 +100,17 @@ function ProductHeading({ product, asH1 }: { product: PublicMaterialProduct; asH
           {catLabel(product.category)}
         </p>
       )}
-      <Tag className="font-serif text-[24px] sm:text-[28px] text-[#1c1917] font-medium leading-tight mt-1">
+      <p className="font-serif text-[24px] sm:text-[28px] text-[#1c1917] font-medium leading-tight mt-1">
         {name}
-      </Tag>
+      </p>
+      {product.model && <p className="mt-2 text-sm text-stone-700">Model: {product.model}</p>}
       <ProductPriceLine product={product} />
+      <div className="mt-3 space-y-1 border-t border-stone-200 pt-3 text-xs leading-relaxed text-stone-600">
+        <p>Price basis: {product.price_basis || (product.price_from ? 'Starting specification to be confirmed' : 'Selected specification to be confirmed')}.</p>
+        {product.price_unit?.toUpperCase() === 'SHEET' && <p>Sheet dimensions: {product.specs.find(s => /dimension|size/i.test(s.label))?.value || 'to be confirmed'}.</p>}
+        <p>Tax, shipping and installation: inclusion to be confirmed in your quote.</p>
+        <p>Availability: {product.availability === 'uae_stock' ? 'UAE stock — quantity to confirm' : product.availability === 'china_order' ? 'Order from China' : product.availability === 'made_to_order' ? 'Made to order' : 'to be confirmed'}. Delivery: {product.lead_time_days != null ? `${product.lead_time_days} days (supplier estimate; confirm for your order)` : 'to be confirmed'}.</p>
+      </div>
       {product.application_scenes.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
           {product.application_scenes.map((slug) => (
@@ -115,17 +128,21 @@ function ProductHeading({ product, asH1 }: { product: PublicMaterialProduct; asH
 }
 
 
-export default function ProductDetailClient({ product, related, catalogs = [] }: ProductDetailClientProps) {
-  const name = product.title || 'New Material';
+export default function ProductDetailClient({ product, related, catalogs = [], returnTo }: ProductDetailClientProps) {
+  const name = materialProductTitle(product);
+  const country = countryFromLang(useSiteLocale().lang).code;
+  useEffect(() => { trackMaterialEvent('materials_product_view', country, product.id); }, [country, product.id]);
   const images = product.image_urls.length ? product.image_urls : product.image_url ? [product.image_url] : [];
   const [mainIdx, setMainIdx] = useState(0);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
   const sampleForm = (
     <SourcingRequestForm
-      variant="sample"
+      variant="quote"
       productId={product.id}
       productTitle={name}
+      productModel={product.model || undefined}
+      quantityUnit={product.price_unit || undefined}
       supplierId={product.supplier_id}
     />
   );
@@ -133,12 +150,13 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
   return (
     <div className="min-h-screen bg-[#faf9f7]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-12 sm:pb-16">
+        <h1 className="sr-only">{name}</h1>
         {/* 显式返回：回到新材料主页（比面包屑更好点） */}
         <Link
-          href="/materials/new-materials"
+          href={safeMaterialsReturn(returnTo)}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-[#b8864a] transition-colors mb-4"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to New Materials
+          <ArrowLeft className="w-4 h-4" /> Back to products
         </Link>
 
         {/* Breadcrumb */}
@@ -147,56 +165,28 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
           <span>/</span>
           <Link href="/materials" className="hover:text-[#b8864a] transition-colors">Materials</Link>
           <span>/</span>
-          <Link href="/materials/new-materials" className="hover:text-[#b8864a] transition-colors">New Materials</Link>
-          <span>/</span>
           <span className="text-stone-600 font-medium truncate max-w-[240px]">{name}</span>
         </nav>
 
         {/* 移动端头部（桌面上品名在右侧 sticky 栏） */}
         <div className="lg:hidden mb-5">
-          <ProductHeading product={product} asH1 />
+          <ProductHeading product={product} />
         </div>
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_380px] gap-8 lg:gap-12 items-start">
           {/* ===== 左：图集 + 内容 ===== */}
           <div className="min-w-0 space-y-10">
             {/* Gallery */}
+            {images.length === 0 && <div className="aspect-video overflow-hidden rounded-2xl border border-stone-200"><MaterialImage alt={name} /></div>}
             {images.length > 0 && (
               <div>
                 {/* 主图 + 保障蒙层：黑块不再单占一段，改叠在图底部（渐变托底），省空间、按设计稿 */}
                 <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setLightboxIdx(mainIdx)}
-                    className="block w-full aspect-video rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 cursor-zoom-in"
-                    aria-label={`View ${name} full size`}
-                  >
-                    <SmartImage
-                      src={images[mainIdx]}
-                      variant="medium"
-                      alt={name}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                  {/* 保障蒙层（容器 pointer-events-none 让点击穿透去开大图；链接区单独 auto 可点） */}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-2xl bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pt-12 pb-4 sm:px-6">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="font-serif text-base sm:text-lg font-medium text-white">From China, Guaranteed Locally</p>
-                        <p className="mt-0.5 hidden sm:block text-[12.5px] leading-relaxed text-white/70 max-w-xl">
-                          Inspected before shipping and backed by our UAE team — delivery, installation & after-sales, all handled here.
-                        </p>
-                      </div>
-                      <div className="pointer-events-auto flex shrink-0 gap-3">
-                        <Link href="/guarantee" className="inline-flex items-center gap-1 text-[13px] font-medium text-[#e6c88f] hover:text-white transition-colors">
-                          Our Guarantee <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                        <Link href="/services/china-sourcing" className="inline-flex items-center gap-1 text-[13px] font-medium text-[#e6c88f] hover:text-white transition-colors">
-                          How Sourcing Works <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </div>
-                    </div>
+                  <div className="relative aspect-video overflow-hidden rounded-2xl border border-stone-200 bg-white">
+                    <MaterialImage key={images[mainIdx]} src={images[mainIdx]} alt={name} eager />
+                    <button type="button" onClick={() => setLightboxIdx(mainIdx)} aria-label={`View ${name} full size`} className="absolute bottom-3 right-3 rounded-full border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-800">View full image</button>
                   </div>
+                  <p className="mt-3 text-sm leading-relaxed text-stone-700">Tarmeer receives your inquiry and coordinates with this supplier. Specifications, delivery and service scope are confirmed in your quote.</p>
                 </div>
                 {images.length > 1 && (
                   <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mt-2">
@@ -215,7 +205,7 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
                           variant="thumb"
                           alt=""
                           loading="lazy"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                       </button>
                     ))}
@@ -253,6 +243,7 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
             )}
 
             {/* Specifications — 空则整块隐藏 */}
+            {product.specs.length === 0 && <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-700">Specifications have not yet been supplied. Include your requirements in the inquiry.</p>}
             {product.specs.length > 0 && (
               <div>
                 <h2 className="text-lg font-semibold text-[#1c1917] mb-4">Specifications</h2>
@@ -273,7 +264,7 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
             {/* Certifications — 空则整块隐藏 */}
             {product.certifications.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold text-[#1c1917] mb-4">Certifications</h2>
+                <h2 className="text-lg font-semibold text-[#1c1917] mb-4">Supplier-provided certifications</h2>
                 <div className="flex flex-wrap gap-2">
                   {product.certifications.map((cert) => (
                     <span
@@ -298,7 +289,6 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
               </div>
             )}
 
-            {/* From China Guaranteed Locally 已改为主图底部蒙层（见 Gallery），不再单占一段 */}
 
             {/* 移动端表单（sticky 侧栏桌面 only，内容底部补充显示） */}
             <div className="lg:hidden space-y-4">
@@ -333,49 +323,7 @@ export default function ProductDetailClient({ product, related, catalogs = [] }:
         )}
       </div>
 
-      {/* ===== Lightbox（参照 SupplierDetailClient 模式）===== */}
-      {lightboxIdx !== null && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4"
-          onClick={() => setLightboxIdx(null)}
-        >
-          <button
-            className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl z-10"
-            onClick={() => setLightboxIdx(null)}
-            aria-label="Close"
-          >
-            ×
-          </button>
-          <div
-            className="flex flex-col items-center gap-3 max-w-full"
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          >
-            <SmartImage
-              src={images[lightboxIdx]}
-              alt={name}
-              className="max-w-full max-h-[75vh] object-contain rounded-lg"
-            />
-          </div>
-          {lightboxIdx > 0 && (
-            <button
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xl transition"
-              onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => (i !== null ? i - 1 : i)); }}
-              aria-label="Previous photo"
-            >
-              ‹
-            </button>
-          )}
-          {lightboxIdx < images.length - 1 && (
-            <button
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xl transition"
-              onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => (i !== null ? i + 1 : i)); }}
-              aria-label="Next photo"
-            >
-              ›
-            </button>
-          )}
-        </div>
-      )}
+      {lightboxIdx !== null && <Lightbox shots={images.map(src => ({ src: resolveImageUrl(src), alt: name, label: name }))} alt={name} index={lightboxIdx} setIndex={update => setLightboxIdx(previous => update(previous ?? 0))} onClose={() => setLightboxIdx(null)} />}
     </div>
   );
 }

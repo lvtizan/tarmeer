@@ -42,7 +42,7 @@ assert.match(macroController, /video_url: \(0, materialVideo_1\.normalizeMateria
 assert.match(detail, /<video[\s\S]*?controls[\s\S]*?playsInline[\s\S]*?preload="metadata"/);
 assert.match(detail, /<source src=\{resolveImageUrl\(product\.video_url\)\} type="video\/mp4"/);
 assert.match(supplierLibrary, /product\.video_url &&/);
-assert.match(supplierLibrary, /className="relative aspect-\[4\/3\] overflow-hidden"/);
+assert.match(supplierLibrary, /className="relative aspect-\[4\/3\] overflow-hidden[^"\n]*"/);
 assert.match(supplierDetail, /onOpenProduct=\{openProductMedia\}/);
 assert.match(supplierDetail, /const videoUrl = normalizeMaterialVideoUrl\(product\.video_url\)/);
 assert.match(supplierDetail, /lightbox\.idx === lightbox\.images\.length/);

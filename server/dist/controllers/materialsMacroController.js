@@ -117,7 +117,7 @@ async function aggregateByChild(country) {
         }
         b.productCount += Number(r.cnt) || 0;
         // GROUP BY (sid,cat) 保证同一供应商在同一分类只出现一次 → suppliers 天然去重
-        b.suppliers.push({ slug: meta.slug, name: meta.name, image: meta.image, weight: meta.weight, pcnt: Number(r.cnt) || 0 });
+        b.suppliers.push({ id: r.sid, slug: meta.slug, name: meta.name, image: meta.image, weight: meta.weight, pcnt: Number(r.cnt) || 0 });
     }
 
     const list = [];
@@ -183,8 +183,8 @@ async function getMacroProducts(req, res) {
 
         const [rows] = await database_1.default.query(
             `SELECT p.id, p.title, p.title_translated, p.image_url, p.category,
-         p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
-         sp.slug AS supplier_slug, sp.company_name AS supplier_real_name,
+         p.specs, p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
+         sp.id AS supplier_id, sp.slug AS supplier_slug, sp.company_name AS supplier_real_name,
          sp.name_zh AS supplier_real_name_zh, sp.categories AS supplier_categories
        FROM supplier_products p
        JOIN supplier_profiles sp ON sp.id = p.supplier_profile_id
@@ -195,6 +195,7 @@ async function getMacroProducts(req, res) {
         );
         const products = rows.map((r) => ({
             id: r.id,
+            ...supplierRedact_1.maskSupplierValue(require('../lib/materialProcurement').metadata(r), r.supplier_real_name, r.supplier_real_name_zh),
             title: maskTitle(r.title_translated || r.title || 'Product', r.supplier_real_name, r.supplier_real_name_zh),
             image_url: r.image_url,
             price: r.price,
@@ -202,6 +203,7 @@ async function getMacroProducts(req, res) {
             price_unit: r.price_unit,
             price_currency: r.price_currency,
             price_from: r.price_from,
+            supplier_id: r.supplier_id,
             supplier_slug: r.supplier_slug || null,
             supplier_name: supplierRedact_1.supplierPublicTitle(r.supplier_categories),
         }));
@@ -218,8 +220,8 @@ async function getPopularProducts(req, res) {
         const country = (typeof req.query.country === 'string' && req.query.country) || req.country || 'ae';
         const limit = Math.min(24, Math.max(1, parseInt(req.query.limit) || 16));
         const [rows] = await database_1.default.query(
-            `SELECT p.id, COALESCE(p.title_translated, p.title, 'Product') AS title, p.image_url,
-         p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
+            `SELECT p.id, COALESCE(p.title_translated, p.title, 'Product') AS title, p.image_url, p.category,
+         p.specs, p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
          sp.slug AS supplier_slug, sp.company_name AS supplier_real_name,
          sp.name_zh AS supplier_real_name_zh, sp.categories AS supplier_categories
        FROM supplier_products p
@@ -236,6 +238,7 @@ async function getPopularProducts(req, res) {
             perSup[r.supplier_slug] = c + 1;
             out.push({
                 id: r.id,
+                ...supplierRedact_1.maskSupplierValue(require('../lib/materialProcurement').metadata(r), r.supplier_real_name, r.supplier_real_name_zh),
                 title: maskTitle(r.title, r.supplier_real_name, r.supplier_real_name_zh),
                 image_url: r.image_url,
                 price: r.price,
@@ -271,8 +274,8 @@ async function getMaterialSearch(req, res) {
             const [cntRows] = await database_1.default.query(
                 `SELECT COUNT(*) total FROM supplier_profiles sp
          WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1
-           AND (sp.company_name LIKE ? OR sp.categories LIKE ?)`,
-                [country, like, like]
+           AND (sp.categories LIKE ? OR CONCAT('Tarmeer sourcing partner #',sp.id) LIKE ? OR CONCAT('Supplier #',sp.id) LIKE ? OR CAST(sp.id AS CHAR)=?)`,
+                [country, like, like, like, q]
             );
             const total = cntRows[0].total;
             const [rows] = await database_1.default.query(
@@ -280,10 +283,10 @@ async function getMaterialSearch(req, res) {
            (SELECT image_url FROM supplier_products p WHERE p.supplier_profile_id=sp.id AND p.image_url IS NOT NULL AND p.image_url<>'' ORDER BY p.sort_order,p.id LIMIT 1) first_product_image
          FROM supplier_profiles sp
          WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1
-           AND (sp.company_name LIKE ? OR sp.categories LIKE ?)
-         ORDER BY (sp.company_name LIKE ?) DESC, sp.id DESC
+           AND (sp.categories LIKE ? OR CONCAT('Tarmeer sourcing partner #',sp.id) LIKE ? OR CONCAT('Supplier #',sp.id) LIKE ? OR CAST(sp.id AS CHAR)=?)
+         ORDER BY sp.id DESC
          LIMIT ${limit} OFFSET ${offset}`,
-                [country, like, like, like]
+                [country, like, like, like, q]
             );
             // 去标识：公开搜索结果用品类通用名，不回传真实厂名/logo
             const results = rows.map((r) => ({
@@ -302,25 +305,26 @@ async function getMaterialSearch(req, res) {
             `SELECT COUNT(*) total FROM supplier_products p
        JOIN supplier_profiles sp ON sp.id=p.supplier_profile_id
        WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1 AND p.image_url IS NOT NULL AND p.image_url<>''
-         AND (p.title LIKE ? OR p.title_translated LIKE ? OR p.category LIKE ?)`,
-            [country, like, like, like]
+         AND (p.title LIKE ? OR p.title_translated LIKE ? OR p.category LIKE ? OR CAST(p.specs AS CHAR) LIKE ?)`,
+            [country, like, like, like, like]
         );
         const total = cntRows[0].total;
         const [rows] = await database_1.default.query(
             `SELECT p.id, COALESCE(p.title_translated, p.title, 'Product') AS title, p.image_url, p.video_url, p.category,
-         p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
+         p.specs, p.price, p.price_max, p.price_unit, p.price_currency, p.price_from,
          sp.slug AS supplier_slug, sp.company_name AS supplier_real_name,
          sp.name_zh AS supplier_real_name_zh, sp.categories AS supplier_categories
        FROM supplier_products p
        JOIN supplier_profiles sp ON sp.id=p.supplier_profile_id
        WHERE sp.country=? AND sp.status='approved' AND sp.is_published=1 AND p.image_url IS NOT NULL AND p.image_url<>''
-         AND (p.title LIKE ? OR p.title_translated LIKE ? OR p.category LIKE ?)
+         AND (p.title LIKE ? OR p.title_translated LIKE ? OR p.category LIKE ? OR CAST(p.specs AS CHAR) LIKE ?)
        ORDER BY (p.title LIKE ? OR p.title_translated LIKE ?) DESC, p.sort_order, p.id
        LIMIT ${limit} OFFSET ${offset}`,
-            [country, like, like, like, like, like]
+            [country, like, like, like, like, like, like]
         );
         const results = rows.map((r) => ({
             id: r.id,
+            ...supplierRedact_1.maskSupplierValue(require('../lib/materialProcurement').metadata(r), r.supplier_real_name, r.supplier_real_name_zh),
             title: maskTitle(r.title, r.supplier_real_name, r.supplier_real_name_zh),
             image_url: r.image_url,
             video_url: (0, materialVideo_1.normalizeMaterialVideoUrl)(r.video_url),
@@ -353,7 +357,7 @@ async function getMegaMenu(req, res) {
             image: b.image,
             subcategories: [], // product_categories 只有两级（大类/子类），子类下无三级 → 无 chips
             // 已按 weight_score 排序（供应商查询 ORDER BY），取前 3；name 已是品类通用名（去标识）
-            featuredSuppliers: b.suppliers.slice(0, 3).map((s) => ({ slug: s.slug, name: s.name, image: s.image })),
+            featuredSuppliers: b.suppliers.slice(0, 3).map((s) => ({ id: s.id, slug: s.slug, name: s.name, image: s.image })),
         }));
         res.json({ macros, country });
     } catch (error) {

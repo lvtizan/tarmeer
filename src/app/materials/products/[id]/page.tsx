@@ -10,10 +10,12 @@ import ProductDetailClient from '@/components/materials/ProductDetailClient';
 import { getCountry } from '@/lib/country';
 import { fetchMaterialProduct, fetchSupplierCatalogs } from '@/lib/materialsApi';
 import { resolveImageUrl } from '@/lib/imageUrl';
+import { materialProductTitle, safeMaterialsReturn } from '@/lib/materialsProcurement';
 import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string | string[] }>;
 }
 
 function truncate(text: string, max: number): string {
@@ -42,7 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!detail) notFound();
 
   const { product } = detail;
-  const name = product.title || 'New Material';
+  const name = materialProductTitle(product);
   const catLabel = prettifyCategory(product.category);
   // 标题：品名 + 品类 + 地域关键词。不手拼 " | Tarmeer"（root layout 模板会追加 → 避免双 Tarmeer）
   const title = catLabel ? `${name} — ${catLabel} in the UAE` : `${name} — New Material in the UAE`;
@@ -53,7 +55,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = cleanDesc.length >= 40
     ? truncate(cleanDesc, 155)
     : truncate(
-        [`${name}${catLabel ? ` — ${catLabel}` : ''} building material available in the UAE via Tarmeer.`, specText]
+        [`${name}${catLabel ? ` — ${catLabel}` : ''} product for sourcing in the UAE through Tarmeer.`, specText]
           .filter(Boolean)
           .join(' '),
         160,
@@ -100,7 +102,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function MaterialProductPage({ params }: PageProps) {
+export default async function MaterialProductPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const c = getCountry((await headers()).get('x-country'));
   // 国家门禁：新材料页 AE 专属，VN 站访问一律 404
@@ -110,11 +112,13 @@ export default async function MaterialProductPage({ params }: PageProps) {
   if (!detail) notFound();
 
   const { product, related } = detail;
+  const returnParam = (await searchParams).returnTo;
+  const returnTo = safeMaterialsReturn(typeof returnParam === 'string' ? returnParam : null);
   // 供应商图册（PDF→电子书）；无则空数组，客户端据此隐藏阅读器模块
   const catalogs = product.supplier_slug
     ? await fetchSupplierCatalogs(product.supplier_slug, c.code)
     : [];
-  const name = product.title || 'New Material';
+  const name = materialProductTitle(product);
   const catLabel = prettifyCategory(product.category);
   const productUrl = `${c.baseUrl}/materials/products/${product.id}`;
   const images = (product.image_urls.length ? product.image_urls : [product.image_url])
@@ -142,7 +146,7 @@ export default async function MaterialProductPage({ params }: PageProps) {
     ...(catLabel ? { category: catLabel } : {}),
     ...(materialSpec ? { material: materialSpec.value } : {}),
     ...(additionalProperty.length ? { additionalProperty } : {}),
-    ...(product.supplier_name ? { brand: { '@type': 'Brand', name: product.supplier_name } } : {}),
+    ...(product.model ? { model: product.model } : {}),
   };
 
   const breadcrumbJsonLd = {
@@ -151,8 +155,7 @@ export default async function MaterialProductPage({ params }: PageProps) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: c.baseUrl },
       { '@type': 'ListItem', position: 2, name: 'Materials', item: `${c.baseUrl}/materials` },
-      { '@type': 'ListItem', position: 3, name: 'New Materials', item: `${c.baseUrl}/materials/new-materials` },
-      { '@type': 'ListItem', position: 4, name, item: productUrl },
+      { '@type': 'ListItem', position: 3, name, item: productUrl },
     ],
   };
 
@@ -166,7 +169,7 @@ export default async function MaterialProductPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
       />
-      <ProductDetailClient product={product} related={related} catalogs={catalogs} />
+      <ProductDetailClient product={product} related={related} catalogs={catalogs} returnTo={returnTo} />
     </>
   );
 }

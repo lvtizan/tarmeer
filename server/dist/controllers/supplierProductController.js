@@ -23,6 +23,7 @@ const translate_1 = require("../lib/translate");
 const productJsonFields_1 = require("../lib/productJsonFields");
 const productPriceRange_1 = require("../lib/productPriceRange");
 const supplierRedact_1 = require("../lib/supplierRedact");
+const procurement = require('../lib/materialProcurement');
 const materialVideo_1 = require("../lib/materialVideo");
 // ── 公开产品 feed（中国新材料改版 spec §3.1，additive：不改动任何既有端点行为）──
 // 应用场景 slug → 存量 category 兜底映射（spec docs/plans/china-materials-revamp-spec.md §2.3）。
@@ -63,8 +64,10 @@ function mapPublicProduct(row) {
     const enDesc = (typeof description_translated === 'string' && description_translated.trim()) ? description_translated : rest.description;
     return {
         ...rest,
+        ...mask(procurement.metadata(row)),
         video_url: (0, materialVideo_1.normalizeMaterialVideoUrl)(rest.video_url),
         title: mask(enTitle),
+        original_title: mask(rest.title),
         description: supplierRedact_1.stripLeadingRedact(mask(enDesc)),
         supplier_name: supplierRedact_1.supplierPublicTitle(supplier_categories),
         supplier_logo: null,
@@ -99,14 +102,18 @@ async function listPublicProductsFeed(req, res) {
             params.push(JSON.stringify(scene), ...fallbackCats);
         }
         const q = req.query.q;
-        const shouldBalance = req.query.balanced === '1' && !category && !scene && !(q && typeof q === 'string');
+        const filters = procurement.feedFilters(req.query);
+        if (filters.error) return res.status(400).json({error: filters.error});
+        if (filters.clauses.length) where += ' AND ' + filters.clauses.join(' AND ');
+        params.push(...filters.params);
+        const shouldBalance = !filters.custom && req.query.balanced === '1' && !category && !scene && !(q && typeof q === 'string');
         const [countRows] = await database_1.default.execute(`SELECT COUNT(*) as total ${PUBLIC_PRODUCT_FROM} ${where}`, params);
         const total = countRows[0].total;
         // LIMIT/OFFSET 拼过整数校验的数字（pool.execute 传参会报错——已知坑）
         const [rows] = shouldBalance
             ? await database_1.default.query(`WITH ranked_products AS (
            SELECT ${PUBLIC_PRODUCT_SELECT},
-                  ROW_NUMBER() OVER (PARTITION BY p.supplier_profile_id ORDER BY p.id DESC) AS supplier_rank
+                  ROW_NUMBER() OVER (PARTITION BY p.supplier_profile_id ORDER BY ${filters.order}) AS supplier_rank
            ${PUBLIC_PRODUCT_FROM}
            ${where}
          )
@@ -116,7 +123,7 @@ async function listPublicProductsFeed(req, res) {
             : await database_1.default.query(`SELECT ${PUBLIC_PRODUCT_SELECT}
            ${PUBLIC_PRODUCT_FROM}
            ${where}
-           ORDER BY p.id DESC
+           ORDER BY ${filters.order}
            LIMIT ${limit} OFFSET ${offset}`, params);
         res.json({ products: rows.map(mapPublicProduct), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
     }
@@ -170,6 +177,8 @@ function normalizeCurrency(value) {
     return typeof value === 'string' && PRODUCT_CURRENCIES.includes(value) ? value : null;
 }
 function validatePrice(body) {
+    const contextError = procurement.validatePriceContext(body);
+    if (contextError) return {error:contextError};
     const price = (0, productPriceRange_1.parseProductPrice)(body.price, 'price');
     if (price.kind !== 'valid')
         return { error: price.error || 'price is required.' };
@@ -256,6 +265,7 @@ async function listProducts(req, res) {
         const __mask = (value) => supplierRedact_1.maskSupplierValue(value, __rn, __rz);
         const masked = (Array.isArray(products) ? products : []).map((p) => ({
             ...p,
+            ...__mask(procurement.metadata(p)),
             image_urls: (0, productJsonFields_1.parseJsonArray)(p.image_urls),
             video_url: (0, materialVideo_1.normalizeMaterialVideoUrl)(p.video_url),
             title: __mask(p.title),
@@ -286,6 +296,15 @@ async function listMyProducts(req, res) {
         res.status(500).json({ error: 'Failed to load products.' });
     }
 }
+async function validatePortalImages(profileId, userId, body) {
+    if (!Object.prototype.hasOwnProperty.call(body,'image_url') && !Object.prototype.hasOwnProperty.call(body,'image_urls')) return null;
+    const [profiles] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [profileId]);
+    if (!profiles.length) return 'Supplier not found.';
+    const images = Array.isArray(body.image_urls) ? body.image_urls : [body.image_url];
+    const {supplierImagePathIsOwned} = require('../lib/supplierImageOwnership');
+    for (const url of images) if (!await supplierImagePathIsOwned(profiles[0],url,null,userId)) return 'Product image must be an existing upload owned by this supplier.';
+    return null;
+}
 async function addProduct(req, res) {
     try {
         const profileId = await getProfileId(req.supplierUser.id);
@@ -298,6 +317,10 @@ async function addProduct(req, res) {
             : image_url ? [image_url] : [];
         if (urls.length === 0)
             return res.status(400).json({ error: 'At least one image is required.' });
+        const validationError = await procurement.validateProduct(database_1.default, req.body, {country:await getProfileCountry(req.supplierUser.id)});
+        if (validationError) return res.status(400).json({error: validationError});
+        const imageError = await validatePortalImages(profileId, req.supplierUser.id, req.body);
+        if (imageError) return res.status(400).json({error:imageError});
         const parsedPrice = validatePrice(req.body);
         if (parsedPrice.error)
             return res.status(400).json({ error: parsedPrice.error });
@@ -328,12 +351,17 @@ async function updateProduct(req, res) {
             return res.status(403).json({ error: 'Forbidden.' });
         const { id } = req.params;
         const { title, description, category, image_url, image_urls, sort_order, price, price_unit, price_from, title_translated, description_translated } = req.body;
-        const [existing] = await database_1.default.execute('SELECT id FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [id, profileId]);
+        const [existing] = await database_1.default.execute('SELECT * FROM supplier_products WHERE id = ? AND supplier_profile_id = ?', [id, profileId]);
         if (existing.length === 0)
             return res.status(404).json({ error: 'Product not found.' });
+        const validationError = await procurement.validateProduct(database_1.default, req.body, {partial:true, existing:existing[0], country:await getProfileCountry(req.supplierUser.id)});
+        if (validationError) return res.status(400).json({error:validationError});
+        const imageError = await validatePortalImages(profileId, req.supplierUser.id, req.body);
+        if (imageError) return res.status(400).json({error:imageError});
+        const previous = existing[0];
         const priceFields = ['price', 'price_max', 'price_unit', 'price_currency', 'price_from'];
         const hasPriceGroup = priceFields.some((field) => Object.prototype.hasOwnProperty.call(req.body, field));
-        const parsedPrice = hasPriceGroup ? validatePrice(req.body) : null;
+        const parsedPrice = hasPriceGroup ? validatePrice({...previous,...req.body}) : null;
         if (parsedPrice?.error)
             return res.status(400).json({ error: parsedPrice.error });
         const urls = Array.isArray(image_urls) && image_urls.length > 0 ? image_urls : null;
@@ -341,10 +369,11 @@ async function updateProduct(req, res) {
         const urlsJson = urls ? JSON.stringify(urls) : null;
         // 供应商门户：specs/certifications/application_scenes 只在传了数组时覆盖（COALESCE 忽略缺省，防误清空）
         const { specs, certifications, application_scenes } = req.body;
-        const commonParams = [title || null, description || null, category || null, primaryUrl, urlsJson, sort_order ?? 0];
-        const contentParams = [title_translated || null, description_translated || null, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes), id];
+        const has = k => Object.prototype.hasOwnProperty.call(req.body,k);
+        const commonParams = [has('title') ? title : previous.title, has('description') ? description : previous.description, has('category') ? category : previous.category, primaryUrl, urlsJson, sort_order ?? previous.sort_order];
+        const contentParams = [has('title_translated') ? title_translated : previous.title_translated, has('description_translated') ? description_translated : previous.description_translated, (0, productJsonFields_1.jsonArrayOrNull)(specs), (0, productJsonFields_1.jsonArrayOrNull)(certifications), (0, productJsonFields_1.jsonArrayOrNull)(application_scenes), id];
         if (hasPriceGroup) {
-            await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_max=?, price_unit=?, price_currency=?, price_from=?, title_translated=?, description_translated=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?', [...commonParams, parsedPrice.price, parsedPrice.priceMax, price_unit.trim(), normalizeCurrency(req.body.price_currency), price_from ? 1 : 0, ...contentParams]);
+            await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, price=?, price_max=?, price_unit=?, price_currency=?, price_from=?, title_translated=?, description_translated=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?', [...commonParams, parsedPrice.price, parsedPrice.priceMax, (price_unit ?? previous.price_unit).trim(), normalizeCurrency(has('price_currency') ? req.body.price_currency : previous.price_currency), (price_from ?? previous.price_from) ? 1 : 0, ...contentParams]);
         }
         else {
             await database_1.default.execute('UPDATE supplier_products SET title=?, description=?, category=?, image_url=COALESCE(?, image_url), image_urls=COALESCE(?, image_urls), sort_order=?, title_translated=?, description_translated=?, specs=COALESCE(?, specs), certifications=COALESCE(?, certifications), application_scenes=COALESCE(?, application_scenes) WHERE id=?', [...commonParams, ...contentParams]);

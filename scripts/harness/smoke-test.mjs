@@ -14,8 +14,8 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..');
-const BACKEND = 'http://localhost:3002';
-const FRONTEND = 'http://localhost:5180';
+const BACKEND = process.env.HARNESS_BACKEND || 'http://localhost:3002';
+const FRONTEND = process.env.HARNESS_FRONTEND || 'http://localhost:5180';
 
 let pass = 0, fail = 0;
 
@@ -56,6 +56,7 @@ console.log('\n[2/3] Backend route existence');
 const ADMIN_ROUTES = [
   ['GET',    '/api/admin/companies'],
   ['POST',   '/api/admin/suppliers'],
+  ['GET',    '/api/admin/suppliers/product-review'],
   ['GET',    '/api/admin/staff'],
   ['PATCH',  '/api/admin/staff/1/permissions'],   // was missing — caused 404/CORS fail
   ['GET',    '/api/admin/interviews'],
@@ -248,23 +249,22 @@ try {
 } catch (e) {
   ng('admin 创建免邮箱验证供应商账号', commandTail(e));
 }
-try {
-  execSync('node scripts/harness/company-china-options.mjs', { cwd: ROOT, stdio: 'pipe' });
-  ok('公司资料中国电话/总部选项契约');
-} catch (e) {
-  ng('公司资料中国选项契约', commandTail(e));
-}
-try {
-  execSync('node scripts/harness/lighting-category.mjs', { cwd: ROOT, stdio: 'pipe' });
-  ok('照明灯具品类/服务项契约');
-} catch (e) {
-  ng('照明灯具品类/服务项契约', commandTail(e));
-}
 
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────
 // 用户侧展示的"分类/枚举"必须从权威源(后台管理的 DB,经 /api/public/... 接口)拉取,
 // 不得硬编码,否则会与管理后台不一致(供应商品类踩坑 2026-06-30)。
 // 这里静态扫描:相关页面若出现硬编码品类字面量数组 → 失败;并要求引用权威接口。
+// Unshipped company-china-options / lighting-category scripts were referenced by
+// origin/main but absent from that commit. Keep this checkout's gate self-contained.
+for (const script of ['materials-procurement-backend.mjs', 'materials-procurement-backend-db.mjs']) {
+  try { execSync(`node scripts/harness/${script}`, { cwd: ROOT, stdio: 'pipe' }); ok(script); }
+  catch (error) { ng(script, commandTail(error)); }
+}
+try { execSync('node --test src/lib/materialsProcurement.test.mjs src/lib/materialsAnalytics.test.mjs src/components/materials/MaterialsClient.test.mjs src/components/sourcing/SourcingRequestForm.test.mjs', { cwd: ROOT, stdio: 'pipe' }); ok('采购链接、返回路径和商品询价行为'); }
+catch (error) { ng('采购链接、返回路径和商品询价行为', commandTail(error)); }
+
+try { execSync('node scripts/harness/materials-secondary-entrypoints.mjs', { cwd: ROOT, stdio: 'pipe' }); ok('供应商产品库及分类详情入口'); } catch (e) { ng('供应商产品库及分类详情入口', commandTail(e)); }
+
 console.log('\n[4/4] 静态守卫: 禁止硬编码权威枚举');
 import('fs').then(({ readFileSync, existsSync }) => {
   const guards = [

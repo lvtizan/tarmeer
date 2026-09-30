@@ -50,7 +50,7 @@ export function getSupplierProductSeries(
   categoryLabel: (category: string) => string,
 ): string {
   const specs = parseSupplierProductSpecs(product.specs);
-  const series = specs.find((spec) => /series|系列/i.test(String(spec.label || '')))?.value;
+  const series = specs.find((spec) => /collection|series|系列/i.test(String(spec.label || '')))?.value;
   if (typeof series === 'string' && series.trim()) return series.trim().slice(0, 120);
   if (product.category) return categoryLabel(product.category);
   return FALLBACK_SERIES;

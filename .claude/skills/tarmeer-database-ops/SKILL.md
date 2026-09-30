@@ -52,3 +52,15 @@ description: Tarmeer 数据库操作安全——本地库与生产 RDS 的边界
 ## 姊妹文档
 
 引用/归属字段怎么设计 → `tarmeer-country-isolation`；操作完验证 → `tarmeer-verification`。
+
+## 2026-09-30 采购询价 schema 与管理员国家边界
+- **现象**：独立 DDL 若漏跑，新询价控制器可能读写不存在字段；country 查询参数可扩大后台读取范围。
+- **根因**：迁移未绑定严格启动，国家过滤未绑定登录管理员。
+- **修复**：ensureSourcingRequestSchema 接入 autoMigrate(required)，手动预检共用同一实现并保留既有 enum/default/nullability；非 super admin 强制使用 admin.country。
+- **预防规则**：新增数据库字段先迁移、校验再上代码；必须测迁移失败不监听、幂等再执行、普通管理员 country 参数伪造；批量内容变更必须有完整行备份、并发前置比较、事务和未修改字段断言。
+
+## [2026-09-30] 公开供应商资料白名单与代采身份
+- 公开 DTO 禁止展开 `supplier_profiles.*`；只列出页面所需字段，营业执照、账号关联、创建人、内部权重及未来新增列不能自动外发。
+- 代采目录搜索只按公开品类、编号与公开 reference 匹配，不以私密公司名称作为公开探测条件；后台管理员搜索保留真实公司字段。
+- supplier fallback SEO 与公开详情同样带 country、approved、is_published；结构化 JSON 输出转义 `<`，防闭合 script。
+- AE-only 商品详情链接不得从 VN 产品库生成；非 AE 保留当地图库入口。跨页面共享组件变更必须同时查供应商产品库、分类页、主目录和搜索入口。

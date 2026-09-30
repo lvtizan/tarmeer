@@ -1,206 +1,66 @@
 'use client';
-
-// 材料搜索 Hub（/materials AE 主页）：顶部 Products/Suppliers tab + 搜索条；
-// 左侧类目目录(hover mega 浮层)；右侧未搜索=精选(HubFeatured)，搜索后=结果(HubSearchResults)。
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Search, LogIn } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
-import {
-  fetchMegaMenu,
-  searchMaterials,
-  type MegaCategory,
-  type SearchProduct,
-  type SearchSupplier,
-} from '@/lib/materialMacros';
+import { fetchMegaMenu, searchMaterials, type MegaCategory, type SearchProduct, type SearchSupplier } from '@/lib/materialMacros';
+import { mergeProcurementFilters, PROCUREMENT_FILTER_KEYS, readProcurementFilters, type ProcurementFilters as Filters } from '@/lib/materialsProcurement';
 import MegaMenuDirectory from './MegaMenuDirectory';
 import HubSearchResults from './HubSearchResults';
 import HubFeatured from './HubFeatured';
 import MaterialsClient from './MaterialsClient';
-
-type Tab = 'products' | 'suppliers';
+import { trackMaterialEvent } from '@/lib/materialsAnalytics';
+import ProcurementFilters from './ProcurementFilters';
 
 export default function MaterialsHub() {
   const country = countryFromLang(useSiteLocale().lang).code;
   const searchParams = useSearchParams();
-  // 初始 tab 从 URL 读（供应商详情页"返回"→ /materials?tab=suppliers 落到供应商 tab）
-  const [tab, setTab] = useState<Tab>(searchParams.get('tab') === 'suppliers' ? 'suppliers' : 'products');
-  const [q, setQ] = useState('');
-  const [submitted, setSubmitted] = useState('');
-  const [results, setResults] = useState<(SearchProduct | SearchSupplier)[]>([]);
-  const [total, setTotal] = useState(0);
-  const [searching, setSearching] = useState(false);
+  useEffect(() => { trackMaterialEvent('materials_directory_view', country); }, [country]);
+  const tab = searchParams.get('tab') === 'suppliers' ? 'suppliers' : 'products';
+  const filters = readProcurementFilters(searchParams);
+  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
+  const categoryToggle = useRef<HTMLButtonElement>(null);
+  const [q, setQ] = useState(filters.q || '');
   const [mega, setMega] = useState<MegaCategory[]>([]);
   const [megaLoading, setMegaLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<MegaCategory | null>(null);
-  const searchVersionRef = useRef(0);
-  const productsResultRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let on = true;
-    setMegaLoading(true);
-    fetchMegaMenu(country).then((m) => {
-      if (on) {
-        setMega(m);
-        setMegaLoading(false);
-      }
-    });
-    return () => {
-      on = false;
-    };
-  }, [country]);
-
-  useEffect(() => {
-    searchVersionRef.current += 1;
-    setSelectedCategory(null);
-    setSubmitted('');
-    setResults([]);
-    setTotal(0);
-    setSearching(false);
-  }, [country]);
-
-  useEffect(() => {
-    if (!selectedCategory || !window.matchMedia('(max-width: 1023px)').matches) return;
-    productsResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [selectedCategory]);
-
-  const runSearch = useCallback(
-    (query: string, type: Tab) => {
-      const term = query.trim();
-      setSubmitted(term);
-      if (!term) {
-        setResults([]);
-        setTotal(0);
-        return;
-      }
-      const searchVersion = searchVersionRef.current + 1;
-      searchVersionRef.current = searchVersion;
-      setSearching(true);
-      searchMaterials(type, term, country).then((r) => {
-        if (searchVersionRef.current !== searchVersion) return;
-        setResults(r.results);
-        setTotal(r.total);
-        setSearching(false);
-      });
-    },
-    [country],
-  );
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    runSearch(q, tab);
+  const [search, setSearch] = useState<{ results: (SearchProduct | SearchSupplier)[]; total: number; loading: boolean }>({ results: [], total: 0, loading: false });
+  const selectedCategory = mega.find(c => c.key === filters.category) || (filters.category ? { key: filters.category, label: filters.category.replace(/_/g, ' ') } as MegaCategory : null);
+  useEffect(() => { setQ(filters.q || ''); }, [filters.q]);
+  useEffect(() => { let active = true; setMega([]); setMegaLoading(true); fetchMegaMenu(country).then(value => { if (active) { setMega(value); setMegaLoading(false); } }); return () => { active = false; }; }, [country]);
+  useEffect(() => { let active = true; setSearch({ results: [], total: 0, loading: tab === 'suppliers' && !!filters.q }); if (tab === 'suppliers' && filters.q) searchMaterials('suppliers', filters.q, country).then(value => { if (active) setSearch({ ...value, loading: false }); }); return () => { active = false; }; }, [tab, filters.q, country]);
+  const update = (changes: Filters & { tab?: string }) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const next = mergeProcurementFilters(filters, changes);
+    for (const key of PROCUREMENT_FILTER_KEYS) { if (next[key]) params.set(key, next[key]); else params.delete(key); }
+    if (changes.tab) params.set('tab', changes.tab);
+    window.history.pushState(null, '', `/materials?${params}`);
   };
-
-  const switchTab = (t: Tab) => {
-    setTab(t);
-    if (submitted) runSearch(submitted, t);
-  };
-
-  const selectCategory = (category: MegaCategory) => {
-    // 分类浏览优先于已有的搜索结果，避免点击目录后右侧仍停留在旧搜索页。
-    setSubmitted('');
-    setResults([]);
-    setTotal(0);
-    setSearching(false);
-    setTab('products');
-    setSelectedCategory(category);
-  };
-
-  const isSearching = submitted.length > 0;
-
-  return (
-    <div className="min-h-screen bg-[#faf9f7]">
-      {/* Hero：大标题 + tab + 大搜索 */}
-      <section className="relative overflow-hidden bg-[#221d19]">
-        {/* 材料底图 + 压暗遮罩（深色渐变），保证白字/搜索可读 */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: 'url(/images/materials/suppliers-hero.webp)' }}
-          aria-hidden
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/70 to-black/80" aria-hidden />
-        <div className="relative z-10 mx-auto max-w-4xl px-4 py-10 text-center sm:px-6 lg:py-14">
-          <h1 className="font-serif text-3xl font-bold leading-tight text-white [text-wrap:balance] sm:text-4xl">
-            Materials &amp; Suppliers
-          </h1>
-
-          <div className="mt-6 mb-5 flex items-center justify-center gap-6">
-            {(
-              [
-                { key: 'products', label: 'Products' },
-                { key: 'suppliers', label: 'Suppliers' },
-              ] as { key: Tab; label: string }[]
-            ).map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => switchTab(t.key)}
-                className={`relative pb-1 text-lg font-semibold transition ${
-                  tab === t.key ? 'text-white' : 'text-white/50 hover:text-white/80'
-                }`}
-              >
-                {t.label}
-                {tab === t.key && (
-                  <span className="absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-[#b8864a]" />
-                )}
-              </button>
-            ))}
-          </div>
-          {/* 搜索条 + 供应商登录：同排（按钮跟在搜索条后面）；移动端堆叠 */}
-          <div className="flex flex-col items-stretch gap-3 sm:flex-row">
-            <form onSubmit={onSubmit} className="flex flex-1 items-center gap-2 rounded-2xl border border-white/10 bg-white p-2 shadow-xl">
-              <Search className="ml-2 h-5 w-5 shrink-0 text-stone-400" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={tab === 'products' ? 'Search materials & products…' : 'Search suppliers by name or category…'}
-                className="w-full bg-transparent px-1 py-2 text-[15px] text-[#1c1917] outline-none placeholder:text-stone-400"
-              />
-              <button
-                type="submit"
-                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[#b8864a] px-6 text-sm font-semibold text-white transition hover:bg-[#a07640]"
-              >
-                <Search className="h-4 w-4" /> Search
-              </button>
-            </form>
-            {/* 大气金边玻璃质感，hover 填金；同排跟在搜索条后面 */}
-            <Link
-              href="/supplier/auth"
-              className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-[#b8864a] bg-[#b8864a]/20 px-7 text-sm font-semibold tracking-wide text-white shadow-lg backdrop-blur-sm transition hover:bg-[#b8864a] hover:shadow-[#b8864a]/30 sm:px-8"
-            >
-              <LogIn className="h-4 w-4" /> Supplier Login
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 供应商 tab（未搜索）：全宽复用旧 MaterialsClient 的公司列表式（左筛选栏 + 全宽大行），跳过其自带 hero（Hub 顶部已有 tab/搜索） */}
-      {tab === 'suppliers' && !isSearching ? (
-        <MaterialsClient initialSuppliers={[]} embedded />
-      ) : (
-        <div className="mx-auto grid w-full max-w-[1920px] gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-7 lg:px-8 lg:py-8 2xl:gap-9">
-          <div className="relative lg:z-20 lg:self-start lg:sticky lg:top-24">
-            <MegaMenuDirectory
-              categories={mega}
-              loading={megaLoading}
-              selectedKey={selectedCategory?.key ?? null}
-              onSelectCategory={selectCategory}
-            />
-          </div>
-          <div ref={productsResultRef} id="products-results" className="scroll-mt-6">
-            {isSearching ? (
-              <HubSearchResults type={tab} results={results} total={total} query={submitted} loading={searching} />
-            ) : (
-              <HubFeatured
-                selectedCategory={selectedCategory}
-                onShowAll={() => setSelectedCategory(null)}
-              />
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  const clear = () => { setQ(''); window.history.pushState(null, '', '/materials?tab=products'); };
+  return <div className="min-h-screen bg-[#faf9f7]">
+    <section className="relative overflow-hidden bg-[#221d19]">
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url(/images/materials/suppliers-hero.webp)' }} aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/75" aria-hidden="true" />
+      <div className="relative mx-auto max-w-5xl px-4 py-5 text-center sm:px-6 lg:py-6">
+        <div className="flex items-center justify-between gap-3"><h1 className="font-serif text-2xl font-bold text-white sm:text-3xl">Materials &amp; Suppliers</h1><Link href="/supplier/auth" className="shrink-0 text-xs text-white underline underline-offset-4">Supplier login</Link></div>
+        <p className="mt-1 text-left text-xs text-white/90">Compare materials and request a quote through Tarmeer. <Link href="/mall" className="underline">Mall</Link> showcases curated collections for sourcing.</p>
+        <div className="mt-3 flex items-center gap-5" aria-label="Directory view">{(['products', 'suppliers'] as const).map(value => <button key={value} onClick={() => update({ tab: value })} aria-pressed={tab === value} className={`border-b-2 pb-1 text-sm font-semibold capitalize ${tab === value ? 'border-[#d9ae75] text-white' : 'border-transparent text-white/80'}`}>{value}</button>)}</div>
+        <form onSubmit={e => { e.preventDefault(); update({ q: q.trim() }); }} className="mt-3 flex items-center gap-2 rounded-xl bg-white p-1.5">
+          <Search className="ml-2 h-4 w-4 shrink-0 text-stone-600" /><input aria-label={tab === 'products' ? 'Search product name, category or model' : 'Search supplier category or reference'} value={q} onChange={e => setQ(e.target.value)} placeholder={tab === 'products' ? 'Search product, category or model…' : 'Search category or supplier reference…'} className="min-w-0 flex-1 bg-white px-1 py-2 text-sm text-stone-900 outline-none" />
+          <button className="rounded-lg bg-[#b8864a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a07640]">Search</button>
+        </form>
+      </div>
+    </section>
+    {tab === 'suppliers' && !filters.q ? <MaterialsClient initialSuppliers={[]} embedded /> : <div className="mx-auto grid w-full max-w-[1920px] gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[210px_minmax(0,1fr)] lg:px-8">
+      <div className="min-w-0 lg:sticky lg:top-24 lg:z-20 lg:self-start">
+        <button ref={categoryToggle} type="button" aria-expanded={mobileCategoriesOpen} aria-controls="materials-categories" onClick={() => setMobileCategoriesOpen(open => !open)} className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-left text-sm font-semibold text-stone-800 lg:hidden">Categories{selectedCategory ? ` · ${selectedCategory.label}` : ''} <span aria-hidden="true">{mobileCategoriesOpen ? '−' : '+'}</span></button>
+        <div id="materials-categories" className={mobileCategoriesOpen ? 'mt-2 lg:mt-0' : 'hidden lg:block'}><MegaMenuDirectory categories={mega} loading={megaLoading} selectedKey={filters.category || null} onSelectCategory={category => { update({ category: category.key, spec: '', tab: 'products' }); setMobileCategoriesOpen(false); if (window.matchMedia('(max-width: 1023px)').matches) categoryToggle.current?.focus(); }} /></div>
+      </div>
+      <div className="min-w-0" id="products-results">{tab === 'suppliers' ? <HubSearchResults type="suppliers" results={search.results} total={search.total} query={filters.q || ''} loading={search.loading} /> : <>
+        <ProcurementFilters filters={filters} onChange={update} onClear={clear} />
+        <HubFeatured selectedCategory={selectedCategory} filters={filters} returnTo={`/materials?${searchParams}`} onShowAll={clear} />
+      </>}</div>
+    </div>}
+  </div>;
 }

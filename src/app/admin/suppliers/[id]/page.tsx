@@ -423,14 +423,15 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
 
 interface ProductEditModalProps {
   supplierId: number;
-  product: { id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_max?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown };
+  product: { id: number; image_url?: string; title?: string; title_translated?: string | null; category?: string; description?: string | null; price?: number | string | null; price_max?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown };
   onClose: () => void;
-  onSaved: (product: { id: number; title?: string; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown }) => void;
+  onSaved: (product: { id: number; title?: string; title_translated?: string | null; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown }) => void;
   t: (en: string, zh: string) => string;
 }
 
 function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductEditModalProps) {
   const [title, setTitle] = useState(product.title || '');
+  const [titleEn, setTitleEn] = useState(product.title_translated || '');
   const [category, setCategory] = useState(product.category || '');
   const [description, setDescription] = useState(product.description || '');
   const [price, setPrice] = useState(product.price != null ? String(product.price) : '');
@@ -442,7 +443,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   // price_from 是布尔标志（价格是否显示为"起价"），不是数值
   const [priceFrom, setPriceFrom] = useState(!!product.price_from);
   const [priceError, setPriceError] = useState('');
-  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
+  const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | 'currency' | null>(null);
   const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
   const [saving, setSaving] = useState(false);
   // 描述框:默认4行(min-h),超4行随内容自动撑高
@@ -475,6 +476,8 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
         ? t('Minimum price is required and must be a positive number with up to 2 decimal places.', '最低价必填，且必须是大于 0、最多两位小数的数字。')
         : priceSubmission.field === 'unit'
           ? t('Please select a unit.', '请选择单位。')
+        : priceSubmission.field === 'currency'
+          ? t('Please select a valid currency.', '请选择有效币种。')
         : priceSubmission.reason === 'below_min'
           ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
           : t('Maximum price must be a positive number with up to 2 decimal places, or left blank.', '最高价必须是大于 0、最多两位小数的数字，或留空。');
@@ -488,6 +491,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
         method: 'PUT',
         body: JSON.stringify({
           title: title.trim() || null,
+          title_translated: titleEn.trim() || null,
           category: category || null,
           description: description.trim() || null,
           ...priceSubmission.payload,
@@ -525,8 +529,12 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
             {/* 移动端顶部小图(桌面端已在左侧大图展示) */}
             {product.image_url && <img src={resolveImageUrl(product.image_url)} alt="" className="md:hidden w-full aspect-video object-cover rounded-lg bg-stone-100" />}
             <div>
-              <label className="block text-xs font-medium text-stone-500 mb-1">{t('Title', '名称')}</label>
-              <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder={t('Product title', '产品名称')} className={inputCls} />
+              <label htmlFor="admin-product-original-title" className="block text-xs font-medium text-stone-500 mb-1">{t('Original / Chinese name', '原名称 / 中文名称')}</label>
+              <input id="admin-product-original-title" type="text" value={title} onChange={e => setTitle(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label htmlFor="admin-product-english-title" className="block text-xs font-medium text-stone-500 mb-1">{t('English product name', '英文产品名称')}</label>
+              <input id="admin-product-english-title" type="text" value={titleEn} onChange={e => setTitleEn(e.target.value)} className={inputCls} />
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-500 mb-1">{t('Category', '分类')}</label>
@@ -550,8 +558,8 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label htmlFor="admin-product-price-currency" className="block text-xs font-medium text-stone-500 mb-1">{t('Currency', '币种')}</label>
-                <select id="admin-product-price-currency" value={priceCurrency} onChange={e => setPriceCurrency(e.target.value)} className={inputCls + ' cursor-pointer'}>
-                  <option value="">{t('By country', '按国家')}</option>
+                <select id="admin-product-price-currency" value={priceCurrency} onChange={e => { setPriceCurrency(e.target.value); setPriceError(''); setPriceErrorField(null); }} className={inputCls + ' cursor-pointer'} aria-invalid={priceErrorField === 'currency'} aria-describedby={priceErrorField === 'currency' ? 'admin-product-price-error' : undefined}>
+                  <option value="">{t('Select currency', '请选择币种')}</option>
                   {PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -612,19 +620,19 @@ export default function AdminSupplierDetailPage() {
     has_physical_store?: boolean; store_address?: string; categories?: string[] | string;
     country?: string; created_at: string;
   } | null>(null);
-  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_max?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
+  const [products, setProducts] = useState<Array<{ id: number; image_url: string; title?: string; title_translated?: string | null; category?: string; description?: string | null; price?: number | string | null; price_max?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown }>>([]);
   const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number; description?: string; budget?: string }>>([]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url?: string; file_size?: number; render_status?: 'pending' | 'processing' | 'ready' | 'failed'; render_error?: string | null; catalog_visible?: number; source_sha256?: string | null; published_sha256?: string | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const emptyNewProduct = () => ({ title: '', category: '', price: '', price_max: '', price_unit: '', price_currency: '', price_from: false });
+  const emptyNewProduct = () => ({ title: '', title_translated: '', category: '', price: '', price_max: '', price_unit: '', price_currency: '', price_from: false });
   const [newProduct, setNewProduct] = useState(emptyNewProduct);
   const [newProductImages, setNewProductImages] = useState<string[]>([]);
   const [newProductExtras, setNewProductExtras] = useState<ProductExtraFields>(emptyExtraFields());
   const [newProductPriceError, setNewProductPriceError] = useState('');
-  const [newProductPriceErrorField, setNewProductPriceErrorField] = useState<'min' | 'max' | 'unit' | null>(null);
+  const [newProductPriceErrorField, setNewProductPriceErrorField] = useState<'min' | 'max' | 'unit' | 'currency' | null>(null);
   const resetNewProduct = () => { setNewProduct(emptyNewProduct()); setNewProductImages([]); setNewProductExtras(emptyExtraFields()); setNewProductPriceError(''); setNewProductPriceErrorField(null); };
   // 新增产品的品类下拉也接后台「产品分类」(子类按大类分组)，与编辑弹窗一致
   const [prodCatGroups, setProdCatGroups] = useState<Array<{ value: string; label: string; children: Array<{ value: string; label: string }> }>>([]);
@@ -643,7 +651,7 @@ export default function AdminSupplierDetailPage() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState<{ id?: number; title?: string; location?: string; year?: number; area_sqm?: number; budget?: string; description?: string; images?: string[] | string } | null>(null);
   const [togglingPublished, setTogglingPublished] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; category?: string; description?: string | null; price?: number | string | null; price_max?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<{ id: number; image_url?: string; title?: string; title_translated?: string | null; category?: string; description?: string | null; price?: number | string | null; price_max?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown } | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
@@ -823,6 +831,8 @@ export default function AdminSupplierDetailPage() {
         ? t('Minimum price is required and must be a positive number with up to 2 decimal places.', '最低价必填，且必须是大于 0、最多两位小数的数字。')
         : priceSubmission.field === 'unit'
           ? t('Please select a unit.', '请选择单位。')
+        : priceSubmission.field === 'currency'
+          ? t('Please select a valid currency.', '请选择有效币种。')
         : priceSubmission.reason === 'below_min'
           ? t('Maximum price must be greater than or equal to the minimum price.', '最高价必须大于或等于最低价。')
           : t('Maximum price must be a positive number with up to 2 decimal places, or left blank.', '最高价必须是大于 0、最多两位小数的数字，或留空。');
@@ -839,6 +849,7 @@ export default function AdminSupplierDetailPage() {
           body: JSON.stringify({
             image_url,
             title: newProduct.title.trim() || null,
+            title_translated: newProduct.title_translated.trim() || null,
             category: newProduct.category || null,
             ...priceSubmission.payload,
             sort_order: products.length + added.length,
@@ -1171,8 +1182,8 @@ export default function AdminSupplierDetailPage() {
                 />
                 {newProductImages.length > 1 && <p className="text-xs text-stone-400">{t(`${newProductImages.length} images selected. They will be added as separate product entries with the same details.`, `已选 ${newProductImages.length} 张图，将按相同信息分别新增为产品。`)}</p>}
                 <div className="flex gap-2">
-                  <input type="text" placeholder={t('Title (optional)', '名称（可选）')} value={newProduct.title} onChange={e => setNewProduct(v => ({ ...v, title: e.target.value }))} className={inputCls + ' flex-1'} />
-                  <select value={newProduct.category} onChange={e => setNewProduct(v => ({ ...v, category: e.target.value }))} className="h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]">
+                  <input type="text" aria-label={t('Original / Chinese name', '原名称 / 中文名称')} placeholder={t('Original / Chinese name', '原名称 / 中文名称')} value={newProduct.title} onChange={e => { const value = e.currentTarget.value; setNewProduct(v => ({ ...v, title: value })); }} className={inputCls + ' flex-1'} />
+                  <select value={newProduct.category} onChange={e => { const value = e.currentTarget.value; setNewProduct(v => ({ ...v, category: value })); }} className="h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A]">
                     <option value="">{t('Category', '分类')}</option>
                     {prodCatGroups.map(g => (
                       <optgroup key={g.value} label={g.label}>
@@ -1181,14 +1192,15 @@ export default function AdminSupplierDetailPage() {
                     ))}
                   </select>
                 </div>
+                <div><label htmlFor="admin-new-product-english-title" className={labelCls}>{t('English product name', '英文产品名称')}</label><input id="admin-new-product-english-title" value={newProduct.title_translated} onChange={e => { const value = e.currentTarget.value; setNewProduct(v => ({ ...v, title_translated: value })); }} className={inputCls + ' w-full'} /></div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div><label htmlFor="admin-new-product-price-min" className={labelCls}>{t('Minimum price *', '最低价 *')}</label><input id="admin-new-product-price-min" type="text" inputMode="decimal" value={newProduct.price} onChange={e => { setNewProduct(v => ({ ...v, price: e.target.value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} aria-describedby={newProductPriceErrorField === 'min' ? 'admin-new-product-price-error' : undefined} aria-invalid={newProductPriceErrorField === 'min'} className={inputCls + ' bg-white'} placeholder="0.00" /></div>
-                  <div><label htmlFor="admin-new-product-price-max" className={labelCls}>{t('Maximum price (optional)', '最高价（选填）')}</label><input id="admin-new-product-price-max" type="text" inputMode="decimal" value={newProduct.price_max} onChange={e => { setNewProduct(v => ({ ...v, price_max: e.target.value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} aria-describedby={newProductPriceErrorField === 'max' ? 'admin-new-product-price-error' : undefined} aria-invalid={newProductPriceErrorField === 'max'} className={inputCls + ' bg-white'} placeholder="0.00" /></div>
-                  <div><label htmlFor="admin-new-product-price-currency" className={labelCls}>{t('Currency', '币种')}</label><select id="admin-new-product-price-currency" value={newProduct.price_currency} onChange={e => setNewProduct(v => ({ ...v, price_currency: e.target.value }))} className={inputCls + ' bg-white'}><option value="">{t('By country', '按国家')}</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                  <div><label htmlFor="admin-new-product-price-unit" className={labelCls}>{t('Unit *', '单位 *')}</label><select id="admin-new-product-price-unit" value={newProduct.price_unit} onChange={e => { setNewProduct(v => ({ ...v, price_unit: e.target.value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} aria-describedby={newProductPriceErrorField === 'unit' ? 'admin-new-product-price-error' : undefined} aria-invalid={newProductPriceErrorField === 'unit'} className={inputCls + ' bg-white'}><option value="">{t('Select unit', '选择单位')}</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{t(u.en, u.zh)}</option>)}</select></div>
+                  <div><label htmlFor="admin-new-product-price-min" className={labelCls}>{t('Minimum price *', '最低价 *')}</label><input id="admin-new-product-price-min" type="text" inputMode="decimal" value={newProduct.price} onChange={e => { const value = e.currentTarget.value; setNewProduct(v => ({ ...v, price: value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} aria-describedby={newProductPriceErrorField === 'min' ? 'admin-new-product-price-error' : undefined} aria-invalid={newProductPriceErrorField === 'min'} className={inputCls + ' bg-white'} placeholder="0.00" /></div>
+                  <div><label htmlFor="admin-new-product-price-max" className={labelCls}>{t('Maximum price (optional)', '最高价（选填）')}</label><input id="admin-new-product-price-max" type="text" inputMode="decimal" value={newProduct.price_max} onChange={e => { const value = e.currentTarget.value; setNewProduct(v => ({ ...v, price_max: value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} aria-describedby={newProductPriceErrorField === 'max' ? 'admin-new-product-price-error' : undefined} aria-invalid={newProductPriceErrorField === 'max'} className={inputCls + ' bg-white'} placeholder="0.00" /></div>
+                  <div><label htmlFor="admin-new-product-price-currency" className={labelCls}>{t('Currency', '币种')}</label><select id="admin-new-product-price-currency" value={newProduct.price_currency} onChange={e => { const value = e.currentTarget.value; setNewProduct(v => ({ ...v, price_currency: value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} className={inputCls + ' bg-white'} aria-invalid={newProductPriceErrorField === 'currency'} aria-describedby={newProductPriceErrorField === 'currency' ? 'admin-new-product-price-error' : undefined}><option value="">{t('Select currency', '请选择币种')}</option>{PRODUCT_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                  <div><label htmlFor="admin-new-product-price-unit" className={labelCls}>{t('Unit *', '单位 *')}</label><select id="admin-new-product-price-unit" value={newProduct.price_unit} onChange={e => { const value = e.currentTarget.value; setNewProduct(v => ({ ...v, price_unit: value })); setNewProductPriceError(''); setNewProductPriceErrorField(null); }} aria-describedby={newProductPriceErrorField === 'unit' ? 'admin-new-product-price-error' : undefined} aria-invalid={newProductPriceErrorField === 'unit'} className={inputCls + ' bg-white'}><option value="">{t('Select unit', '选择单位')}</option>{PRODUCT_UNITS.map(u => <option key={u.value} value={u.value}>{t(u.en, u.zh)}</option>)}</select></div>
                 </div>
                 {newProductPriceError && <p id="admin-new-product-price-error" role="alert" className="text-xs text-red-600">{newProductPriceError}</p>}
-                <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={newProduct.price_from} onChange={e => setNewProduct(v => ({ ...v, price_from: e.target.checked }))} />{t('Show as a starting price when no maximum is provided', '未填写最高价时显示为起价')}</label>
+                <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={newProduct.price_from} onChange={e => { const value = e.currentTarget.checked; setNewProduct(v => ({ ...v, price_from: value })); }} />{t('Show as a starting price when no maximum is provided', '未填写最高价时显示为起价')}</label>
                 <ProductExtraFieldsEditor value={newProductExtras} onChange={setNewProductExtras} t={t} />
                 <div className="flex gap-2">
                   <button onClick={handleAddProduct} disabled={addingProduct || productImagesUploading} className="px-4 py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07540] disabled:opacity-50 transition">{addingProduct ? t('Adding...', '添加中...') : t('Add', '确认添加')}</button>

@@ -1,16 +1,18 @@
 import { createElement, type ReactElement } from 'react';
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
-import { formatProductPrice, type ProductPriceFields } from './supplierProductUnits.ts';
+import { formatProductPrice, normalizeProductPriceUnit, type ProductPriceFields } from './supplierProductUnits.ts';
 
-export function buildProductPriceLabel(product: ProductPriceFields, fallbackCurrency: string): string {
+export function buildProductPriceLabel(product: ProductPriceFields, _fallbackCurrency: string): string {
+  const unit = normalizeProductPriceUnit(product.price_unit, product.price_currency);
+  if (!product.price_currency || !unit) return 'Request a quote';
   return formatProductPrice(
     product.price,
-    product.price_unit,
+    unit,
     product.price_from,
-    product.price_currency || fallbackCurrency,
+    product.price_currency,
     product.price_max,
     'en',
-  );
+  ).replace(/\bpcs\b/gi, 'piece').replace(/㎡/g, 'm²') || 'Request a quote';
 }
 
 export function ProductPriceText({

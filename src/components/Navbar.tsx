@@ -101,7 +101,7 @@ export default function Navbar({
         if (Array.isArray(data?.categories)) setNavCategories(data.categories);
       })
       .catch(() => {});
-    fetch(`${API_BASE}/public/supplier-categories`)
+    fetch(`${API_BASE}/public/product-categories`)
       .then((r) => r.json())
       .then((d: unknown) => {
         const data = d as { groups?: { value: string; label: string; categories: { value: string; label: string }[] }[]; ungrouped?: { value: string; label: string }[] };
@@ -403,7 +403,7 @@ export default function Navbar({
                   })()}
                 </div>
                 <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg flex flex-wrap items-center gap-x-6 gap-y-2">
-                  <Link href="/materials" onClick={() => handleClick('/materials')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
+                  <Link href="/materials?tab=suppliers" onClick={() => handleClick('/materials?tab=suppliers')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
                     {tr.nav.allSuppliers} {'>'}
                   </Link>
                   {/* 中国新材料采购入口（AE 专属，业务转型新增） */}
@@ -614,7 +614,7 @@ export default function Navbar({
                     );
                   })}
                   <div className="border-t border-stone-200 pt-2">
-                    <Link href="/materials" onClick={() => handleClick('/materials')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
+                    <Link href="/materials?tab=suppliers" onClick={() => handleClick('/materials?tab=suppliers')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
                       {tr.nav.allSuppliers} {'>'}
                     </Link>
                     {/* 中国新材料采购入口（AE 专属，业务转型新增） */}

@@ -18,8 +18,8 @@ const HIGHLIGHTS = [
   },
   {
     icon: ShieldCheck,
-    title: 'Guaranteed locally',
-    body: 'Sourced overseas, backed here in the UAE — delivery, installation and after-sales.',
+    title: 'Sourcing support through Tarmeer',
+    body: 'Ask our team about delivery, installation and after-sales. The scope and costs are confirmed in your quote.',
   },
 ];
 

@@ -2,6 +2,9 @@
 
 import { useCallback, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { recordMaterialsPosition } from '@/lib/materialsProcurement';
+import MaterialImage from './MaterialImage';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import {
   MACRO_DEDICATED_PAGE,
@@ -13,7 +16,6 @@ import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { getMegaMenuFlyoutPlacement } from '@/lib/megaMenuFlyout';
 import { shouldCloseMegaMenu, shouldReturnToCategoryFromFlyout } from '@/lib/megaMenuFocus';
-import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 import ProductPriceLine from './ProductPriceLine';
 
 const GOLD = '#b8864a';
@@ -227,7 +229,7 @@ export default function MegaMenuDirectory({
                       {c.label}
                     </div>
                     <div className="text-xs text-stone-500">
-                      {c.productCount} products
+                      {c.productCount} product{c.productCount === 1 ? '' : 's'}
                     </div>
                   </div>
 
@@ -308,6 +310,8 @@ function MegaPanel({
   products: MacroProduct[] | undefined;
   loadingProducts: boolean;
 }) {
+  const searchParams = useSearchParams();
+  const returnTo = `/materials?${searchParams}`;
   const href = categoryHref(c);
 
   return (
@@ -322,7 +326,7 @@ function MegaPanel({
             {c.label}
           </h3>
           <p className="mt-1 text-sm text-stone-500">
-            {c.supplierCount} suppliers · {c.productCount} products
+            {c.supplierCount} supplier{c.supplierCount === 1 ? '' : 's'} · {c.productCount} product{c.productCount === 1 ? '' : 's'}
           </p>
         </div>
         <Link
@@ -388,31 +392,14 @@ function MegaPanel({
             products.map((p) => {
               const content = (
                 <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.image_url}
-                    alt={p.title}
-                    width={80}
-                    height={80}
-                    loading="lazy"
-                    className="h-20 w-20 flex-none rounded-lg object-cover ring-1 ring-stone-200 transition-transform hover:scale-[1.03]"
-                  />
+                  <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-stone-200">
+                    <MaterialImage key={p.image_url} src={p.image_url} alt={p.title || 'Supplier product'} />
+                    <Link href={`/materials/products/${p.id}?returnTo=${encodeURIComponent(returnTo)}`} onClick={recordMaterialsPosition} aria-label={`View ${p.title || `product ${p.id}`}`} className="absolute inset-0" />
+                  </div>
                   <ProductPriceLine product={p} compact />
                 </>
               );
-              return p.supplier_slug ? (
-                <Link
-                  key={p.id}
-                  href={supplierFromProductsHref(p.supplier_slug)}
-                  className="w-20 flex-none"
-                >
-                  {content}
-                </Link>
-              ) : (
-                <div key={p.id} className="w-20 flex-none">
-                  {content}
-                </div>
-              );
+              return <div key={p.id} className="w-20 flex-none">{content}</div>;
             })
           )}
         </div>
@@ -434,7 +421,7 @@ function MegaPanel({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={s.image}
-                  alt={s.name}
+                  alt={`Tarmeer sourcing partner #${s.id}`}
                   width={40}
                   height={40}
                   loading="lazy"
@@ -446,7 +433,7 @@ function MegaPanel({
                   onMouseOver={(e) => (e.currentTarget.style.color = GOLD_DARK)}
                   onMouseOut={(e) => (e.currentTarget.style.color = INK)}
                 >
-                  {s.name}
+                  Tarmeer sourcing partner #{s.id}<span className="block text-xs font-normal text-stone-600">{s.name}</span>
                 </span>
               </Link>
             ))}
@@ -494,14 +481,14 @@ function MobilePanel({ category: c }: { category: MegaCategory }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={s.image}
-                alt={s.name}
+                alt={`Tarmeer sourcing partner #${s.id}`}
                 width={36}
                 height={36}
                 loading="lazy"
                 className="h-9 w-9 flex-none rounded-full object-cover ring-1 ring-stone-200"
               />
               <span className="text-sm font-medium" style={{ color: INK }}>
-                {s.name}
+                Tarmeer sourcing partner #{s.id}<span className="block text-xs font-normal text-stone-600">{s.name}</span>
               </span>
             </Link>
           ))}

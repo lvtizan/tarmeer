@@ -163,3 +163,21 @@ test('normalizeProductPriceFields：number 同样拒绝 DECIMAL(12,2) 溢出和�
     assert.equal(productUnits.normalizeProductPriceFields({ price }).price, null);
   }
 });
+
+test('saving a numeric price requires an explicit supported currency without a country fallback', () => {
+  const input = { min: '120', max: '', unit: 'PCS', currency: '', from: false, dirty: true };
+  for (const currency of ['', 'aed', 'EUR', 'AED ', 'null']) {
+    assert.deepStrictEqual(productUnits.buildProductPriceSubmission({ ...input, currency }), {
+      ok: false, field: 'currency', reason: currency ? 'invalid' : 'required',
+    });
+  }
+  for (const currency of PRODUCT_CURRENCIES) {
+    const result = productUnits.buildProductPriceSubmission({ ...input, currency });
+    assert.equal(result.ok, true);
+    assert.equal(result.payload.price_currency, currency);
+  }
+});
+
+test('unchanged legacy price fields do not block a name-only edit or invent currency', () => {
+  assert.deepStrictEqual(productUnits.buildProductPriceSubmission({ min: '120', max: '', unit: 'PCS', currency: '', from: false, dirty: false }), { ok: true, payload: {} });
+});

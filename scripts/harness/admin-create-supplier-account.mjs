@@ -153,7 +153,7 @@ try {
   check('non-super admin cannot create a cross-country supplier', subRows[0]?.country === 'ae', JSON.stringify(subRows[0]));
 
   if (process.env.TARMEER_HTTP_TESTS === '1') {
-    const route = 'http://localhost:3002/api/admin/suppliers';
+    const route = `${process.env.HARNESS_BACKEND || 'http://localhost:3002'}/api/admin/suppliers`;
     const request = (token, body) => fetch(route, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },

@@ -31,7 +31,7 @@ const UNIT_MAP = new Map(PRODUCT_UNITS.map(u => [u.value, u]));
 
 /**
  * 供应商可选报价币种（单一真相源）。
- * 中国供应商按人民币报价是常态，站点币种（profile.country → AED/VND）只作默认值。
+ * 中国供应商按人民币报价是常态，数值报价必须显式选择币种，不按国家推断。
  * ⚠️ 后端 server/dist/controllers/supplierProductController.js 有一份同源白名单，改这里必须同步改那里。
  */
 export const PRODUCT_CURRENCIES = ['AED', 'CNY', 'USD', 'VND'] as const;
@@ -68,6 +68,14 @@ function normalizePositivePrice(value: unknown): number | null {
   return parseDecimalPrice(value)?.value ?? null;
 }
 
+/** Known legacy quotation text contains currency as well as a unit; never convert its amount. */
+export function normalizeProductPriceUnit(unit: unknown, currency: unknown): string | null {
+  if (typeof unit !== 'string' || !unit.trim()) return null;
+  const value = unit.trim();
+  if (value === '元/㎡') return currency === 'CNY' ? 'SQM' : null;
+  return value;
+}
+
 /** 把不可信 API 行中的五个价格字段收窄为公共前端契约。 */
 export function normalizeProductPriceFields(value: unknown): ProductPriceFields {
   const row = value && typeof value === 'object' && !Array.isArray(value)
@@ -77,7 +85,7 @@ export function normalizeProductPriceFields(value: unknown): ProductPriceFields 
   const hasPriceMax = row.price_max != null;
   const priceMax = hasPriceMax ? normalizePositivePrice(row.price_max) : null;
   const validRange = price !== null && (!hasPriceMax || (priceMax !== null && priceMax >= price));
-  const unit = typeof row.price_unit === 'string' ? row.price_unit.trim() : '';
+  const unit = normalizeProductPriceUnit(row.price_unit, row.price_currency);
   return {
     price: validRange ? price : null,
     price_max: validRange ? priceMax : null,
@@ -141,7 +149,7 @@ export function parseProductPriceRange(minRaw: string, maxRaw: string): ProductP
 
 export type ProductPriceSubmissionResult =
   | { ok: true; payload: Partial<ProductPriceFields> }
-  | { ok: false; field: 'min' | 'max' | 'unit'; reason: 'required' | 'invalid' | 'below_min' };
+  | { ok: false; field: 'min' | 'max' | 'unit' | 'currency'; reason: 'required' | 'invalid' | 'below_min' };
 
 /** Shared save-boundary behavior for supplier portal and both admin product editors. */
 export function buildProductPriceSubmission(input: {
@@ -157,13 +165,14 @@ export function buildProductPriceSubmission(input: {
   if (!parsed.ok) return parsed;
   const unit = input.unit.trim();
   if (!unit) return { ok: false, field: 'unit', reason: 'required' };
+  if (!isValidCurrency(input.currency)) return { ok: false, field: 'currency', reason: input.currency ? 'invalid' : 'required' };
   return {
     ok: true,
     payload: {
       price: parsed.min,
       price_max: parsed.max,
       price_unit: unit,
-      price_currency: isValidCurrency(input.currency) ? input.currency : null,
+      price_currency: input.currency,
       price_from: parsed.max == null && input.from,
     },
   };

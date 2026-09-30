@@ -1,14 +1,16 @@
 'use client';
 
-// 大类产品展示（从供应商图库聚合）→ 点产品穿透到供应商。Premium/空类 → 引导询价。
+// 分类产品直达详情，保留独立供应商与图片放大入口。
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ZoomIn } from 'lucide-react';
 import { countryFromLang } from '@/lib/country';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { fetchMacroProducts, PREMIUM_MATERIALS, type MacroProduct } from '@/lib/materialMacros';
 import Lightbox from '@/components/Lightbox';
 import ProductPriceLine from './ProductPriceLine';
+import MaterialImage from './MaterialImage';
+import { materialProductTitle } from '@/lib/materialsProcurement';
 import { supplierFromProductsHref } from '@/lib/materialsNavigation';
 
 export default function MacroProductGrid({ macroKey, label }: { macroKey: string; label: string }) {
@@ -17,7 +19,7 @@ export default function MacroProductGrid({ macroKey, label }: { macroKey: string
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const isPremium = PREMIUM_MATERIALS.some((p) => p.key === macroKey);
-  // 点产品 → 弹画廊（该产品全部图）；「查看供应商」按钮才跳供应商页
+  // 独立放大按钮打开该产品全部图片。
   const [gallery, setGallery] = useState<{ images: { url: string; title: string }[]; index: number; title: string } | null>(null);
   const openGallery = (p: MacroProduct) => {
     const urls = p.image_urls?.length ? p.image_urls : [p.image_url];
@@ -56,8 +58,8 @@ export default function MacroProductGrid({ macroKey, label }: { macroKey: string
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-stone-600">
           {isPremium
-            ? `Tell us your project and we'll share ${label.toLowerCase()} options, specs and trade pricing from our vetted China suppliers, delivered across the UAE.`
-            : 'New products land every month. Send us what you need and a specialist will source it.'}
+            ? `Tell us your project and we'll share ${label.toLowerCase()} options, specs and trade pricing through Tarmeer. Availability, delivery and service scope will be confirmed in your quote.`
+            : 'Tell Tarmeer what you need. Our team will review sourcing options and confirm availability.'}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
@@ -79,35 +81,22 @@ export default function MacroProductGrid({ macroKey, label }: { macroKey: string
 
   return (
     <div>
-      <p className="mb-6 text-[13px] text-stone-400">{total} products from our China suppliers</p>
-      {/* 瀑布流(masonry)：每张图按自然比例(w-full h-auto)，高图高/宽图宽，无上下留白——算法自适应 */}
-      <div className="columns-2 gap-4 sm:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 [column-fill:_balance]">
+      <p className="mb-6 text-[13px] text-stone-400">{total} product{total !== 1 ? 's' : ''} · Sourcing coordinated by Tarmeer</p>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {products.map((p) => (
           <div
             key={p.id}
             className="group mb-4 block break-inside-avoid overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:border-[#b8864a]/40 hover:shadow-sm"
           >
-            {/* 点图 → 弹画廊 */}
-            <button
-              type="button"
-              onClick={() => openGallery(p)}
-              className="block w-full cursor-zoom-in overflow-hidden bg-white"
-              aria-label={`View ${p.title} gallery`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={p.image_url}
-                alt={`${p.title} — ${label} from ${p.supplier_name ?? 'a China supplier'}, sourced through Tarmeer UAE`}
-                loading="lazy"
-                className="w-full h-auto transition duration-500 group-hover:scale-105"
-              />
-            </button>
+            <div className="relative aspect-[4/3] overflow-hidden bg-white">
+              <MaterialImage key={p.image_url} src={p.image_url} alt={materialProductTitle(p)} />
+              <Link href={`/materials/products/${p.id}?returnTo=${encodeURIComponent(`/materials?category=${macroKey}`)}`} aria-label={`View ${materialProductTitle(p)}`} className="absolute inset-0 focus-visible:ring-2 focus-visible:ring-[#b8864a]" />
+              <button type="button" onClick={() => openGallery(p)} aria-label={`Enlarge ${materialProductTitle(p)}`} className="absolute right-2 top-2 rounded-full bg-white/95 p-2 text-stone-800 shadow-sm"><ZoomIn className="h-4 w-4" /></button>
+            </div>
             <div className="p-3">
-              <p className="line-clamp-1 text-sm font-medium text-[#1c1917]">{p.title}</p>
+              <Link href={`/materials/products/${p.id}?returnTo=${encodeURIComponent(`/materials?category=${macroKey}`)}`} className="line-clamp-2 text-sm font-medium text-[#1c1917] hover:text-[#92652e]">{materialProductTitle(p)}</Link>
               <ProductPriceLine product={p} />
-              {p.supplier_name && (
-                <p className="mt-0.5 line-clamp-1 text-[12px] text-stone-500">{p.supplier_name}</p>
-              )}
+              <p className="mt-1 text-xs text-stone-600">Via Tarmeer · Supplier #{p.supplier_id}</p>
               {p.supplier_slug && (
                 <Link
                   href={supplierFromProductsHref(p.supplier_slug)}

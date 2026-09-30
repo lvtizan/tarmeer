@@ -108,6 +108,14 @@ async function publishProduct(partner, stagingRow, imageResolver) {
   }
   for (const country of countriesOf(partner)) {
     const lang = LANG_BY_COUNTRY[country] || defLang;
+    const title = pickText(item.title, lang, defLang);
+    const desc = pickText(item.description, lang, defLang);
+    const catPath = pickArray(item.category_path, lang, defLang);
+    const category = catPath.length ? catPath[catPath.length - 1] : (item.category || null);
+    if (!removed) {
+      const validationError = await require('./materialProcurement').validateProduct(pool, {title, category, image_url:imageUrl}, {country});
+      if (validationError) throw new Error('Product requires review: ' + validationError);
+    }
     // 用商品自身的 supplierRef 找到对应供应商（而非全局的单一供应商）
     const supplierId = await ensurePartnerSupplier(partner, country, null, supplierRef);
     const [exist] = await pool.execute(
@@ -117,10 +125,6 @@ async function publishProduct(partner, stagingRow, imageResolver) {
       if (exist[0]) await pool.execute("DELETE FROM supplier_products WHERE id=?", [exist[0].id]);
       continue;
     }
-    const title = pickText(item.title, lang, defLang);
-    const desc = pickText(item.description, lang, defLang);
-    const catPath = pickArray(item.category_path, lang, defLang);
-    const category = catPath.length ? catPath[catPath.length - 1] : (item.category || null);
     const imageUrls = JSON.stringify([imageUrl]);
     if (exist[0]) {
       await pool.execute(

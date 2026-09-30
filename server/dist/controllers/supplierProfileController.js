@@ -139,6 +139,7 @@ async function getPublicProfile(req, res) {
         const realNameZh = supplier.name_zh || '';
         const maskedProducts = (Array.isArray(products) ? products : []).map((p) => ({
             ...p,
+            ...supplierRedact_1.maskSupplierValue(require('../lib/materialProcurement').metadata(p), realName, realNameZh),
             image_urls: (0, productJsonFields_1.parseJsonArray)(p.image_urls),
             video_url: (0, materialVideo_1.normalizeMaterialVideoUrl)(p.video_url),
             title: supplierRedact_1.maskSupplierValue(p.title, realName, realNameZh),
