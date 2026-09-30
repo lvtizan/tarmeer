@@ -1,11 +1,12 @@
 'use client';
 import { useState } from 'react';
+import ProcurementSelect from './ProcurementSelect';
 import { PRODUCT_UNITS } from '@/lib/supplierProductUnits';
 import type { ProcurementFilters as Filters } from '@/lib/materialsProcurement';
 const LABELS: Record<string, string> = { q: 'Search', category: 'Category', currency: 'Currency', unit: 'Unit', origin: 'Supplier location', availability: 'Availability', material: 'Material', spec: 'Specification', lead_time_max: 'Maximum lead time', price_min: 'Minimum price', price_max: 'Maximum price', sort: 'Sort' };
 export default function ProcurementFilters({ filters, onChange, onClear }: { filters: Filters; onChange: (changes: Filters) => void; onClear: () => void }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const select = (key: keyof Filters, label: string, options: [string, string][]) => <label className="flex min-w-0 flex-col gap-1 text-xs text-stone-700">{label}<select value={filters[key] || ''} onChange={e => onChange({ [key]: e.target.value, ...(['currency', 'unit'].includes(key) ? { sort: '' } : {}) })} className="min-w-0 rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm"><option value="">Any</option>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>;
+  const select = (key: keyof Filters, label: string, options: [string, string][]) => <ProcurementSelect label={label} value={filters[key] || ''} onChange={value => onChange({ [key]: value, ...(['currency', 'unit'].includes(key) ? { sort: '' } : {}) })} options={[{ value: '', label: 'Any' }, ...options.map(([value, label]) => ({ value, label }))]} />;
   return <div className="mb-4 rounded-xl border border-stone-200 bg-white p-3">
     <button type="button" aria-expanded={mobileOpen} aria-controls="procurement-controls" onClick={() => setMobileOpen(value => !value)} className="flex w-full items-center justify-between text-sm font-semibold text-stone-800 sm:hidden">Filters &amp; sort <span aria-hidden="true">{mobileOpen ? '−' : '+'}</span></button>
     <div id="procurement-controls" className={mobileOpen ? 'mt-3 sm:mt-0' : 'hidden sm:block'}>
@@ -14,7 +15,12 @@ export default function ProcurementFilters({ filters, onChange, onClear }: { fil
       {select('availability', 'Availability (recorded)', [['uae_stock', 'UAE stock'], ['china_order', 'China order']])}
       {select('currency', 'Price currency', [['AED', 'AED'], ['USD', 'USD'], ['CNY', 'CNY'], ['VND', 'VND']])}
       {select('unit', 'Price unit', PRODUCT_UNITS.map(unit => [unit.value, unit.en.replace('pcs', 'piece').replace('㎡', 'm²')]))}
-      <label className="flex flex-col gap-1 text-xs text-stone-700">Sort<select value={filters.sort || 'relevance'} onChange={e => onChange({ sort: e.target.value })} className="rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm"><option value="relevance">Recommended / relevance</option><option value="newest">Newest</option><option value="price_asc" disabled={!filters.currency || !filters.unit}>Price: low to high</option><option value="price_desc" disabled={!filters.currency || !filters.unit}>Price: high to low</option></select></label>
+      <ProcurementSelect label="Sort" value={filters.sort || 'relevance'} onChange={value => onChange({ sort: value })} options={[
+        { value: 'relevance', label: 'Recommended / relevance' },
+        { value: 'newest', label: 'Newest' },
+        { value: 'price_asc', label: 'Price: low to high', disabled: !filters.currency || !filters.unit },
+        { value: 'price_desc', label: 'Price: high to low', disabled: !filters.currency || !filters.unit },
+      ]} />
     </div>
     <details className="mt-3 text-sm text-stone-700"><summary className="cursor-pointer font-medium">Material, budget &amp; lead time</summary><form className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4" key={JSON.stringify(filters)} onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); onChange(Object.fromEntries(['material', 'spec', 'price_min', 'price_max', 'lead_time_max'].map(k => [k, String(data.get(k) || '').trim()]))); }}>
       <label className="text-xs">Material<input name="material" defaultValue={filters.material || ''} placeholder={filters.category === 'stone' ? 'e.g. marble' : filters.category === 'furniture' ? 'e.g. oak' : 'Recorded material'} className="mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-sm" /></label>

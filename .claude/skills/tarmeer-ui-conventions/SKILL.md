@@ -70,3 +70,8 @@ description: Tarmeer UI 约束与组件复用——先找现成组件再写新�
 - 材料目录的桌面端分类导航必须在滚动时保持可达：网格侧栏容器使用 `lg:self-start lg:sticky lg:top-24`，为 64px 固定主导航留出空间；过长分类列表在视口内滚动，右侧 hover 浮层必须脱离该滚动容器以免被裁切。
 - 供应商材料库的 Collections 桌面端须用 `FilterSidebar` 的 `desktopFixed` 模式保持长列表浏览时持续可达，并传入与搜索栏错开的 `desktopFixedTop`；固定模式需在材料区结束前解除，避免进入页脚后悬浮。
 - 供应商详情页顶部 Products / Projects 标签栏依赖原生 `sticky`：从标签栏到 `body` 之间不得新增带 `overflow-x: clip/hidden` 的非根布局祖先（`html/body` 的站点级横向防溢出规则不在此限）；吸顶层在所有断点均使用不带 `backdrop-filter` 的纯色背景，避免移动 Safari（含横屏手机和平板）滚动合成时上下抖动。
+
+## 2026-09-30 公开目录下拉外观
+- 公开采购筛选使用局部 `ProcurementSelect`，白底、品牌金色选中态、箭头右侧 16px 留白。
+- 原生 select 的弹出菜单可能跟随操作系统深色外观；仅设置 select 背景不能保证选项面板颜色。
+- 自绘菜单必须保留标签、键盘选择、关闭后焦点和禁用选项；不要为局部样式修改所有后台下拉组件。
