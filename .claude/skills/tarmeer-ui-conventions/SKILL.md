@@ -79,3 +79,7 @@ description: Tarmeer UI 约束与组件复用——先找现成组件再写新�
 ## 2026-09-30 商品分类侧栏
 - 类别名称完整换行，不得 truncate/line-clamp；商品数量保持单行。
 - 分类列表保留 overflow-y-auto 滚动能力，用 scrollbar-width:none 和 WebKit 规则隐藏常驻滚动条，不能用 overflow:hidden 替代。
+
+## 2026-09-30 供应商侧栏跟随
+- sticky 放在参与主列表布局的 aside 上，不能放在与自身同高的包裹层内部。
+- 顶部留96px避开主导航；内部滚动容器高度小于视口，隐藏滚动条仍需保证最后一项及展厅入口可达。

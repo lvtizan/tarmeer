@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const source=readFileSync('src/components/materials/MaterialsClient.tsx','utf8');
+const aside=source.match(/<aside className="([^"]+)" aria-label="Supplier filters">\s*<div className="([^"]+)">/);
+assert(aside,'supplier filter sidebar exists');
+assert.match(aside[1],/self-start lg:sticky lg:top-24 lg:block/,'sticky belongs to the flex item with list-height containing block');
+assert.match(aside[1],/hidden/,'desktop-only sidebar preserves mobile controls');
+assert.match(aside[2],/max-h-\[calc\(100dvh-7rem\)\] overflow-y-auto/,'long sidebar fits viewport and remains scrollable');
+assert.match(aside[2],/\[scrollbar-width:none\] \[&::-webkit-scrollbar\]:hidden/,'scrollbar remains hidden');
+assert(!aside[2].includes('sticky'),'inner content must not stick inside same-height parent');
+console.log('6/6 PASS supplier sidebar sticky contracts');

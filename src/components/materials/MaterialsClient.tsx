@@ -367,8 +367,8 @@ export default function MaterialsClient({ initialSuppliers, showNewMaterialsEntr
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex gap-8 items-start">
         {/* Left Sidebar */}
-        <aside className="w-60 flex-shrink-0 hidden lg:block">
-          <div className="lg:sticky lg:top-24">
+        <aside className="hidden w-60 flex-shrink-0 self-start lg:sticky lg:top-24 lg:block" aria-label="Supplier filters">
+          <div className="max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 space-y-6">
               {/* Origin */}
               <div>
