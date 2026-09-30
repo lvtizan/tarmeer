@@ -147,7 +147,7 @@ export default function MegaMenuDirectory({
         style={{ backgroundColor: CREAM }}
       >
         <ul
-          className="space-y-1 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1"
+          className="space-y-1 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           onScroll={repositionActiveFlyout}
         >
           {categories.map((c) => {
@@ -223,12 +223,12 @@ export default function MegaMenuDirectory({
                   {/* Label + count */}
                   <div className="min-w-0 flex-1">
                     <div
-                      className="truncate text-sm font-medium"
+                      className="whitespace-normal break-words text-sm font-medium leading-5"
                       style={{ color: isActive ? GOLD_DARK : INK }}
                     >
                       {c.label}
                     </div>
-                    <div className="text-xs text-stone-500">
+                    <div className="whitespace-nowrap text-xs text-stone-500">
                       {c.productCount} product{c.productCount === 1 ? '' : 's'}
                     </div>
                   </div>

@@ -75,3 +75,7 @@ description: Tarmeer UI 约束与组件复用——先找现成组件再写新�
 - 公开采购筛选使用局部 `ProcurementSelect`，白底、品牌金色选中态、箭头右侧 16px 留白。
 - 原生 select 的弹出菜单可能跟随操作系统深色外观；仅设置 select 背景不能保证选项面板颜色。
 - 自绘菜单必须保留标签、键盘选择、关闭后焦点和禁用选项；不要为局部样式修改所有后台下拉组件。
+
+## 2026-09-30 商品分类侧栏
+- 类别名称完整换行，不得 truncate/line-clamp；商品数量保持单行。
+- 分类列表保留 overflow-y-auto 滚动能力，用 scrollbar-width:none 和 WebKit 规则隐藏常驻滚动条，不能用 overflow:hidden 替代。
