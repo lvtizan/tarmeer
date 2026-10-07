@@ -34,15 +34,15 @@
 - [x] Establish local MySQL/backends on localhost using local-only env; install compatible deps and baseline checks.
 - [x] Obtain production SSH access, inspect deployed commits/process cwd, back up code and survey data using server env before migration.
 - [x] Add real V7 walkthrough including role/country/capability/legacy/save-read/submit/attachments cases.
-- [x] Run node scripts/harness/smoke-test.mjs; country-walkthrough.mjs; field-attachments-test.mjs; field-edit-test.mjs; field-other-test.mjs; V7 tests. All must pass with counts.
+- [x] Run smoke-test.mjs, field-attachments-test.mjs, field-edit-test.mjs, field-other-test.mjs and V7 tests; complete Dubai-focused production country acceptance. Subsequent full VN walkthrough skipped per user steering. All executed checks pass with recorded counts.
 - [x] Run node_modules/.bin/next build exit 0; restart development server. Verify PC and phone UI and error cases.
 
 ## 5. Independent review and release — root orchestrates
 - [x] Independent round 1 specification/security; fix and repeat until clear.
 - [x] Independent round 2 fixes/quality; fix and repeat until clear.
 - [x] Independent round 3 integration/omissions; fix and repeat until clear.
-- [ ] Re-run affected validations, bump patch version, commit only feature files, fetch/rebase if needed and push main fast-forward.
-- [ ] Back up production code/schema/records; migrate on server, rsync exact changed backend files and restart API; pull/build frontend then restart Next only after successful build.
-- [ ] Verify BUILD_ID changed, health, authenticated detail and phone/PC, preserve rollback evidence. Record final test counts and three round findings.
+- [x] Re-run affected validations, bump patch version, commit only feature files, fetch/rebase if needed and push main fast-forward.
+- [x] Back up production code/schema/records; rsync exact compatible backend files and restart API; pull/build frontend and restart Next only after successful build; finally activate V7 on server with a further backup and locked legacy preservation check.
+- [x] Verify BUILD_ID changed, health, authenticated detail and phone/PC, preserve rollback evidence. Record final test counts and three round findings.
 
 最新测试范围：按用户追加要求，后续国家业务验收仅迪拜；国家隔离继续由代码审查及既有防护保证。生产按兼容后端 → 前端 → 激活 V7 顺序发布。

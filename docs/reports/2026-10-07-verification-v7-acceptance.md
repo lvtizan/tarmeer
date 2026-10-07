@@ -1,6 +1,6 @@
 # V7 访谈升级验收记录
 
-状态：本地验收通过，三轮审查通过，等待生产发布。
+状态：0.1.48 已上线；三轮审查、本地及生产验收通过。
 
 ## 范围与保留
 
@@ -33,3 +33,12 @@ AE/迪拜访谈填写及后台详情按参考 HTML 升级，服务端提取 327 
 - 生产发布前：`/tarmeer/backups/verification-v7-20261007/`（API dist、前端构建/source、35 条访谈、1 份旧 schema、18 条审计记录及原 Git HEAD/BUILD_ID）。
 - 私有认证保存在仓库外，未输出或提交。标准入口：`docs/operations/deployment-runbook.md`、AGENTS.md、前后端部署技能；先运行 `node scripts/ops/deploy-preflight.mjs`。
 - 发布顺序：兼容后端同步并重启 → 前端 pull/build 成功并重启 → SSH 使用生产 .env 激活 schema。激活再次备份且事务内验证所有旧列未改。
+
+## 生产结果
+
+- 发布 commit `daa1c4d379d87360b5303b9e9bc9c98237d4c496`；生产 Next build exit=0，前后端 online。
+- BUILD_ID：`kofLt9Ujt1Sg_Wa9uP-sb` → `yxVIBDX9bndY_VUtuZ6xe`，确认新构建运行。
+- 激活附加备份 `verification-before-v7-2026-10-07T14-37-21-854Z.json`；35/35 旧访谈逐列检查未改写，原问卷快照保留。
+- 迪拜生产 HTTP 8/8 PASS：327 字段、旧缓存兼容、ID-only 读取拒绝、保存读取零值/区域、提交、后台详情、列表区域、35 条旧快照。测试数据已单独归档并清理。
+- 公网首页、问卷、后台访谈、V7 schema 4/4 HTTP200。
+- 生产浏览器复核：V7 后台六章节、零人数及区域恢复正确；PC 1792px / 手机 320px 页面宽度匹配；手机编辑入口加载原答案，输入框白色、Next 品牌金色。浏览器验收夹具另行归档清理。
