@@ -59,13 +59,15 @@ try {
   const category = categoryRows[0]?.value;
   if (!category) throw new Error('本地库没有可用的产品子分类 seed。');
 
+  // Supplier identity must differ from product marker; privacy masking would
+  // otherwise rewrite the displayed title and yield a query absent from stored data.
   const fixtureIds = {};
   for (const country of ['ae', 'vn']) {
     const [profileResult] = await pool.execute(
       `INSERT INTO supplier_profiles
        (company_name, slug, origin, status, country, is_published, categories, weight_score)
        VALUES (?, ?, 'china', 'approved', ?, 1, ?, 999999)`,
-      [`Harness Public Price ${country.toUpperCase()}`, `${marker}-${country}`, country, JSON.stringify([category])]);
+      [`Synthetic Fixture Supplier ${country.toUpperCase()}`, `${marker}-${country}`, country, JSON.stringify([category])]);
     const profileId = Number(profileResult.insertId);
     createdProfileIds.push(profileId);
     fixtureIds[country] = {};
@@ -158,7 +160,7 @@ try {
   check('popular exposes five price fields', popular.statusCode === 200 && popular.body?.products?.length > 0 && popular.body.products.every(hasPriceContract));
   const q = String(selected.title || selected.category || '').trim().split(/\s+/)[0] || String(selected.id);
   const search = await invoke(macros.getMaterialSearch, { country: seeded.country, query: { type: 'products', q, limit: '48' } });
-  check('search exposes five price fields', search.statusCode === 200 && search.body?.results?.length > 0 && search.body.results.every(hasPriceContract));
+  check('search exposes five price fields', search.statusCode === 200 && search.body?.results?.length > 0 && search.body.results.every(hasPriceContract), `status=${search.statusCode} q=${q} title=${selected.title} results=${search.body?.results?.length}`);
   const categoryList = await invoke(macros.getMacroCategories, { country: seeded.country });
   const populated = categoryList.body?.macros?.find((macro) => Number(macro.productCount) > 0);
   check('macro category returns populated seed', categoryList.statusCode === 200 && Boolean(populated));

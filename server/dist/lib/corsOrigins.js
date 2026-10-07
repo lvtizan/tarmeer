@@ -41,7 +41,7 @@ const CORS_CONFIG = {
     allowedMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     // 允许的请求头（x-country 必须允许：VN 站客户端跨域读 www API 时带国家头做隔离，
     // 缺它会触发 CORS 预检失败 → VN portfolio 等客户端读接口全空。见 pitfalls 2026-06-26）
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-country'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-country', 'x-interview-token'],
     // 是否允许发送凭据
     credentials: true,
     // 预检请求缓存时间（秒）

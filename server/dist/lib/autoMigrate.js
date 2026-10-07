@@ -591,6 +591,7 @@ async function runAutoMigrate(options = {}) {
         }
         // Procurement receipt/idempotency columns are required before accepting traffic.
         await require('./sourcingRequestSchema').ensureSourcingRequestSchema(database_1.default);
+        await require('./verificationV7').ensureVerificationSchema(database_1.default);
         // 1. 添加缺失的字段
         for (const col of REQUIRED_COLUMNS) {
             const exists = await columnExists(col.table, col.column);

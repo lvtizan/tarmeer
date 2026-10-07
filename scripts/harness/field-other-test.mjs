@@ -14,9 +14,10 @@ function check(name, cond) {
 console.log('\n[field-other] 「其他」自定义文本显示/同步回归');
 
 const visit = readFileSync('src/app/admin/visit-records/page.tsx', 'utf8');
-check('访谈记录详情读取 ${field.key}__other', /\$\{field\.key\}__other/.test(visit));
-check('访谈记录详情渲染 otherVal', /otherVal\s*&&/.test(visit) && /\{otherVal\}/.test(visit));
-check('hasAnyData 计入 __other（只填其他的 section 不被隐藏）', /\$\{f\.key\}__other/.test(visit));
+const renderer = readFileSync('src/components/admin/VerificationRecordSections.tsx', 'utf8');
+check('访谈记录详情接入共享动态渲染器', visit.includes('<VerificationRecordSections'));
+check('访谈记录详情读取并渲染 other 自定义文本', /\$\{field\.key\}__other/.test(renderer) && renderer.includes('<RecordValue value={section.data[`${field.key}__other`]}'));
+check('只填其他的 section 不被隐藏', !renderer.includes('if (!hasAnyData) return null') && renderer.includes('sections.map'));
 
 const profile = readFileSync('src/app/admin/profile-companies/[id]/page.tsx', 'utf8');
 check('公司详情 interviewIndex 读取 ${field.key}__other', /\$\{field\.key\}__other/.test(profile));

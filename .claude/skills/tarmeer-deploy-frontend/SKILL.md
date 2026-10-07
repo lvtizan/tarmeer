@@ -19,13 +19,21 @@ description: Tarmeer 前端（Next.js）部署流程——上线 src/ 下的代�
 3. 工作区只含本次要上线的改动。
 4. `package.json` 版本号 patch +1（如 4.0.1 → 4.0.2），与功能 commit 一起提交或单独 `chore: bump version`（沿用 deploy-safety-workflow 的版本规则）。
 
+## 连接预检与备份（发布入口）
+
+先读 [`docs/operations/deployment-runbook.md`](../../../docs/operations/deployment-runbook.md)，执行 `node scripts/ops/deploy-preflight.mjs --check-config` 后再执行 `node scripts/ops/deploy-preflight.mjs` 实际只读预检，成功后先备份生产当前版本与受影响数据库表。连接配置优先仓库外 `~/.config/tarmeer/deploy.env` 或已验证 SSH 别名；禁止打印/提交密码与私钥。
+
+2026-10-07 当前开发 Mac 的 `~/.ssh/tarmeer_ecs` 不存在，`id_ed25519` 与 `kst_deploy_ed25519` 已被生产拒绝，已从本机私有 Tarmeer 项目记忆恢复既有密码认证，`~/.config/tarmeer/deploy.env`（600）现为已验证入口，实际只读预检 exit=0。本文该私钥命令是历史示例，仅在恢复并验证后可用。缺配置时明确报告，不反复猜测密钥；历史密码 fallback 只作考古，见运行手册。
+
+用户在当前任务已明确授权上线即满足发布授权，无须重复索取。预检/备份失败不得发布，也不得声称认证恢复或已上线。
+
 ## 标准流程
 
 ```bash
 git push
 ssh -i ~/.ssh/tarmeer_ecs root@47.91.108.104
 # 服务器上（Next 应用目录，可用 pm2 describe tarmeer-next 查 cwd）：
-git pull && next build && pm2 restart tarmeer-next
+git pull --ff-only && node_modules/.bin/next build && pm2 restart tarmeer-next
 ```
 
 ## 部署后必须验证（防最贵的坑）

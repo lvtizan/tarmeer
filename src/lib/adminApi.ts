@@ -1131,8 +1131,8 @@ class AdminApiClient {
     const qs = country ? `?country=${country}` : '';
     return this.request(`/interviews${qs}`);
   }
-  async getInterview(id: number) {
-    return this.request(`/interviews/${id}`);
+  async getInterview(id: number, country?: string) {
+    return this.request(`/interviews/${id}${country ? `?country=${encodeURIComponent(country)}` : ''}`);
   }
   // 供应商上架报表：日期范围 → 当天上架几家 + 按号(supplier 账号)分组哪个号传了哪几家
   async getSupplierReport(from: string, to: string, country?: string) {
@@ -1144,11 +1144,11 @@ class AdminApiClient {
     return this.request('/suppliers', { method: 'POST', body: JSON.stringify(data) });
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async updateInterview(id: number, data: Record<string, any>) {
-    return this.request(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  async updateInterview(id: number, data: Record<string, any>, country?: string) {
+    return this.request(`/interviews/${id}${country ? `?country=${encodeURIComponent(country)}` : ''}`, { method: 'PATCH', body: JSON.stringify(data) });
   }
-  async deleteInterviews(ids: number[]) {
-    return this.request('/interviews', { method: 'DELETE', body: JSON.stringify({ ids }) });
+  async deleteInterviews(ids: number[], country?: string) {
+    return this.request(`/interviews${country ? `?country=${encodeURIComponent(country)}` : ''}`, { method: 'DELETE', body: JSON.stringify({ ids }) });
   }
 
   // Field staff management
@@ -1211,6 +1211,39 @@ export const adminApi = new AdminApiClient();
 
 const FIELD_API_BASE = '/api/field';
 
+export class FieldApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = 'FieldApiError';
+  }
+}
+
+interface DraftAccess { token: string; country?: string }
+const draftAccess = new Map<number, DraftAccess>();
+const draftAccessKey = (id: number) => `field_draft_access_${id}`;
+
+function getDraftAccess(id: number): DraftAccess | undefined {
+  const cached = draftAccess.get(id);
+  if (cached) return cached;
+  const saved = safeGetItem(draftAccessKey(id));
+  if (!saved) return undefined;
+  try {
+    const parsed = JSON.parse(saved) as DraftAccess;
+    if (typeof parsed.token !== 'string' || !parsed.token) return undefined;
+    draftAccess.set(id, parsed);
+    return parsed;
+  } catch { return undefined; }
+}
+
+function draftHeaders(id: number, country?: string): Record<string, string> {
+  const access = getDraftAccess(id);
+  const selectedCountry = country || access?.country;
+  return {
+    ...(access ? { 'x-interview-token': access.token } : {}),
+    ...(selectedCountry ? { 'x-country': selectedCountry } : {}),
+  };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fieldRequest(path: string, options: RequestInit = {}): Promise<any> {
   const token = typeof window !== 'undefined'
@@ -1227,22 +1260,44 @@ async function fieldRequest(path: string, options: RequestInit = {}): Promise<an
   if (!res.ok) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const err = await res.json().catch(() => ({})) as any;
-    throw new Error(err.error || `Request failed: ${res.status}`);
+    throw new FieldApiError(err.error || `Request failed: ${res.status}`, res.status);
   }
   return res.json();
 }
 
 export const fieldApi = {
-  createDraft: () => fieldRequest('/interviews', { method: 'POST' }),
-  getDraft: (id: number) => fieldRequest(`/interviews/draft?id=${id}`),
+  createDraft: async (data?: { country?: string; schema_version?: string }) => {
+    const created = await fieldRequest('/interviews', {
+      method: 'POST',
+      ...(data ? { body: JSON.stringify(data) } : {}),
+      ...(data?.country ? { headers: { 'x-country': data.country } } : {}),
+    });
+    if (created.draft_token && Number.isInteger(created.id)) {
+      const access = { token: String(created.draft_token), country: created.country || data?.country };
+      draftAccess.set(created.id, access);
+      safeSetItem(draftAccessKey(created.id), JSON.stringify(access));
+    }
+    return created;
+  },
+  getDraft: (id: number, country?: string) => fieldRequest(`/interviews/draft?id=${id}`, { headers: draftHeaders(id, country) }),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  saveDraft: (id: number, data: Record<string, any>) =>
-    fieldRequest(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-  submit: (id: number) =>
-    fieldRequest(`/interviews/${id}/submit`, { method: 'POST' }),
+  saveDraft: (id: number, data: Record<string, any>, country?: string) =>
+    fieldRequest(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data), headers: draftHeaders(id, country) }),
+  submit: (id: number, country?: string) =>
+    fieldRequest(`/interviews/${id}/submit`, { method: 'POST', headers: draftHeaders(id, country) }),
   searchCompanies: (q: string, country?: string) =>
     fieldRequest(`/companies/search?q=${encodeURIComponent(q)}${country ? `&country=${country}` : ''}`),
-  getSurveySchema: () => fieldRequest('/survey-schema'),
+  getSurveySchema: (country?: string, version?: string) => {
+    const query = new URLSearchParams();
+    if (country) query.set('country', country);
+    if (version) query.set('version', version);
+    const qs = query.toString();
+    return fieldRequest(`/survey-schema${qs ? `?${qs}` : ''}`, { headers: country ? { 'x-country': country } : {} });
+  },
+  clearDraftAccess: (id: number) => {
+    draftAccess.delete(id);
+    safeRemoveItem(draftAccessKey(id));
+  },
   logout: () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('field_token');
@@ -1264,13 +1319,13 @@ export const fieldApi = {
     if (meta?.field_key) fd.append('field_key', meta.field_key);
     const res = await fetch(`${FIELD_API_BASE}/interviews/${id}/photos`, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...draftHeaders(id) },
       body: fd,
     });
     if (!res.ok) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const err = await res.json().catch(() => ({})) as any;
-      throw new Error(err.error || `Upload failed: ${res.status}`);
+      throw new FieldApiError(err.error || `Upload failed: ${res.status}`, res.status);
     }
     return res.json();
   },
@@ -1283,13 +1338,13 @@ export const fieldApi = {
     if (fieldKey) fd.append('field_key', fieldKey);
     const res = await fetch(`${FIELD_API_BASE}/interviews/${id}/attachments`, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...draftHeaders(id) },
       body: fd,
     });
     if (!res.ok) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const err = await res.json().catch(() => ({})) as any;
-      throw new Error(err.error || `Upload failed: ${res.status}`);
+      throw new FieldApiError(err.error || `Upload failed: ${res.status}`, res.status);
     }
     return res.json();
   },

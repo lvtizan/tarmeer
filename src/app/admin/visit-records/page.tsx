@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { adminApi, fieldApi } from '@/lib/adminApi';
 import { showConfirm } from '@/components/ui/ConfirmModal';
@@ -8,6 +8,8 @@ import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { MapPin, ExternalLink, X, ClipboardList, Trash2, FileText, Download, Pencil } from 'lucide-react';
+import VerificationRecordSections from '@/components/admin/VerificationRecordSections';
+import { parseRecordSchema, parseRecordFiles, exportRecordPayload, parseRecordServiceAreas as parseServiceAreas, type RecordServiceArea as SvcArea } from '@/components/admin/VerificationRecordModel';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface VisitRecord {
@@ -21,6 +23,7 @@ interface VisitRecord {
   submitted_at: string | null;
   created_at: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  service_areas?: unknown;
   section_9?: any;  // 服务区域（列表列展示）
 }
 
@@ -49,6 +52,9 @@ interface BindCandidate {
 
 interface VisitRecordDetail extends VisitRecord {
   country?: string;
+  schema_snapshot?: unknown;
+  schema_version?: string;
+  verification_data?: unknown;
   section_1: Record<string, string | string[]> | null;
   section_2: Record<string, string | string[]> | null;
   section_3: Record<string, string | string[]> | null;
@@ -64,27 +70,6 @@ interface VisitRecordDetail extends VisitRecord {
   location_pin?: any;  // { lat, lng, address }
   attachments?: string | AttachmentEntry[] | null;
   photos?: string | PhotoEntry[] | null;
-}
-
-interface SvcArea { emirate: string; sectors: Array<{ group: string; districts: string[] }> }
-
-// 解析服务区域（兼容旧 {emirate,group,districts} / 新 {areas:[{emirate,sectors}]}）
-function parseServiceAreas(raw: unknown): SvcArea[] {
-  if (!raw) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let obj: any = raw;
-  if (typeof raw === 'string') { try { obj = JSON.parse(raw); } catch { return []; } }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const normArea = (a: any): SvcArea => {
-    if (Array.isArray(a?.sectors)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return { emirate: String(a.emirate || ''), sectors: a.sectors.map((s: any) => ({ group: String(s.group || ''), districts: Array.isArray(s.districts) ? s.districts : [] })) };
-    }
-    const districts = Array.isArray(a?.districts) ? a.districts : (a?.district ? [String(a.district)] : []);
-    return { emirate: String(a?.emirate || ''), sectors: [{ group: String(a?.group || ''), districts }] };
-  };
-  const areas = Array.isArray(obj?.areas) ? obj.areas : ((obj?.emirate || obj?.districts || obj?.sectors) ? [obj] : []);
-  return areas.map(normArea).filter((a: SvcArea) => a.emirate || a.sectors.some(s => s.districts.length > 0));
 }
 
 // 一套区域压成一行文本（列表用）
@@ -103,7 +88,7 @@ function parseAttachments(raw: unknown): AttachmentEntry[] {
   let obj: unknown = raw;
   if (typeof raw === 'string') { try { obj = JSON.parse(raw); } catch { return []; } }
   if (!Array.isArray(obj)) return [];
-  return (obj as AttachmentEntry[]).filter(a => a && typeof a.url === 'string' && a.url.length > 0);
+  return parseRecordFiles(obj);
 }
 
 function formatBytes(bytes?: number): string {
@@ -123,49 +108,11 @@ interface EditLog {
   edited_at: string;
 }
 
-interface SchemaField {
-  key: string;
-  label: string;
-}
-
-interface SchemaSection {
-  title: string;
-  key: string;
-  fields: SchemaField[];
-}
-
 const STATUS_OPTIONS = [
   { value: '', label: 'All Status' },
   { value: 'submitted', label: 'Submitted' },
   { value: 'draft', label: 'Draft' },
 ];
-
-function parseSection(raw: unknown): Record<string, string | string[]> {
-  if (!raw) return {};
-  if (typeof raw === 'string') {
-    try { return JSON.parse(raw); } catch { return {}; }
-  }
-  return raw as Record<string, string | string[]>;
-}
-
-function FieldValue({ value }: { value: string | string[] | undefined }) {
-  if (!value || (Array.isArray(value) && value.length === 0) || value === '') {
-    return <span className="text-stone-300 text-sm">—</span>;
-  }
-  const arr = Array.isArray(value) ? value : [value];
-  if (arr.length === 1) {
-    return <span className="text-sm font-medium text-[#2c2c2c]">{arr[0]}</span>;
-  }
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {arr.map((v, i) => (
-        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-sm font-medium bg-stone-100 text-stone-700">
-          {v}
-        </span>
-      ))}
-    </div>
-  );
-}
 
 function AdminVisitRecordsContent() {
   const { t } = useAdminT();
@@ -173,13 +120,24 @@ function AdminVisitRecordsContent() {
   const searchParams = useSearchParams();
   const [records, setRecords] = useState<VisitRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [listError, setListError] = useState(false);
+  const [detailError, setDetailError] = useState(false);
+  const [schemaError, setSchemaError] = useState(false);
+  const [recordsCountry, setRecordsCountry] = useState(country);
+  const [detailCountry, setDetailCountry] = useState(country);
+  const countryRef = useRef(country);
+  useLayoutEffect(() => { countryRef.current = country; }, [country]);
+  const listRequest = useRef(0);
+  const schemaRequest = useRef(0);
+  const detailRequest = useRef(0);
+  const bindRequest = useRef(0);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detail, setDetail] = useState<VisitRecordDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-  const [activeSchema, setActiveSchema] = useState<SchemaSection[]>([]);
+  const [activeSchema, setActiveSchema] = useState<unknown>(null);
   const [schemaLoaded, setSchemaLoaded] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [deleting, setDeleting] = useState(false);
@@ -191,36 +149,37 @@ function AdminVisitRecordsContent() {
   const [bindError, setBindError] = useState(false);
   const [binding, setBinding] = useState(false);
 
-  useEffect(() => {
-    fieldApi.getSurveySchema()
-      .then((res: { schema: SchemaSection[] | null }) => {
-        if (res?.schema && Array.isArray(res.schema) && res.schema.length > 0) {
-          setActiveSchema(res.schema);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setSchemaLoaded(true));
-  }, []);
+  const loadSchema = useCallback(async () => {
+    const request = ++schemaRequest.current;
+    const requestedCountry = country;
+    setSchemaLoaded(false); setSchemaError(false); setActiveSchema(null);
+    try {
+      const res = await fieldApi.getSurveySchema(country, 'legacy') as { schema: unknown };
+      if (request === schemaRequest.current && countryRef.current === requestedCountry) setActiveSchema(res?.schema ?? null);
+    } catch { if (request === schemaRequest.current && countryRef.current === requestedCountry) setSchemaError(true); }
+    finally { if (request === schemaRequest.current && countryRef.current === requestedCountry) setSchemaLoaded(true); }
+  }, [country]);
+  useEffect(() => { void loadSchema(); }, [loadSchema]);
 
   const fetchRecords = useCallback(async () => {
-    setLoading(true);
+    const request = ++listRequest.current;
+    const requestedCountry = country;
+    setLoading(true); setListError(false);
     try {
       const data = await adminApi.getInterviews(country);
-      setRecords(data.interviews || []);
-    } catch {}
-    setLoading(false);
+      if (request === listRequest.current && countryRef.current === requestedCountry) {
+        setRecords(data.interviews || []); setRecordsCountry(requestedCountry);
+      }
+    } catch { if (request === listRequest.current && countryRef.current === requestedCountry) { setRecords([]); setRecordsCountry(requestedCountry); setListError(true); } }
+    finally { if (request === listRequest.current && countryRef.current === requestedCountry) setLoading(false); }
   }, [country]);
 
-  useEffect(() => { fetchRecords(); }, [fetchRecords]);
-
-  // Auto-open a record when navigating back from company detail (?detail=N)
   useEffect(() => {
-    const detailId = searchParams.get('detail');
-    if (detailId) {
-      openDetail(Number(detailId));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    ++detailRequest.current; ++bindRequest.current;
+    setSelectedId(null); setDetail(null); setSelected(new Set()); setEditLogs([]);
+    setBindOpen(false); setBindResults([]); setLightboxUrl(null); setSearch(''); setStatusFilter('');
+    void fetchRecords();
+  }, [fetchRecords]);
 
   const handleSelectAll = (checked: boolean) => {
     setSelected(checked ? new Set(filtered.map(r => r.id)) : new Set());
@@ -244,7 +203,7 @@ function AdminVisitRecordsContent() {
       onConfirm: async () => {
         setDeleting(true);
         try {
-          await adminApi.deleteInterviews(ids);
+          await adminApi.deleteInterviews(ids, country);
           setSelected(new Set());
           await fetchRecords();
         } catch {
@@ -256,32 +215,48 @@ function AdminVisitRecordsContent() {
   };
 
   const openDetail = async (id: number) => {
+    const request = ++detailRequest.current;
+    ++bindRequest.current;
+    const requestedCountry = country;
+    setDetailCountry(country); setDetailError(false); setEditLogs([]);
     setSelectedId(id);
     setDetail(null);
     setDetailLoading(true);
     setBindOpen(false); setBindQuery(''); setBindResults([]); setBindError(false);
     try {
-      const data = await adminApi.getInterview(id);
-      setDetail(data.interview || data);
-      setEditLogs(data.edit_logs || []);
-    } catch {}
-    setDetailLoading(false);
+      const data = await adminApi.getInterview(id, country);
+      if (request !== detailRequest.current || countryRef.current !== requestedCountry) return;
+      const record = data.interview || data;
+      if (record.country && record.country !== requestedCountry) throw new Error('Country mismatch');
+      setDetail(record); setEditLogs(data.edit_logs || []);
+    } catch { if (request === detailRequest.current && countryRef.current === requestedCountry) setDetailError(true); }
+    finally { if (request === detailRequest.current && countryRef.current === requestedCountry) setDetailLoading(false); }
   };
+
+  // Auto-open a record when navigating back from company detail (?detail=N)
+  useEffect(() => {
+    const detailId = searchParams.get('detail');
+    if (detailId && /^\d+$/.test(detailId) && Number(detailId) > 0) {
+      openDetail(Number(detailId));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 绑定公司：按访谈所属国家搜索（国家数据隔离），选中后 PATCH company_ref
   const handleBindSearch = async (q: string) => {
+    const request = ++bindRequest.current;
+    const requestedCountry = country;
     setBindQuery(q);
     setBindError(false);
-    if (!q.trim()) { setBindResults([]); return; }
+    if (!q.trim()) { setBindResults([]); setBindSearching(false); return; }
     setBindSearching(true);
     try {
       const { results } = await fieldApi.searchCompanies(q.trim(), detail?.country || country) as { results: BindCandidate[] };
-      setBindResults(results || []);
+      if (request === bindRequest.current && countryRef.current === requestedCountry) setBindResults(results || []);
     } catch {
-      setBindResults([]);
-      setBindError(true);
+      if (request === bindRequest.current && countryRef.current === requestedCountry) { setBindResults([]); setBindError(true); }
     } finally {
-      setBindSearching(false);
+      if (request === bindRequest.current && countryRef.current === requestedCountry) setBindSearching(false);
     }
   };
 
@@ -292,7 +267,8 @@ function AdminVisitRecordsContent() {
       await adminApi.updateInterview(detail.id, {
         company_ref_id: candidate.id,
         company_ref_source: candidate.source,
-      });
+      }, country);
+      if (countryRef.current !== country) return;
       setBindOpen(false); setBindQuery(''); setBindResults([]);
       await openDetail(detail.id);
       await fetchRecords();
@@ -307,7 +283,8 @@ function AdminVisitRecordsContent() {
     if (!detail || binding) return;
     setBinding(true);
     try {
-      await adminApi.updateInterview(detail.id, { company_ref_id: null });
+      await adminApi.updateInterview(detail.id, { company_ref_id: null, company_ref_source: null }, country);
+      if (countryRef.current !== country) return;
       await openDetail(detail.id);
       await fetchRecords();
     } catch {
@@ -317,19 +294,29 @@ function AdminVisitRecordsContent() {
     }
   };
 
-  const filtered = records.filter(r => {
+  const filtered = (recordsCountry === country ? records : []).filter(r => {
     if (statusFilter && r.status !== statusFilter) return false;
     if (search) {
       const q = search.toLowerCase();
       return (
-        r.company_name.toLowerCase().includes(q) ||
-        r.interviewer_name.toLowerCase().includes(q)
+        (r.company_name || '').toLowerCase().includes(q) ||
+        (r.interviewer_name || '').toLowerCase().includes(q)
       );
     }
     return true;
   });
 
   const formatDate = (s: string | null) => formatAdminDateTime(s);
+
+  const handleExport = () => {
+    if (!detail || detailCountry !== country) return;
+    const payload = exportRecordPayload(detail as unknown as Record<string, unknown>, activeSchema);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url; link.download = `tarmeer-verification-${detail.id}.json`;
+    document.body.appendChild(link); link.click(); link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   const lightbox = lightboxUrl ? (
     <div
@@ -348,26 +335,28 @@ function AdminVisitRecordsContent() {
   ) : null;
 
   // Detail view
-  if (selectedId !== null) {
+  if (selectedId !== null && detailCountry === country) {
     return (
       <div className="space-y-4">
         <button
-          onClick={() => { setSelectedId(null); setDetail(null); setLightboxUrl(null); setEditLogs([]); }}
+          onClick={() => { ++detailRequest.current; ++bindRequest.current; setSelectedId(null); setDetail(null); setLightboxUrl(null); setEditLogs([]); }}
           className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
           {t('Back to Records', '返回访谈列表')}
         </button>
 
-        {detailLoading || !detail ? (
+        {detailError ? (
+          <div role="alert" className="rounded-xl border border-red-200 bg-white p-5 text-sm text-red-600">{t('Record could not be loaded.', '记录加载失败。')} <button className="underline" onClick={() => openDetail(selectedId)}>{t('Retry', '重试')}</button></div>
+        ) : detailLoading || !detail ? (
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : (
           <>
             <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5">
               {/* Title row: company name + status badge */}
-              <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                 <div className="min-w-0">
-                  <h1 className="text-[17px] sm:text-[22px] font-bold text-[#2c2c2c] leading-snug">{detail.company_name || '—'}</h1>
+                  <h1 className="text-[17px] sm:text-[22px] font-bold text-[#2c2c2c] leading-snug break-words [overflow-wrap:anywhere]">{detail.company_name || '—'}</h1>
                   {/* 绑定状态 + 操作 */}
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {detail.company_ref_id ? (
@@ -442,7 +431,9 @@ function AdminVisitRecordsContent() {
                     </div>
                   )}
                 </div>
-                <div className="flex-shrink-0 flex items-center gap-2">
+                <div className="w-full sm:w-auto min-w-0 max-w-full flex flex-wrap items-center gap-2 print:hidden">
+                  <button type="button" onClick={handleExport} className="inline-flex items-center gap-1.5 min-h-9 px-3 rounded-lg border border-stone-200 bg-white text-xs text-stone-600"><Download size={14}/>{t('Export JSON', '导出 JSON')}</button>
+                  <button type="button" onClick={() => window.print()} className="inline-flex items-center min-h-9 px-3 rounded-lg border border-stone-200 bg-white text-xs text-stone-600">{t('Print', '打印')}</button>
                   {detail.status === 'submitted' && (
                     <a
                       href={`/field/survey?edit=${detail.id}`}
@@ -469,6 +460,7 @@ function AdminVisitRecordsContent() {
                 <div className="sm:hidden space-y-1 text-sm">
                   <div className="flex items-center gap-2 flex-wrap text-stone-600">
                     {detail.interviewer_name && <span className="font-medium text-[#2c2c2c]">{detail.interviewer_name}</span>}
+                    {detail.filled_by && <span>{t("Filled by", "填写人")}: {detail.filled_by}</span>}
                     {detail.company_name && <>
                       <span className="text-stone-300">·</span>
                       {detail.company_ref_id ? (
@@ -497,7 +489,7 @@ function AdminVisitRecordsContent() {
                 </div>
 
                 {/* Desktop: 5-col English info bar */}
-                <div className="hidden sm:flex items-start gap-0 text-sm divide-x divide-stone-100">
+                <div className="hidden sm:flex flex-wrap items-start gap-y-4 text-sm divide-x divide-stone-100">
                   <div className="pr-6">
                     <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Interviewer</div>
                     <div className="font-medium text-[#2c2c2c]">{detail.interviewer_name || '—'}</div>
@@ -546,10 +538,7 @@ function AdminVisitRecordsContent() {
 
             {/* Photos */}
             {(() => {
-              const raw = detail.photos;
-              const photos: PhotoEntry[] = raw
-                ? (typeof raw === 'string' ? JSON.parse(raw) : raw) as PhotoEntry[]
-                : [];
+              const photos = parseRecordFiles(detail.photos);
               if (photos.length === 0) return null;
               return (
                 <div className="bg-white rounded-xl border border-stone-200 p-5">
@@ -625,45 +614,14 @@ function AdminVisitRecordsContent() {
               );
             })()}
 
-            {!schemaLoaded ? (
-              <div className="flex justify-center py-4"><Spinner /></div>
-            ) : activeSchema.map(section => {
-              const sectionData = parseSection(detail[section.key as keyof VisitRecordDetail]);
-              const hasAnyData = section.fields.some(f => {
-                const v = sectionData[f.key];
-                const o = String(sectionData[`${f.key}__other`] ?? '').trim();
-                return !!o || (v && (Array.isArray(v) ? v.length > 0 : v !== ''));
-              });
-              if (!hasAnyData) return null;
-              return (
-                <div key={section.key} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
-                    <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{section.title}</h2>
-                  </div>
-                  <div className="divide-y divide-stone-50">
-                    {section.fields.map(field => {
-                      const val = sectionData[field.key];
-                      const otherVal = String(sectionData[`${field.key}__other`] ?? '').trim();
-                      const valEmpty = !val || (Array.isArray(val) ? val.length === 0 : val === '');
-                      if (valEmpty && !otherVal) return null;
-                      return (
-                        <div key={field.key} className="flex items-start gap-4 px-5 py-3.5">
-                          <div className="w-28 sm:w-28 sm:w-52 flex-shrink-0 text-sm text-stone-600 pt-0.5 leading-snug">{field.label}</div>
-                          <div className="flex-1 min-w-0">
-                            {!valEmpty && <FieldValue value={val} />}
-                            {otherVal && (
-                              <p className="mt-1 text-sm text-stone-700 break-words">
-                                <span className="text-stone-400">{t('Other', '其他')}: </span>{otherVal}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+            {parseRecordSchema(detail.schema_snapshot).length > 0 ? (
+              <VerificationRecordSections record={detail as unknown as Record<string, unknown>} schema={detail.schema_snapshot}/>
+            ) : !schemaLoaded ? <div className="flex justify-center py-4"><Spinner /></div> : (
+              <>
+                {schemaError && <p role="alert" className="text-sm text-red-600">{t('Survey labels could not be loaded. Saved answers are shown below.', '问卷标签加载失败，下方仍显示已保存的答案。')} <button onClick={loadSchema} className="underline">{t('Retry', '重试')}</button></p>}
+                <VerificationRecordSections record={detail as unknown as Record<string, unknown>} schema={activeSchema}/>
+              </>
+            )}
 
             {/* Service Area（多套） */}
             {(() => {
@@ -708,14 +666,14 @@ function AdminVisitRecordsContent() {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               let pin: any = raw;
               if (typeof raw === 'string') { try { pin = JSON.parse(raw); } catch { return null; } }
-              if (!pin?.lat || !pin?.lng) return null;
+              if (!Number.isFinite(Number(pin?.lat)) || !Number.isFinite(Number(pin?.lng)) || pin.lat == null || pin.lng == null) return null;
               return (
                 <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
                   <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
                     <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{t('Company Address Pin', '公司地址定位')}</h2>
                   </div>
                   <div className="px-5 py-3.5">
-                    {pin.address && <p className="text-sm text-[#2c2c2c] mb-1">{pin.address}</p>}
+                    {typeof pin.address === "string" && pin.address && <p className="text-sm text-[#2c2c2c] mb-1">{pin.address}</p>}
                     <a
                       href={`https://www.google.com/maps?q=${pin.lat},${pin.lng}`}
                       target="_blank"
@@ -766,7 +724,7 @@ function AdminVisitRecordsContent() {
         <div className="flex items-center gap-3">
           <MapPin className="w-5 h-5 text-[#b8864a]" />
           <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Visit Records', '访谈记录')}</h1>
-          <span className="text-sm text-stone-400">{records.length}</span>
+          <span className="text-sm text-stone-400">{recordsCountry === country ? records.length : 0}</span>
         </div>
         <div className="flex items-center gap-2">
           <a
@@ -796,7 +754,7 @@ function AdminVisitRecordsContent() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={t('Search company / staff…', '搜索公司 / 人员…')}
-          className="basis-full sm:basis-auto sm:flex-1 h-9 px-3 rounded-lg border border-stone-200 bg-stone-50 text-[15px] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white min-w-0"
+          className="basis-full sm:basis-auto sm:flex-1 h-9 px-3 rounded-lg border border-stone-200 bg-white text-[15px] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white min-w-0"
         />
         <AdminSelect
           value={statusFilter}
@@ -807,7 +765,7 @@ function AdminVisitRecordsContent() {
         />
       </div>
 
-      {selected.size > 0 && (
+      {recordsCountry === country && selected.size > 0 && (
         <div className="flex items-center justify-between px-4 py-2.5 mb-2 rounded-lg bg-red-50 border border-red-100">
           <span className="text-sm text-red-700">已选 {selected.size} 条</span>
           <button
@@ -821,8 +779,10 @@ function AdminVisitRecordsContent() {
         </div>
       )}
 
-      {loading ? (
+      {loading || recordsCountry !== country ? (
         <div className="flex justify-center py-16"><Spinner /></div>
+      ) : listError ? (
+        <div role="alert" className="py-10 text-center text-sm text-red-600">{t('Records could not be loaded.', '访谈记录加载失败。')} <button onClick={fetchRecords} className="underline">{t('Retry', '重试')}</button></div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-stone-400 text-sm">{t('No records found.', '暂无记录。')}</div>
       ) : (
@@ -834,13 +794,15 @@ function AdminVisitRecordsContent() {
                 key={r.id}
                 className={`bg-white rounded-xl border flex items-stretch cursor-pointer transition-colors ${selected.has(r.id) ? 'border-amber-300 bg-amber-50/30' : 'border-stone-200'}`}
                 onClick={() => openDetail(r.id)}
+                role="button" tabIndex={0}
+                onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); void openDetail(r.id); } }}
               >
                 {/* Checkbox — large touch target on left */}
                 <div
                   className="flex-shrink-0 flex items-center justify-center w-12"
                   onClick={e => { e.stopPropagation(); handleSelectOne(r.id, !selected.has(r.id)); }}
                 >
-                  <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
+                  <button type="button" aria-label={`${t("Select record", "选择记录")} #${r.id}`} aria-pressed={selected.has(r.id)} onKeyDown={event => event.stopPropagation()} className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
                     style={{ borderColor: selected.has(r.id) ? '#b8864a' : '#d1cdc7', backgroundColor: selected.has(r.id) ? '#b8864a' : 'white' }}
                   >
                     {selected.has(r.id) && (
@@ -848,7 +810,7 @@ function AdminVisitRecordsContent() {
                         <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
-                  </div>
+                  </button>
                 </div>
 
                 {/* Card content */}
@@ -882,8 +844,8 @@ function AdminVisitRecordsContent() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden sm:block bg-white rounded-xl border border-stone-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="hidden sm:block bg-white rounded-xl border border-stone-200 overflow-x-auto">
+            <table className="w-full min-w-[900px] text-sm">
               <thead>
                 <tr className="border-b border-stone-100 text-left">
                   <th className="px-4 py-3">
@@ -933,7 +895,7 @@ function AdminVisitRecordsContent() {
                     </td>
                     <td className="px-4 py-3 text-stone-600 max-w-[260px]">
                       {(() => {
-                        const areas = parseServiceAreas(r.section_9);
+                        const areas = parseServiceAreas(r.service_areas ?? r.section_9);
                         if (areas.length === 0) return <span className="text-stone-300">—</span>;
                         return (
                           <div className="space-y-0.5">

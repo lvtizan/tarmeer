@@ -12,6 +12,7 @@ exports.createStaff = createStaff;
 exports.toggleStaff = toggleStaff;
 exports.updateStaffPermissions = updateStaffPermissions;
 const database_1 = __importDefault(require("../config/database"));
+const verification = require("../lib/verificationV7");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const STAFF_VALID_COUNTRIES = new Set(['ae', 'vn', 'sa']);
 // 自动补列（幂等）：外勤人员按国家隔离需要 admin_users.country
@@ -31,11 +32,11 @@ async function ensureStaffCountryColumn() {
 ensureStaffCountryColumn();
 // GET /api/admin/interviews
 async function listInterviews(req, res) {
-    const country = req.query.country || req.country || 'ae';
+    const country = verification.requestCountry(req);
     try {
         const [rows] = await database_1.default.execute(`
       SELECT ci.id, ci.company_name, ci.status, ci.submitted_at, ci.created_at,
-             ci.company_ref_id, ci.company_ref_source, ci.section_9,
+             ci.company_ref_id, ci.company_ref_source, ci.section_9, ci.schema_version, ci.country, ci.verification_data, ci.schema_snapshot,
              COALESCE(au.full_name, '—') AS interviewer_name,
              CASE ci.company_ref_source
                WHEN 'uae'     THEN uc.name_en
@@ -50,7 +51,20 @@ async function listInterviews(req, res) {
       ORDER BY ci.updated_at DESC
       LIMIT 200
     `, [country]);
-        res.json({ interviews: rows });
+        res.json({ interviews: rows.map(row=> {
+            const {schema_snapshot,...item}=row;
+            let service_areas=null;
+            if(row.schema_version===verification.VERSION) {
+                const snapshot=verification.parseJSON(schema_snapshot);
+                const fields=(snapshot?.sections||[]).flatMap(section=>section.fields||[]);
+                // Snapshots created before this display metadata was added keep their answers.
+                const areaField=fields.find(field=>field.role==='service_areas') || fields.find(field=>field.key==='areas');
+                const data=verification.parseJSON(row.verification_data)||{};
+                const areas=data[areaField?.key || 'areas'];
+                service_areas=Array.isArray(areas)?areas:[];
+            }
+            return {...item,service_areas};
+        }) });
     }
     catch (e) {
         res.status(500).json({ error: 'Failed to list interviews.' });
@@ -74,7 +88,7 @@ async function getInterview(req, res) {
       WHERE ci.id = ?
     `, [id]);
         const items = rows;
-        if (items.length === 0)
+        if (items.length === 0 || !verification.canAccessCountry(req,items[0].country))
             return res.status(404).json({ error: 'Not found.' });
         // Fetch edit logs
         const [logRows] = await database_1.default.execute(
@@ -82,45 +96,55 @@ async function getInterview(req, res) {
              FROM interview_edit_logs WHERE interview_id = ? ORDER BY edited_at ASC`,
             [id]
         );
-        res.json({ interview: items[0], edit_logs: logRows });
+        res.json({ interview: verification.sanitizeInterview(items[0]), edit_logs: logRows });
     }
     catch (e) {
         res.status(500).json({ error: 'Failed to fetch interview.' });
     }
 }
 // PATCH /api/admin/interviews/:id — super admin edit
-async function editInterview(req, res) {
-    const { id } = req.params;
-    const allowed = ['company_name', 'company_ref_id', 'company_ref_source', 'section_1', 'section_2', 'section_3',
-        'section_4', 'section_5', 'section_6', 'section_7', 'section_8', 'section_9'];
-    const fields = {};
-    for (const key of allowed) {
-        if (req.body[key] !== undefined) {
-            fields[key] = typeof req.body[key] === 'object'
-                ? JSON.stringify(req.body[key])
-                : req.body[key];
-        }
-    }
-    if (Object.keys(fields).length === 0)
-        return res.json({ ok: true });
+async function editInterview(req,res) {
+    const {id}=req.params;
+    let db,committed=false;
     try {
-        // 绑定/改绑公司时按被绑定公司同步国家归属（国家数据隔离规则）
-        if (fields.company_ref_id) {
-            const source = fields.company_ref_source || 'uae';
-            const table = source === 'profile' ? 'company_profiles' : 'uae_companies';
-            const [refRows] = await database_1.default.execute(`SELECT country FROM ${table} WHERE id = ? LIMIT 1`, [fields.company_ref_id]);
-            const refCountry = refRows[0]?.country;
-            if (refCountry === 'ae' || refCountry === 'vn' || refCountry === 'sa') {
-                fields.country = refCountry;
-            }
+        db=await database_1.default.getConnection();
+        await db.beginTransaction();
+        const [rows]=await db.execute('SELECT * FROM company_interviews WHERE id = ? LIMIT 1 FOR UPDATE',[id]);
+        const current=rows[0];
+        if(!current || !verification.canAccessCountry(req,current.country)) return res.status(404).json({error:'Interview not found.'});
+        const v7=current.schema_version===verification.VERSION;
+        const allowed=['company_name','company_ref_id','company_ref_source',...Array.from({length:9},(_,i)=>`section_${i+1}`)];
+        const fields={};
+        if(v7 && Object.keys(req.body).some(k=>/^section_[1-9]$/.test(k))) return res.status(400).json({error:'V7 answers must use verification_data.'});
+        for(const key of allowed) if(req.body[key]!==undefined && !(v7 && key==='company_name')) fields[key]=typeof req.body[key]==='object' && req.body[key]!==null ? JSON.stringify(req.body[key]) : req.body[key];
+        if(req.body.verification_data!==undefined) {
+            if(!v7) return res.status(400).json({error:'This record uses the legacy survey.'});
+            if(!req.body.verification_data || typeof req.body.verification_data!=='object' || Array.isArray(req.body.verification_data)) return res.status(400).json({error:'Verification answers must be an object.'});
+            const data={...(verification.parseJSON(current.verification_data)||{}),...req.body.verification_data};
+            const snapshot=verification.parseJSON(current.schema_snapshot);
+            const error=verification.validateAnswers(data,snapshot,current.status==='submitted');
+            if(error) return res.status(400).json({error});
+            fields.verification_data=JSON.stringify(data);
+            const companyField=snapshot.sections.flatMap(s=>s.fields).find(f=>f.role==='company_name');
+            if(companyField && data[companyField.key]!==undefined) fields.company_name=String(data[companyField.key]).slice(0,200);
         }
-        const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');
-        await database_1.default.execute(`UPDATE company_interviews SET ${setClauses} WHERE id = ?`, [...Object.values(fields), id]);
-        res.json({ ok: true });
-    }
-    catch (e) {
-        res.status(500).json({ error: 'Failed to update interview.' });
-    }
+        const refId=req.body.company_ref_id===undefined?current.company_ref_id:req.body.company_ref_id;
+        const source=req.body.company_ref_source===undefined?current.company_ref_source:req.body.company_ref_source;
+        if(refId && (req.body.company_ref_id!==undefined||req.body.company_ref_source!==undefined)) {
+            if(!['profile','uae'].includes(source)) return res.status(400).json({error:'Company reference source is required.'});
+            const table=source==='profile'?'company_profiles':'uae_companies';
+            const [refs]=await database_1.default.execute(`SELECT country FROM ${table} WHERE id = ? LIMIT 1`,[refId]);
+            if(refs[0]?.country!==current.country) return res.status(400).json({error:'Company belongs to a different country or does not exist.'});
+        }
+        if(!Object.keys(fields).length) return res.json({ok:true});
+        {
+            await db.execute(`UPDATE company_interviews SET ${Object.keys(fields).map(k=>`${k} = ?`).join(', ')} WHERE id = ?`,[...Object.values(fields),id]);
+            await db.execute(`INSERT INTO interview_edit_logs (interview_id,editor_id,editor_name,snapshot_before,edit_summary) VALUES (?,?,?,?,?)`,[id,req.adminId||0,req.admin?.full_name||'—',JSON.stringify(verification.sanitizeInterview(current)),`Admin updated: ${Object.keys(fields).join(', ')}`]);
+            await db.commit(); committed=true;
+        }
+        res.json({ok:true});
+    } catch(e) {console.error('editInterview:',e);res.status(500).json({error:'Failed to update interview.'});}
+    finally {if(db) {if(!committed) await db.rollback();db.release();}}
 }
 // DELETE /api/admin/interviews — bulk delete by ids[]
 async function deleteInterviews(req, res) {
@@ -132,8 +156,9 @@ async function deleteInterviews(req, res) {
         return res.status(400).json({ error: 'No valid ids' });
     try {
         const placeholders = safe.map(() => '?').join(',');
-        await database_1.default.execute(`DELETE FROM company_interviews WHERE id IN (${placeholders})`, safe);
-        res.json({ ok: true, deleted: safe.length });
+        const country=verification.requestCountry(req);
+        const [result]=await database_1.default.execute(`DELETE FROM company_interviews WHERE id IN (${placeholders}) AND country = ?`, [...safe,country]);
+        res.json({ ok: true, deleted: result.affectedRows });
     }
     catch (e) {
         res.status(500).json({ error: 'Failed to delete interviews.' });

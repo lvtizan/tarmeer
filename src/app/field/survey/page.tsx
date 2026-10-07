@@ -10,6 +10,8 @@ import MultiSelectDropdown from '@/components/ui/MultiSelectDropdown';
 import WatermarkCamera, { type CapturedPhoto } from '@/components/field/WatermarkCamera';
 import MapPinModal, { type PinResult } from '@/components/field/MapPinModal';
 import { UAE_EMIRATES } from '@/lib/uae-locations';
+import VerificationSurvey from '@/components/field/verification-survey';
+import { captureVerificationAuth, getVerificationCountry, parseVerificationData, recoverVerificationAuthentication, restoreStoredVerificationDraft, verificationSignInUrl, verificationUnauthorized, type VerificationRecord, type VerificationSchema } from '@/lib/verification';
 
 interface SurveyField {
   key: string;
@@ -68,9 +70,10 @@ interface DraftData {
   [key: string]: unknown;
 }
 
-export default function FieldSurveyPage() {
+function LegacyFieldSurveyPage() {
   const router = useRouter();
   const [draftId, setDraftId] = useState<number | null>(null);
+  const [authExpired, setAuthExpired] = useState(false);
   const [filledBy, setFilledBy] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [companyRefId, setCompanyRefId] = useState<number | null>(null);
@@ -101,11 +104,11 @@ export default function FieldSurveyPage() {
   useEffect(() => {
     (async () => {
       try {
-        const { schema: remoteSchema } = await fieldApi.getSurveySchema() as { schema: SurveySection[] | null };
+        const { schema: remoteSchema } = await fieldApi.getSurveySchema(getVerificationCountry(), 'legacy') as { schema: SurveySection[] | null };
         if (remoteSchema && Array.isArray(remoteSchema) && remoteSchema.length > 0) {
           setSchema(remoteSchema);
         }
-      } catch { /* schema unavailable */ }
+      } catch (error) { if (verificationUnauthorized(error)) setAuthExpired(true); }
 
       // 编辑模式：?edit=<id> —— 修改已提交问卷，必须是外勤人员（field_staff/super_admin）登录方可。
       const editId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('edit') : null;
@@ -141,7 +144,7 @@ export default function FieldSurveyPage() {
           }
         }
         if (!loaded) {
-          const { id } = await fieldApi.createDraft() as { id: number };
+          const { id } = await fieldApi.createDraft({ country: getVerificationCountry(), schema_version: 'legacy' }) as { id: number };
           setDraftId(id);
           if (typeof window !== 'undefined') localStorage.setItem('field_draft_id', String(id));
         }
@@ -232,7 +235,8 @@ export default function FieldSurveyPage() {
         field_key: fieldKey,
       });
       setPhotos(prev => prev.map((p) => p._id === photoId ? { ...p, url, uploading: false } : p));
-    } catch {
+    } catch (error) {
+      if (verificationUnauthorized(error)) setAuthExpired(true);
       setPhotos(prev => prev.map((p) => p._id === photoId ? { ...p, uploading: false, error: 'Upload failed' } : p));
     }
   }
@@ -245,7 +249,8 @@ export default function FieldSurveyPage() {
       try {
         const result = await fieldApi.uploadAttachment(draftId, file, fieldKey);
         setAttachments(prev => prev.map(a => a._id === attId ? { ...a, url: result.url, uploading: false } : a));
-      } catch {
+      } catch (error) {
+        if (verificationUnauthorized(error)) setAuthExpired(true);
         setAttachments(prev => prev.map(a => a._id === attId ? { ...a, uploading: false, error: 'Upload failed' } : a));
       }
     }
@@ -272,7 +277,9 @@ export default function FieldSurveyPage() {
           ...(filledByArg !== undefined ? { filled_by: filledByArg } : {}),
         });
         setSaveStatus('saved');
-      } catch {
+        setAuthExpired(false);
+      } catch (error) {
+        if (verificationUnauthorized(error)) setAuthExpired(true);
         setSaveStatus('idle');
       }
     }, 500);
@@ -379,7 +386,8 @@ export default function FieldSurveyPage() {
       }
       setSubmitted(true);
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Failed to submit');
+      if (verificationUnauthorized(e)) setAuthExpired(true);
+      else alert(e instanceof Error ? e.message : 'Failed to submit');
     } finally {
       setIsSubmitting(false);
     }
@@ -458,6 +466,7 @@ export default function FieldSurveyPage() {
       </div>
 
       <div className="px-4 pt-6 space-y-8 max-w-lg mx-auto">
+        {authExpired && <div role="alert" className="rounded-2xl border border-amber-200 bg-white p-4 text-sm text-amber-900">Your session expired. Your answers remain in this form. <a href={verificationSignInUrl(editingInterviewId)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Sign in in a new tab</a>, then return here and retry your save, upload or submission.{draftId && !editingInterviewId && <button type="button" className="mt-3 rounded-xl bg-[#b8864a] px-4 py-2 text-white hover:bg-[#a07640]" onClick={()=>triggerSave(draftId,companyName,companyRefId,companyRefSource,sections,serviceAreas,locationPin,filledBy)}>Retry save</button>}</div>}
         {/* 公司名称 */}
         <div>
           <label className="block text-sm font-medium text-stone-500 mb-2">
@@ -871,4 +880,79 @@ export default function FieldSurveyPage() {
       )}
     </div>
   );
+}
+
+
+export default function FieldSurveyPage() {
+  const router = useRouter();
+  const [state, setState] = useState<{legacy:boolean;schema?:VerificationSchema;record?:VerificationRecord;editingId:number|null}|null>(null);
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setError('');
+    const selectedAuth = captureVerificationAuth(localStorage);
+    const editQuery = new URLSearchParams(window.location.search).get('edit');
+    const authReturnEditId = editQuery && Number.isSafeInteger(Number(editQuery)) && Number(editQuery) > 0 ? Number(editQuery) : null;
+    void (async () => {
+      const country = getVerificationCountry();
+      const rawEdit = new URLSearchParams(window.location.search).get('edit');
+      const editingId = rawEdit ? Number(rawEdit) : null;
+      if (rawEdit && (!Number.isSafeInteger(editingId) || Number(editingId) <= 0)) throw new Error('Invalid interview ID.');
+      if (editingId && !localStorage.getItem('field_token') && !localStorage.getItem('admin_token')) {
+        router.replace(`/field/login?return=${encodeURIComponent(`/field/survey?edit=${editingId}`)}`); return;
+      }
+      let record: VerificationRecord | null = null;
+      if (editingId) {
+        const response = await fieldApi.loadInterview(editingId) as {interview:VerificationRecord|null};
+        record = response.interview;
+        if (!record) throw new Error('Interview not found.');
+      } else {
+        record = await restoreStoredVerificationDraft(localStorage, country, id => fieldApi.getDraft(id), fieldApi.clearDraftAccess);
+      }
+      if (record?.country && record.country !== country) {
+        if (editingId) throw new Error('This interview belongs to another country.');
+        localStorage.setItem(`field_draft_id_${record.country}`, String(record.id));
+        localStorage.removeItem('field_draft_id');
+        record = null;
+      }
+      if (record) {
+        if (!editingId) localStorage.setItem('field_draft_id', String(record.id));
+        const snapshot = typeof record.schema_snapshot === 'string' ? JSON.parse(record.schema_snapshot) : record.schema_snapshot;
+        if (snapshot && !Array.isArray(snapshot) && snapshot.sections && snapshot.version) {
+          parseVerificationData(record.verification_data);
+          const evidence = typeof record.attachments === 'string' ? JSON.parse(record.attachments) : record.attachments;
+          if (evidence != null && (!Array.isArray(evidence) || evidence.some(item => !item || typeof item.name !== 'string' || typeof item.url !== 'string'))) throw new Error('Saved attachments are invalid. Contact an administrator.');
+          if (snapshot.country !== country) throw new Error('Saved schema country does not match this site.');
+          if (active) setState({legacy:false,schema:snapshot,record,editingId});
+          return;
+        }
+        if (record.schema_version && record.schema_version !== 'legacy') throw new Error('The saved verification schema is unavailable. Contact an administrator.');
+        if (active) setState({legacy:true,editingId}); return;
+      }
+      const response = await fieldApi.getSurveySchema(country, 'tarmeer-verification-v7') as {schema:VerificationSchema|unknown[]|null};
+      if (!response.schema || Array.isArray(response.schema)) {
+        if (active) setState({legacy:true,editingId}); return;
+      }
+      const schema = response.schema;
+      if (!schema.sections?.length || schema.country !== country) throw new Error('The verification schema is invalid for this country.');
+      if (!active) return;
+      const created = await fieldApi.createDraft({country,schema_version:schema.version}) as VerificationRecord & {draft?:VerificationRecord};
+      const draft = created.draft || created;
+      if (!draft.id) throw new Error('Unable to create a verification draft.');
+      localStorage.setItem(`field_draft_id_${country}`,String(draft.id));
+      localStorage.setItem('field_draft_id',String(draft.id));
+      if (active) setState({legacy:false,schema,record:draft,editingId});
+    })().catch(e => {
+      if (!active) return;
+      const signInUrl = recoverVerificationAuthentication(e, localStorage, selectedAuth, authReturnEditId);
+      if (signInUrl) { router.replace(signInUrl); return; }
+      setError(e instanceof Error ? e.message : 'Unable to load the form. Please retry.');
+    });
+    return () => {active=false;};
+  }, [router,retry]);
+  if(error) return <div className="flex min-h-screen items-center justify-center px-4"><div role="alert" className="max-w-md rounded-2xl border border-red-200 bg-white p-6"><h1 className="mb-3 text-xl font-semibold">Unable to load verification</h1><p className="mb-4 break-words text-sm text-red-700">{error}</p><button className="rounded-xl bg-[#b8864a] px-4 py-2 text-white hover:bg-[#a07640]" onClick={()=>setRetry(x=>x+1)}>Retry</button></div></div>;
+  if(!state) return <div role="status" className="flex min-h-screen items-center justify-center text-stone-500">Loading verification…</div>;
+  if(state.legacy) return <LegacyFieldSurveyPage/>;
+  return <VerificationSurvey schema={state.schema!} record={state.record!} editingId={state.editingId}/>;
 }

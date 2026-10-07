@@ -10,7 +10,8 @@
  * 分别查询，断言数据落入正确的国家桶。结束后清理测试数据。
  */
 
-import { execSync, spawn } from 'child_process';
+import { execFileSync, spawn } from 'child_process';
+import { createRequire } from 'node:module';
 import { randomUUID } from 'crypto';
 import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -18,6 +19,9 @@ import path from 'path';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const SERVER_DIR = path.join(ROOT, 'server');
+const require = createRequire(import.meta.url);
+require(path.join(SERVER_DIR, 'node_modules/dotenv')).config({ path: path.join(SERVER_DIR, '.env') });
+if (process.env.DB_HOST !== 'localhost') throw new Error('Country walkthrough requires DB_HOST=localhost.');
 const SERVER_ENTRY = path.join(ROOT, 'scripts/harness/start-isolated-backend.cjs');
 const SAFE_PORT = 3312;
 const API = `http://127.0.0.1:${SAFE_PORT}/api`;
@@ -95,7 +99,7 @@ function knownBug(label, detail) {
 }
 
 function sql(query) {
-  return execSync(`mysql -u root -proot123 tarmeer -N -e ${JSON.stringify(query)} 2>/dev/null`, { encoding: 'utf8' }).trim();
+  return execFileSync('mysql', ['-h', 'localhost', '-u', process.env.DB_USER || 'root', process.env.DB_NAME || 'tarmeer', '-N', '-e', query], { encoding: 'utf8', env: { ...process.env, MYSQL_PWD: process.env.DB_PASSWORD || '' }, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 }
 
 async function req(method, path, body, token) {
@@ -103,6 +107,7 @@ async function req(method, path, body, token) {
     method,
     headers: {
       'Content-Type': 'application/json',
+      ...(body?.country ? { 'x-country': body.country } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -350,7 +355,7 @@ console.log('[UC10] VN 供应商注册（+84 手机号）→ supplier_profiles.c
 // ─── UC11 实地调研 → company_interviews.country ─────────────────────────────
 console.log('[UC11] 实地调研创建+提交（VN 公司）→ company_interviews.country');
 {
-  const draft = await req('POST', '/field/interviews', {}, adminToken);
+  const draft = await req('POST', '/field/interviews', { country: 'vn', schema_version: 'legacy' }, adminToken);
   const interviewId = draft.body?.id || draft.body?.interviewId || draft.body?.interview?.id;
   if (!interviewId) ng('创建草稿', `${draft.status} ${JSON.stringify(draft.body)}`);
   else {
@@ -370,7 +375,7 @@ console.log('[UC11] 实地调研创建+提交（VN 公司）→ company_intervie
 // ─── UC13 手填公司名提交 → 同国家精确匹配自动绑定 ───────────────────────────
 console.log('[UC13] 手填公司名提交调研 → 自动绑定同国家精确匹配的公司');
 {
-  const draft = await req('POST', '/field/interviews', {}, adminToken);
+  const draft = await req('POST', '/field/interviews', { country: 'ae', schema_version: 'legacy' }, adminToken);
   const ivId = draft.body?.id;
   if (!ivId) ng('创建草稿', `${draft.status} ${JSON.stringify(draft.body)}`);
   else {
@@ -381,19 +386,16 @@ console.log('[UC13] 手填公司名提交调研 → 自动绑定同国家精确�
     if (refSource === 'profile' && refId !== 'NULL' && ivCountry === 'ae') ok(`自动绑定 profile#${refId}，country='ae'`);
     else ng('自动绑定', `ref=${refSource}#${refId} country=${ivCountry}`);
 
-    // ─ UC14 后台改绑到 VN 公司 → country 跟随同步
-    console.log('[UC14] 后台改绑到 VN 公司 → 访谈 country 同步为 vn');
+    // ─ UC14 禁止 AE 访谈跨国改绑到 VN，公司引用与国家均保持原值
+    console.log('[UC14] AE 访谈跨国改绑到 VN 公司被拒绝，原引用与国家不变');
     if (!vnCompanyProfileId) ng('前置条件', 'UC3 未创建 VN 公司');
     else {
       const patch = await req('PATCH', `/admin/interviews/${ivId}`, {
         company_ref_id: Number(vnCompanyProfileId), company_ref_source: 'profile',
       }, adminToken);
-      if (patch.status !== 200) ng('改绑', `${patch.status} ${JSON.stringify(patch.body)}`);
-      else {
-        const c = sql(`SELECT country FROM company_interviews WHERE id=${ivId}`);
-        if (c === 'vn') ok("country 已同步为 'vn'");
-        else ng('country 同步', `实际='${c}'`);
-      }
+      const after = sql(`SELECT company_ref_id, company_ref_source, country FROM company_interviews WHERE id=${ivId}`);
+      if ([400, 403].includes(patch.status) && after === row) ok('跨国家改绑被拒绝，原公司引用与国家不变');
+      else ng('跨国家改绑隔离', `status=${patch.status} before=${row} after=${after}`);
     }
   }
 }
@@ -403,7 +405,7 @@ console.log('[UC15] 提交调研 → notifications/counts 的 totalInterviews/ne
 {
   const before = await adminGet('/admin/notifications/counts?country=ae');
   const t0 = before.body?.totalInterviews ?? -1;
-  const draft = await req('POST', '/field/interviews', {}, adminToken);
+  const draft = await req('POST', '/field/interviews', { country: 'ae', schema_version: 'legacy' }, adminToken);
   const ivId = draft.body?.id;
   if (!ivId || t0 < 0) ng('前置', `draft=${ivId} total0=${t0}`);
   else {

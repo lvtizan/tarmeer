@@ -34,9 +34,15 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 第二步：确认部署路径
 
+部署前先读 [`docs/operations/deployment-runbook.md`](docs/operations/deployment-runbook.md)，执行 `scripts/ops/deploy-preflight.mjs` 只读连接预检，再做服务器备份。长期认证配置保存在仓库外 `~/.config/tarmeer/deploy.env` 或已验证的 `tarmeer-production` SSH 别名，禁止提交凭据。
+
+**2026-10-07 连接状态**：当前 Mac 的 `~/.ssh/tarmeer_ecs` 不存在，`id_ed25519` / `kst_deploy_ed25519` 已被生产目标拒绝；本机现已恢复既有密码认证并经只读预检验证，凭据保存在仓库外 `~/.config/tarmeer/deploy.env`（600）。下文 `ssh -i ~/.ssh/tarmeer_ecs` 是历史示例，只有该私钥已恢复并经预检验证后才可使用；否则用实际已验证的配置。禁止反复猜密钥或执行旧部署脚本，遇缺项应明确报告。
+
+**发布顺序**：测试与三轮审查全绿 → 只读连接预检 → 服务器备份 → 同步最新 main 并成功 push → 后端精确文件路径 rsync + API 重启 → 前端确认 PM2 cwd、`git pull --ff-only`、build exit=0 后重启 → 对比 BUILD_ID 与真实链路验收。用户已明确授权本次上线时不重复请求发布许可。
+
 | 操作 | 正确命令 |
 |------|---------|
-| 前端代码上线 | `git push` → SSH: `git pull && next build && pm2 restart tarmeer-next` |
+| 前端代码上线 | `git push` → SSH 确认 PM2 cwd：`git pull --ff-only && node_modules/.bin/next build && pm2 restart tarmeer-next` |
 | 静态图片上线 | `rsync -avz public/images/vn-companies/ root@47.91.108.104:/tarmeer/tarmeer_web_portal/images/vn-companies/` |
 | 后端代码上线 | 见下方后端部署规则 |
 

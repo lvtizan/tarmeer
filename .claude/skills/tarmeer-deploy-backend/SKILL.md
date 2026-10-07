@@ -11,6 +11,14 @@ description: Tarmeer 后端（Express，server/dist/）部署流程——rsync �
 - 要改生产数据库数据（跑 SQL/脚本）→ `tarmeer-database-ops`，那不叫部署
 - 前后端都改 → **先本流程，后前端部署**
 
+## 连接预检与备份（发布入口）
+
+先读 [`docs/operations/deployment-runbook.md`](../../../docs/operations/deployment-runbook.md)，执行 `node scripts/ops/deploy-preflight.mjs --check-config` 后再执行 `node scripts/ops/deploy-preflight.mjs` 实际只读预检，成功后先备份生产当前版本与受影响数据库表。连接配置优先仓库外 `~/.config/tarmeer/deploy.env` 或已验证 SSH 别名；禁止打印/提交密码与私钥。
+
+2026-10-07 当前开发 Mac 的 `~/.ssh/tarmeer_ecs` 不存在，`id_ed25519` 与 `kst_deploy_ed25519` 已被生产拒绝，已从本机私有 Tarmeer 项目记忆恢复既有密码认证，`~/.config/tarmeer/deploy.env`（600）现为已验证入口，实际只读预检 exit=0。本文该私钥命令是历史示例，仅在恢复并验证后可用。缺配置时明确报告，不反复猜测密钥；历史密码 fallback 只作考古，见运行手册。
+
+用户在当前任务已明确授权上线即满足发布授权，无须重复索取。预检/备份失败不得发布，也不得声称认证恢复或已上线。
+
 ## 背景事实
 
 - `server/dist/` 的 JS 就是后端唯一源码（无 TS 源码），生产在 `/tarmeer/tarmeer_api/dist/`。

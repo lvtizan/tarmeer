@@ -12,6 +12,7 @@ exports.uploadPhoto = uploadPhoto;
 exports.getSurveySchema = getSurveySchema;
 exports.uploadPhotoMiddleware = void 0;
 const database_1 = __importDefault(require("../config/database"));
+const verification = require("../lib/verificationV7");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const crypto_1 = __importDefault(require("crypto"));
@@ -194,7 +195,7 @@ async function mergeInterviewToProfile(interviewId) {
     try {
         const [rows] = await database_1.default.execute(`SELECT * FROM company_interviews WHERE id = ? LIMIT 1`, [interviewId]);
         const iv = rows[0];
-        if (!iv) return;
+        if (!iv || iv.schema_version === verification.VERSION) return;
 
         // 条件1：必须匹配到已注册装企（profile 来源）
         if (iv.company_ref_source !== 'profile' || !iv.company_ref_id) {
@@ -247,37 +248,42 @@ async function mergeInterviewToProfile(interviewId) {
     }
 }
 
+// V7 public draft mutations require a secret returned only at creation.
+async function fetchAccessibleInterview(req, res, status, db=database_1.default, lock=false) {
+    const [rows] = await db.execute('SELECT * FROM company_interviews WHERE id = ? LIMIT 1'+(lock?' FOR UPDATE':''), [req.params.id || req.query.id]);
+    const row = rows[0];
+    if (!row || (status && row.status !== status)) { res.status(404).json({error:'Interview not found.'}); return null; }
+    if (!verification.canAccessCountry(req, row.country)) { res.status(404).json({error:'Interview not found.'}); return null; }
+    if (!req.admin && (row.schema_version === verification.VERSION || row.draft_token_hash) && !verification.matchesToken(req.headers?.['x-interview-token'], row.draft_token_hash)) {
+        res.status(403).json({error:'This draft requires its private access token.'}); return null;
+    }
+    return row;
+}
+async function guardDraftUpload(req,res,next) {
+    try { const row=await fetchAccessibleInterview(req,res,req.admin ? null : 'draft'); if(!row) return; req.interview=row; next(); }
+    catch(e) { console.error('guardDraftUpload:',e); res.status(500).json({error:'Unable to verify draft access.'}); }
+}
+exports.guardDraftUpload=guardDraftUpload;
 async function createDraft(req, res) {
     try {
-        const interviewerId = req.adminId || null;
-        // 国家归属：登录外勤取本人 admin_users.country；公开填写按站点 x-country（req.country）
-        const country = ['ae', 'vn', 'sa'].includes(req.admin?.country)
-            ? req.admin.country
-            : (['ae', 'vn', 'sa'].includes(req.country) ? req.country : 'ae');
-        const [result] = await database_1.default.execute(
-            `INSERT INTO company_interviews (status, interviewer_id, country) VALUES ('draft', ?, ?)`,
-            [interviewerId, country]
-        );
-        const id = result.insertId;
-        res.status(201).json({ id });
-    }
-    catch (e) {
-        console.error('createDraft error:', e);
-        res.status(500).json({ error: 'Failed to create draft.' });
-    }
+        const interviewerId=req.adminId || null;
+        const country=verification.requestCountry(req);
+        if(req.body.country && req.body.country !== country) return res.status(400).json({error:'Country does not match the current site.'});
+        const schema=await verification.loadSchema(database_1.default,country,req.body.schema_version);
+        const version=schema?.version || 'legacy';
+        if(req.body.schema_version && req.body.schema_version !== version) return res.status(409).json({error:'The requested survey version is no longer available. Please reload.'});
+        const token=version===verification.VERSION ? verification.createToken() : null;
+        const [result]=await database_1.default.execute(
+            `INSERT INTO company_interviews (status, interviewer_id, country, schema_version, schema_snapshot, draft_token_hash) VALUES ('draft', ?, ?, ?, ?, ?)`,
+            [interviewerId,country,version,schema ? JSON.stringify(schema) : null,token ? verification.hashToken(token) : null]);
+        res.status(201).json({id:result.insertId,country,schema_version:version,schema_snapshot:schema,...(token?{draft_token:token}:{})});
+    } catch(e) { console.error('createDraft error:',e); res.status(500).json({error:'Failed to create draft.'}); }
 }
-async function getMyDraft(req, res) {
-    const id = parseInt(String(req.query.id || ''), 10);
-    if (!id) return res.json({ draft: null });
-    try {
-        const [rows] = await database_1.default.execute(`SELECT * FROM company_interviews WHERE id = ? AND status = 'draft' LIMIT 1`, [id]);
-        const drafts = rows;
-        if (drafts.length === 0) return res.json({ draft: null });
-        res.json({ draft: drafts[0] });
-    }
-    catch (e) {
-        res.status(500).json({ error: 'Failed to fetch draft.' });
-    }
+async function getMyDraft(req,res) {
+    const id=Number(req.query.id);
+    if(!Number.isSafeInteger(id)||id<=0) return res.json({draft:null});
+    try { const row=await fetchAccessibleInterview(req,res,'draft'); if(row) res.json({draft:verification.sanitizeInterview(row)}); }
+    catch(e) { res.status(500).json({error:'Failed to fetch draft.'}); }
 }
 // 根据关联公司（profile = company_profiles / uae = uae_companies）查国家，查不到返回 null
 async function resolveCompanyRefCountry(refId, refSource) {
@@ -294,20 +300,42 @@ async function resolveCompanyRefCountry(refId, refSource) {
 async function saveDraft(req, res) {
     const { id } = req.params;
     const { company_name, company_ref_id, company_ref_source, section_1, section_2, section_3, section_4, section_5, section_6, section_7, section_8, section_9, photos, qa_answers, location_pin, filled_by, } = req.body;
+    let db,committed=false;
     try {
-        const [rows] = await database_1.default.execute(`SELECT id FROM company_interviews WHERE id = ? AND status = 'draft'`, [id]);
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Draft not found or already submitted.' });
-        }
+        db=await database_1.default.getConnection();
+        await db.beginTransaction();
+        const current = await fetchAccessibleInterview(req,res,'draft',db,true);
+        if(!current) return;
+        const v7 = current.schema_version === verification.VERSION;
+        if(req.body.verification_data !== undefined && !v7) return res.status(400).json({error:'This record uses the legacy survey.'});
         const fields = {};
+        if(v7) {
+            if(Object.keys(req.body).some(k=>/^section_[1-9]$/.test(k))) return res.status(400).json({error:'V7 answers must use verification_data.'});
+            if(req.body.verification_data !== undefined) {
+                const snapshot=verification.parseJSON(current.schema_snapshot);
+                const previous=verification.parseJSON(current.verification_data)||{};
+                if(!req.body.verification_data || typeof req.body.verification_data!=='object' || Array.isArray(req.body.verification_data)) return res.status(400).json({error:'Verification answers must be an object.'});
+                const merged={...previous,...req.body.verification_data};
+                const error=verification.validateAnswers(merged,snapshot,false);
+                if(error) return res.status(400).json({error});
+                fields.verification_data=JSON.stringify(merged);
+                const companyField=snapshot.sections.flatMap(s=>s.fields).find(f=>f.role==='company_name');
+                if(companyField && merged[companyField.key]!==undefined) fields.company_name=String(merged[companyField.key]).slice(0,200);
+            }
+        }
+        if(v7 && req.body.attachments!==undefined) {
+            const result=verification.validateEvidence(req.body.attachments,current.attachments);
+            if(result.error) return res.status(400).json({error:result.error});
+            fields.attachments=JSON.stringify(result.attachments);
+        }
         if (filled_by !== undefined)
             fields.filled_by = filled_by ? String(filled_by).slice(0, 120) : null;
-        if (company_name !== undefined)
+        if (!v7 && company_name !== undefined)
             fields.company_name = String(company_name).slice(0, 200);
         if (company_ref_id !== undefined)
             fields.company_ref_id = company_ref_id || null;
         if (company_ref_source !== undefined)
-            fields.company_ref_source = company_ref_source || 'uae';
+            fields.company_ref_source = company_ref_source || null;
         if (section_1 !== undefined)
             fields.section_1 = JSON.stringify(section_1);
         if (section_2 !== undefined)
@@ -326,29 +354,31 @@ async function saveDraft(req, res) {
             fields.section_8 = JSON.stringify(section_8);
         if (section_9 !== undefined)
             fields.section_9 = JSON.stringify(section_9);
-        if (photos !== undefined)
+        if (!v7 && photos !== undefined)
             fields.photos = JSON.stringify(photos);
         if (qa_answers !== undefined)
             fields.qa_answers = JSON.stringify(qa_answers);
         if (location_pin !== undefined)
             fields.location_pin = location_pin ? JSON.stringify(location_pin) : null;
-        // 关联公司变更时，按被关联公司推导调研记录的国家归属（无关联则保持默认 'ae'）
-        if (company_ref_id) {
-            const refCountry = await resolveCompanyRefCountry(company_ref_id, company_ref_source || 'uae');
-            if (refCountry)
-                fields.country = refCountry;
+        const refId=company_ref_id === undefined ? current.company_ref_id : company_ref_id;
+        const refSource=company_ref_source === undefined ? current.company_ref_source : company_ref_source;
+        if(refId && (company_ref_id !== undefined || company_ref_source !== undefined)) {
+            if(!['uae','profile'].includes(refSource)) return res.status(400).json({error:'Company reference source is required.'});
+            const refCountry=await resolveCompanyRefCountry(refId,refSource);
+            if(refCountry!==current.country) return res.status(400).json({error:'Company belongs to a different country or does not exist.'});
         }
         if (Object.keys(fields).length === 0)
             return res.json({ ok: true });
         const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');
         const values = [...Object.values(fields), id];
-        await database_1.default.execute(`UPDATE company_interviews SET ${setClauses} WHERE id = ?`, values);
+        await db.execute(`UPDATE company_interviews SET ${setClauses} WHERE id = ?`, values);
+        await db.commit(); committed=true;
         res.json({ ok: true });
     }
     catch (e) {
         console.error('saveDraft error:', e);
         res.status(500).json({ error: 'Failed to save.' });
-    }
+    } finally { if(db) {if(!committed) await db.rollback();db.release();} }
 }
 // 提交时自动绑定：公司名在同国家内精确匹配（忽略大小写）且唯一 → 写入 company_ref；
 // 匹配不上的留空，由管理员在后台手动绑定
@@ -380,27 +410,28 @@ async function autoBindCompanyRef(interviewId) {
 async function submitInterview(req, res) {
     const { id } = req.params;
     try {
-        const [rows] = await database_1.default.execute('SELECT id FROM company_interviews WHERE id = ? AND status = ?', [id, 'draft']);
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Draft not found.' });
+        const current=await fetchAccessibleInterview(req,res,'draft');
+        if(!current) return;
+        if(current.schema_version===verification.VERSION) {
+            const error=verification.validateAnswers(verification.parseJSON(current.verification_data)||{},verification.parseJSON(current.schema_snapshot),true);
+            if(error) return res.status(400).json({error});
         }
         await autoBindCompanyRef(parseInt(id, 10));
-        await database_1.default.execute(`UPDATE company_interviews SET status = 'submitted', submitted_at = NOW() WHERE id = ?`, [id]);
-        // Write initial audit log
+        const db=await database_1.default.getConnection();
         try {
-          const editorId = req.adminId || 0;
-          const [editorRows] = await database_1.default.execute(
-            'SELECT full_name FROM admin_users WHERE id = ?', [editorId]
-          );
-          const editorName = editorRows[0]?.full_name || '—';
-          await database_1.default.execute(
-            `INSERT INTO interview_edit_logs (interview_id, editor_id, editor_name, snapshot_before, edit_summary)
-             VALUES (?, ?, ?, NULL, 'Initial submission')`,
-            [id, editorId, editorName]
-          );
-        } catch(logErr) {
-          console.error('[field] audit log error:', logErr.message);
-        }
+            await db.beginTransaction();
+            const [locked]=await db.execute("SELECT * FROM company_interviews WHERE id = ? AND status = 'draft' FOR UPDATE",[id]);
+            if(!locked.length) {await db.rollback();return res.status(409).json({error:'This record has already been submitted.'});}
+            if(locked[0].schema_version===verification.VERSION) {
+                const error=verification.validateAnswers(verification.parseJSON(locked[0].verification_data)||{},verification.parseJSON(locked[0].schema_snapshot),true);
+                if(error) {await db.rollback();return res.status(400).json({error});}
+            }
+            await db.execute("UPDATE company_interviews SET status = 'submitted', submitted_at = NOW() WHERE id = ?",[id]);
+            const editorId=req.adminId||0;
+            const [editors]=await db.execute('SELECT full_name FROM admin_users WHERE id = ?',[editorId]);
+            await db.execute(`INSERT INTO interview_edit_logs (interview_id,editor_id,editor_name,snapshot_before,edit_summary) VALUES (?,?,?,NULL,'Initial submission')`,[id,editorId,editors[0]?.full_name||'—']);
+            await db.commit();
+        } catch(error) {await db.rollback();throw error;} finally {db.release();}
         res.json({ ok: true });
         // fire-and-forget：满足条件时自动合并 + 同步 CRM
         mergeInterviewToProfile(parseInt(id, 10)).catch(() => {});
@@ -429,9 +460,7 @@ async function uploadPhoto(req, res) {
             timestamp: req.body.timestamp || new Date().toISOString(),
             field_key: req.body.field_key || undefined,
         };
-        const existing = rows[0].photos || [];
-        const updated = [...existing, meta];
-        await database_1.default.execute('UPDATE company_interviews SET photos = ? WHERE id = ?', [JSON.stringify(updated), id]);
+        await database_1.default.execute("UPDATE company_interviews SET photos = JSON_ARRAY_APPEND(COALESCE(photos, JSON_ARRAY()), '$', CAST(? AS JSON)) WHERE id = ?", [JSON.stringify(meta), id]);
         res.json({ url });
     }
     catch (e) {
@@ -448,6 +477,12 @@ async function uploadAttachment(req, res) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
     try {
+        if(req.interview?.schema_version===verification.VERSION) {
+            const snapshot=verification.parseJSON(req.interview.schema_snapshot);
+            const field=snapshot.sections.flatMap(s=>s.fields).find(f=>f.key===req.body.field_key && f.type==='attachment');
+            const error=!field ? 'Select an evidence category from the survey.' : verification.validateEvidenceFile(req.file);
+            if(error) { fs_1.default.unlinkSync(req.file.path); return res.status(400).json({error}); }
+        }
         const [rows] = await database_1.default.execute('SELECT attachments FROM company_interviews WHERE id = ?', [id]);
         if (rows.length === 0) {
             fs_1.default.unlinkSync(req.file.path);
@@ -463,10 +498,8 @@ async function uploadAttachment(req, res) {
             field_key: req.body.field_key || undefined,
             uploaded_at: new Date().toISOString(),
         };
-        const existing = rows[0].attachments || [];
-        const updated = [...existing, meta];
-        await database_1.default.execute('UPDATE company_interviews SET attachments = ? WHERE id = ?', [JSON.stringify(updated), id]);
-        res.json({ url, name: meta.name, type: meta.type, size: meta.size });
+        await database_1.default.execute("UPDATE company_interviews SET attachments = JSON_ARRAY_APPEND(COALESCE(attachments, JSON_ARRAY()), '$', CAST(? AS JSON)) WHERE id = ?", [JSON.stringify(meta), id]);
+        res.json(meta);
     }
     catch (e) {
         console.error('uploadAttachment error:', e);
@@ -477,14 +510,9 @@ async function uploadAttachment(req, res) {
     }
 }
 exports.uploadAttachment = uploadAttachment;
-async function getSurveySchema(req, res) {
-    try {
-        const [rows] = await database_1.default.execute('SELECT schema_json FROM survey_schema WHERE id = 1');
-        if (rows.length === 0) return res.json({ schema: null });
-        res.json({ schema: JSON.parse(rows[0].schema_json) });
-    } catch {
-        res.json({ schema: null });
-    }
+async function getSurveySchema(req,res) {
+    try { const schema=await verification.loadSchema(database_1.default,verification.requestCountry(req),req.query.version || req.query.schema_version); res.json({schema}); }
+    catch(e) { console.error('getSurveySchema:',e); res.status(500).json({error:'Failed to load survey schema.'}); }
 }
 async function searchCompanies(req, res) {
   const q = String(req.query.q || '').trim().slice(0, 100);
@@ -512,10 +540,10 @@ async function searchCompanies(req, res) {
         `SELECT ci.id, ci.submitted_at, COALESCE(au.full_name, '—') AS interviewer_name
          FROM company_interviews ci
          LEFT JOIN admin_users au ON au.id = ci.interviewer_id
-         WHERE ci.company_ref_id = ? AND ci.company_ref_source = ? AND ci.status = 'submitted'
+         WHERE ci.company_ref_id = ? AND ci.company_ref_source = ? AND ci.status = 'submitted' AND ci.country = ?
          ORDER BY ci.submitted_at DESC
          LIMIT 5`,
-        [company.id, company.source]
+        [company.id, company.source, staffCountry]
       );
       return { ...company, interviews: ivRows };
     }));
@@ -536,8 +564,8 @@ async function loadInterview(req, res) {
              WHERE ci.id = ? AND ci.status = 'submitted'`,
             [id]
         );
-        if (rows.length === 0) return res.status(404).json({ error: 'Interview not found.' });
-        res.json({ interview: rows[0] });
+        if (rows.length === 0 || !verification.canAccessCountry(req,rows[0].country)) return res.status(404).json({ error: 'Interview not found.' });
+        res.json({ interview: verification.sanitizeInterview(rows[0]) });
     } catch(e) {
         res.status(500).json({ error: 'Failed to load interview.' });
     }
@@ -547,43 +575,52 @@ async function reSubmitInterview(req, res) {
   const { id } = req.params;
   const allowed = ['company_name','company_ref_id','company_ref_source',
     'section_1','section_2','section_3','section_4','section_5',
-    'section_6','section_7','section_8','section_9'];
+    'section_6','section_7','section_8','section_9','verification_data','attachments','filled_by','location_pin','qa_answers'];
 
+  let db,committed=false;
   try {
+    db=await database_1.default.getConnection();
+    await db.beginTransaction();
     // Fetch current state for snapshot
-    const [rows] = await database_1.default.execute(
-      'SELECT * FROM company_interviews WHERE id = ? AND status = ?',
+    const [rows] = await db.execute(
+      'SELECT * FROM company_interviews WHERE id = ? AND status = ? FOR UPDATE',
       [id, 'submitted']
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Submitted interview not found.' });
     const current = rows[0];
+    if(!verification.canAccessCountry(req,current.country)) return res.status(404).json({error:'Interview not found.'});
+    if(current.schema_version === verification.VERSION) {
+        if(Object.keys(req.body).some(k=>/^section_[1-9]$/.test(k))) return res.status(400).json({error:'V7 answers must use verification_data.'});
+        if(req.body.verification_data !== undefined) {
+            if(!req.body.verification_data || typeof req.body.verification_data!=='object' || Array.isArray(req.body.verification_data)) return res.status(400).json({error:'Verification answers must be an object.'});
+            req.body.verification_data={...(verification.parseJSON(current.verification_data)||{}),...req.body.verification_data};
+            const error=verification.validateAnswers(req.body.verification_data,verification.parseJSON(current.schema_snapshot),true);
+            if(error) return res.status(400).json({error});
+        }
+    } else if(req.body.verification_data!==undefined) return res.status(400).json({error:'This record uses the legacy survey.'});
 
+    if(req.body.attachments!==undefined) {
+        const result=verification.validateEvidence(req.body.attachments,current.attachments);
+        if(result.error) return res.status(400).json({error:result.error});
+        req.body.attachments=result.attachments;
+    }
     // Build update fields
     const fields = {};
     for (const key of allowed) {
-      if (req.body[key] !== undefined) {
+      if (req.body[key] !== undefined && !(current.schema_version===verification.VERSION && key==='company_name')) {
         fields[key] = typeof req.body[key] === 'object' ? JSON.stringify(req.body[key]) : req.body[key];
       }
     }
-    // 与 saveDraft 一致：关联公司变更时同步国家归属
-    if (req.body.company_ref_id) {
-      const refCountry = await resolveCompanyRefCountry(req.body.company_ref_id, req.body.company_ref_source || current.company_ref_source || 'uae');
-      if (refCountry) fields.country = refCountry;
+    const refId=req.body.company_ref_id===undefined?current.company_ref_id:req.body.company_ref_id;
+    const refSource=req.body.company_ref_source===undefined?current.company_ref_source:req.body.company_ref_source;
+    if(refId && (req.body.company_ref_id!==undefined || req.body.company_ref_source!==undefined)) {
+        if(!['uae','profile'].includes(refSource)) return res.status(400).json({error:'Company reference source is required.'});
+        if(await resolveCompanyRefCountry(refId,refSource)!==current.country) return res.status(400).json({error:'Company belongs to a different country or does not exist.'});
     }
-    if (Object.keys(fields).length > 0) {
-      const setClauses = Object.keys(fields).map(k => `${k} = ?`).join(', ');
-      await database_1.default.execute(
-        `UPDATE company_interviews SET ${setClauses}, submitted_at = NOW(), updated_at = NOW() WHERE id = ?`,
-        [...Object.values(fields), id]
-      ).catch(async () => {
-        // updated_at may not exist; retry without it
-        await database_1.default.execute(
-          `UPDATE company_interviews SET ${setClauses}, submitted_at = NOW() WHERE id = ?`,
-          [...Object.values(fields), id]
-        );
-      });
+    if(current.schema_version===verification.VERSION && req.body.verification_data) {
+        const companyField=verification.parseJSON(current.schema_snapshot).sections.flatMap(s=>s.fields).find(f=>f.role==='company_name');
+        if(companyField && req.body.verification_data[companyField.key]!==undefined) fields.company_name=String(req.body.verification_data[companyField.key]).slice(0,200);
     }
-
     // Build edit summary (field-level diff)
     const summaryParts = [];
     for (const key of allowed) {
@@ -607,11 +644,15 @@ async function reSubmitInterview(req, res) {
       'SELECT full_name FROM admin_users WHERE id = ?', [editorId]
     );
     const editorName = editorRows[0]?.full_name || '—';
-    await database_1.default.execute(
-      `INSERT INTO interview_edit_logs (interview_id, editor_id, editor_name, snapshot_before, edit_summary)
-       VALUES (?, ?, ?, ?, ?)`,
-      [id, editorId, editorName, JSON.stringify(snapshotBefore), editSummary]
-    );
+    {
+        if(Object.keys(fields).length) {
+            const setClauses=Object.keys(fields).map(k=>`${k} = ?`).join(', ');
+            await db.execute(`UPDATE company_interviews SET ${setClauses}, submitted_at = NOW() WHERE id = ?`,[...Object.values(fields),id]);
+        }
+        await db.execute(`INSERT INTO interview_edit_logs (interview_id,editor_id,editor_name,snapshot_before,edit_summary) VALUES (?,?,?,?,?)`,[id,editorId,editorName,JSON.stringify(snapshotBefore),editSummary]);
+        await db.commit(); committed=true;
+    }
+
 
     res.json({ ok: true });
     // Re-run merge in case data changed
@@ -619,6 +660,6 @@ async function reSubmitInterview(req, res) {
   } catch(e) {
     console.error('reSubmitInterview error:', e);
     res.status(500).json({ error: 'Failed to re-submit.' });
-  }
+  } finally {if(db) {if(!committed) await db.rollback();db.release();}}
 }
 exports.reSubmitInterview = reSubmitInterview;

@@ -1,0 +1,3850 @@
+{
+  "version": "tarmeer-verification-v7",
+  "country": "ae",
+  "title": "Contractor Verification",
+  "currency": "AED",
+  "source_sha256": "67897800e5c9aefef6ba83981cab8d9d8401b862a99d08ff8f3f0e5c6f2e5d7a",
+  "sections": [
+    {
+      "key": "verification_1",
+      "title": "Company Details",
+      "titleEn": "Company Details",
+      "fields": [
+        {
+          "key": "company",
+          "label": "Company Name",
+          "labelEn": "Company Name",
+          "type": "text",
+          "required": true,
+          "role": "company_name"
+        },
+        {
+          "key": "year",
+          "label": "Year Established",
+          "labelEn": "Year Established",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "contact",
+          "label": "On-site Contact",
+          "labelEn": "On-site Contact",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "position",
+          "label": "Job Title",
+          "labelEn": "Job Title",
+          "type": "text"
+        },
+        {
+          "key": "phone",
+          "label": "Phone / WhatsApp",
+          "labelEn": "Phone / WhatsApp",
+          "type": "tel",
+          "required": true
+        },
+        {
+          "key": "website",
+          "label": "Website / Social Media",
+          "labelEn": "Website / Social Media",
+          "type": "text"
+        },
+        {
+          "key": "email",
+          "label": "Official Company Email",
+          "labelEn": "Official Company Email",
+          "type": "email"
+        },
+        {
+          "key": "registration",
+          "label": "Registration Location",
+          "labelEn": "Registration Location",
+          "type": "radio",
+          "options": [
+            "Dubai",
+            "Abu Dhabi",
+            "Sharjah",
+            "Other UAE",
+            "Outside UAE"
+          ]
+        },
+        {
+          "key": "office",
+          "label": "Office Type",
+          "labelEn": "Office Type",
+          "type": "radio",
+          "options": [
+            "Private Office",
+            "Shared Office",
+            "No Fixed Office"
+          ]
+        },
+        {
+          "key": "address",
+          "label": "Office Address",
+          "labelEn": "Office Address",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "map",
+          "label": "Google Maps Link",
+          "labelEn": "Google Maps Link",
+          "type": "url"
+        },
+        {
+          "key": "Office Evidence",
+          "label": "Office Evidence",
+          "labelEn": "Office Evidence",
+          "type": "attachment",
+          "accept": "image/jpeg,image/png,image/webp,application/pdf",
+          "maxBytes": 15728640
+        },
+        {
+          "key": "ownerName",
+          "label": "Owner / Decision-maker Name (optional)",
+          "labelEn": "Owner / Decision-maker Name (optional)",
+          "type": "text",
+          "group": "Owner / Decision-maker"
+        },
+        {
+          "key": "ownerPhone",
+          "label": "Owner / Decision-maker Phone",
+          "labelEn": "Owner / Decision-maker Phone",
+          "type": "tel",
+          "group": "Owner / Decision-maker"
+        },
+        {
+          "key": "commercialName",
+          "label": "Commercial Contact Name",
+          "labelEn": "Commercial Contact Name",
+          "type": "text",
+          "group": "Commercial Contact",
+          "copyFrom": "contact"
+        },
+        {
+          "key": "commercialRole",
+          "label": "Job Title",
+          "labelEn": "Job Title",
+          "type": "text",
+          "group": "Commercial Contact",
+          "copyFrom": "position"
+        },
+        {
+          "key": "commercialPhone",
+          "label": "Commercial Contact Phone / WhatsApp",
+          "labelEn": "Commercial Contact Phone / WhatsApp",
+          "type": "tel",
+          "group": "Commercial Contact",
+          "copyFrom": "phone"
+        },
+        {
+          "key": "technicalName",
+          "label": "Technical / Site Contact Name",
+          "labelEn": "Technical / Site Contact Name",
+          "type": "text",
+          "group": "Technical / Site Contact",
+          "copyFrom": "contact"
+        },
+        {
+          "key": "technicalRole",
+          "label": "Job Title",
+          "labelEn": "Job Title",
+          "type": "text",
+          "group": "Technical / Site Contact",
+          "copyFrom": "position"
+        },
+        {
+          "key": "technicalPhone",
+          "label": "Technical / Site Contact Phone / WhatsApp",
+          "labelEn": "Technical / Site Contact Phone / WhatsApp",
+          "type": "tel",
+          "group": "Technical / Site Contact",
+          "copyFrom": "phone"
+        }
+      ]
+    },
+    {
+      "key": "verification_2",
+      "title": "Business Profile",
+      "titleEn": "Business Profile",
+      "fields": [
+        {
+          "key": "specialist_civil",
+          "label": "Civil Works — select all that apply",
+          "labelEn": "Civil Works — select all that apply",
+          "type": "checkbox",
+          "options": [
+            "General Civil Works",
+            "Excavation Works",
+            "Concrete Casting",
+            "Blockwork & Masonry",
+            "Plastering",
+            "Waterproofing — Membrane / Combo Systems",
+            "Flooring & Tiling",
+            "Road Paving",
+            "Landscaping",
+            "External Works & Decoration"
+          ],
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_0",
+          "label": "General Civil Works — Number of Workers",
+          "labelEn": "General Civil Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "General Civil Works"
+            ]
+          }
+        },
+        {
+          "key": "workers_civil_1",
+          "label": "Excavation Works — Number of Workers",
+          "labelEn": "Excavation Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "Excavation Works"
+            ]
+          }
+        },
+        {
+          "key": "workers_civil_2",
+          "label": "Concrete Casting — Number of Workers",
+          "labelEn": "Concrete Casting — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "Concrete Casting"
+            ]
+          }
+        },
+        {
+          "key": "workers_civil_3",
+          "label": "Blockwork & Masonry — Number of Workers",
+          "labelEn": "Blockwork & Masonry — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "Blockwork & Masonry"
+            ]
+          }
+        },
+        {
+          "key": "workers_civil_4",
+          "label": "Plastering — Number of Workers",
+          "labelEn": "Plastering — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "Plastering"
+            ]
+          }
+        },
+        {
+          "key": "workers_civil_5",
+          "label": "Waterproofing — Membrane / Combo Systems — Number of Workers",
+          "labelEn": "Waterproofing — Membrane / Combo Systems — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "Waterproofing — Membrane / Combo Systems"
+            ]
+          }
+        },
+        {
+          "key": "workers_civil_6",
+          "label": "Flooring & Tiling — Number of Workers",
+          "labelEn": "Flooring & Tiling — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "Flooring & Tiling"
+            ]
+          }
+        },
+        {
+          "key": "workers_civil_7",
+          "label": "Road Paving — Number of Workers",
+          "labelEn": "Road Paving — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "Road Paving"
+            ]
+          }
+        },
+        {
+          "key": "workers_civil_8",
+          "label": "Landscaping — Number of Workers",
+          "labelEn": "Landscaping — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "Landscaping"
+            ]
+          }
+        },
+        {
+          "key": "workers_civil_9",
+          "label": "External Works & Decoration — Number of Workers",
+          "labelEn": "External Works & Decoration — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil",
+            "values": [
+              "External Works & Decoration"
+            ]
+          }
+        },
+        {
+          "key": "specialist_civil_detail_1",
+          "label": "Additional work 1",
+          "labelEn": "Additional work 1",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_1",
+          "label": "Civil Works — Additional Work 1 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 1 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_1",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_civil_detail_2",
+          "label": "Additional work 2",
+          "labelEn": "Additional work 2",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_2",
+          "label": "Civil Works — Additional Work 2 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 2 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_2",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_civil_detail_3",
+          "label": "Additional work 3",
+          "labelEn": "Additional work 3",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_3",
+          "label": "Civil Works — Additional Work 3 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 3 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_3",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_civil_detail_4",
+          "label": "Additional work 4",
+          "labelEn": "Additional work 4",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_4",
+          "label": "Civil Works — Additional Work 4 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 4 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_4",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_civil_detail_5",
+          "label": "Additional work 5",
+          "labelEn": "Additional work 5",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_5",
+          "label": "Civil Works — Additional Work 5 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 5 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_5",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_civil_detail_6",
+          "label": "Additional work 6",
+          "labelEn": "Additional work 6",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_6",
+          "label": "Civil Works — Additional Work 6 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 6 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_6",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_civil_detail_7",
+          "label": "Additional work 7",
+          "labelEn": "Additional work 7",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_7",
+          "label": "Civil Works — Additional Work 7 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 7 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_7",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_civil_detail_8",
+          "label": "Additional work 8",
+          "labelEn": "Additional work 8",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_8",
+          "label": "Civil Works — Additional Work 8 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 8 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_8",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_civil_detail_9",
+          "label": "Additional work 9",
+          "labelEn": "Additional work 9",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_9",
+          "label": "Civil Works — Additional Work 9 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 9 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_9",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_civil_detail_10",
+          "label": "Additional work 10",
+          "labelEn": "Additional work 10",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Civil Works",
+          "groupKey": "civil"
+        },
+        {
+          "key": "workers_civil_extra_10",
+          "label": "Civil Works — Additional Work 10 — Number of Workers",
+          "labelEn": "Civil Works — Additional Work 10 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Civil Works",
+          "groupKey": "civil",
+          "visibleWhen": {
+            "field": "specialist_civil_detail_10",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical",
+          "label": "Mechanical Works — select all that apply",
+          "labelEn": "Mechanical Works — select all that apply",
+          "type": "checkbox",
+          "options": [
+            "HVAC Works",
+            "Chilled Water Systems",
+            "Plumbing",
+            "Firefighting System Installation",
+            "Fire Protection",
+            "Drainage Systems",
+            "Water Supply Systems",
+            "Pump Installation",
+            "Ducting",
+            "Mechanical Equipment Installation"
+          ],
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_0",
+          "label": "HVAC Works — Number of Workers",
+          "labelEn": "HVAC Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "HVAC Works"
+            ]
+          }
+        },
+        {
+          "key": "workers_mechanical_1",
+          "label": "Chilled Water Systems — Number of Workers",
+          "labelEn": "Chilled Water Systems — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "Chilled Water Systems"
+            ]
+          }
+        },
+        {
+          "key": "workers_mechanical_2",
+          "label": "Plumbing — Number of Workers",
+          "labelEn": "Plumbing — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "Plumbing"
+            ]
+          }
+        },
+        {
+          "key": "workers_mechanical_3",
+          "label": "Firefighting System Installation — Number of Workers",
+          "labelEn": "Firefighting System Installation — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "Firefighting System Installation"
+            ]
+          }
+        },
+        {
+          "key": "workers_mechanical_4",
+          "label": "Fire Protection — Number of Workers",
+          "labelEn": "Fire Protection — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "Fire Protection"
+            ]
+          }
+        },
+        {
+          "key": "workers_mechanical_5",
+          "label": "Drainage Systems — Number of Workers",
+          "labelEn": "Drainage Systems — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "Drainage Systems"
+            ]
+          }
+        },
+        {
+          "key": "workers_mechanical_6",
+          "label": "Water Supply Systems — Number of Workers",
+          "labelEn": "Water Supply Systems — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "Water Supply Systems"
+            ]
+          }
+        },
+        {
+          "key": "workers_mechanical_7",
+          "label": "Pump Installation — Number of Workers",
+          "labelEn": "Pump Installation — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "Pump Installation"
+            ]
+          }
+        },
+        {
+          "key": "workers_mechanical_8",
+          "label": "Ducting — Number of Workers",
+          "labelEn": "Ducting — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "Ducting"
+            ]
+          }
+        },
+        {
+          "key": "workers_mechanical_9",
+          "label": "Mechanical Equipment Installation — Number of Workers",
+          "labelEn": "Mechanical Equipment Installation — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical",
+            "values": [
+              "Mechanical Equipment Installation"
+            ]
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_1",
+          "label": "Additional work 1",
+          "labelEn": "Additional work 1",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_1",
+          "label": "Mechanical Works — Additional Work 1 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 1 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_1",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_2",
+          "label": "Additional work 2",
+          "labelEn": "Additional work 2",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_2",
+          "label": "Mechanical Works — Additional Work 2 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 2 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_2",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_3",
+          "label": "Additional work 3",
+          "labelEn": "Additional work 3",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_3",
+          "label": "Mechanical Works — Additional Work 3 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 3 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_3",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_4",
+          "label": "Additional work 4",
+          "labelEn": "Additional work 4",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_4",
+          "label": "Mechanical Works — Additional Work 4 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 4 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_4",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_5",
+          "label": "Additional work 5",
+          "labelEn": "Additional work 5",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_5",
+          "label": "Mechanical Works — Additional Work 5 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 5 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_5",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_6",
+          "label": "Additional work 6",
+          "labelEn": "Additional work 6",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_6",
+          "label": "Mechanical Works — Additional Work 6 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 6 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_6",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_7",
+          "label": "Additional work 7",
+          "labelEn": "Additional work 7",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_7",
+          "label": "Mechanical Works — Additional Work 7 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 7 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_7",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_8",
+          "label": "Additional work 8",
+          "labelEn": "Additional work 8",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_8",
+          "label": "Mechanical Works — Additional Work 8 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 8 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_8",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_9",
+          "label": "Additional work 9",
+          "labelEn": "Additional work 9",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_9",
+          "label": "Mechanical Works — Additional Work 9 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 9 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_9",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_mechanical_detail_10",
+          "label": "Additional work 10",
+          "labelEn": "Additional work 10",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical"
+        },
+        {
+          "key": "workers_mechanical_extra_10",
+          "label": "Mechanical Works — Additional Work 10 — Number of Workers",
+          "labelEn": "Mechanical Works — Additional Work 10 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Mechanical Works",
+          "groupKey": "mechanical",
+          "visibleWhen": {
+            "field": "specialist_mechanical_detail_10",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout",
+          "label": "Fit-out Works — select all that apply",
+          "labelEn": "Fit-out Works — select all that apply",
+          "type": "checkbox",
+          "options": [
+            "Complete Interior Fit-out",
+            "Gypsum Partitions",
+            "Ceiling Installation",
+            "Flooring & Decking",
+            "Wall Cladding Installation",
+            "Joinery",
+            "Painting",
+            "Glass & Aluminium Works",
+            "Decorative Steel Doors & Laser-cut Features",
+            "Kitchen Cabinets"
+          ],
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_0",
+          "label": "Complete Interior Fit-out — Number of Workers",
+          "labelEn": "Complete Interior Fit-out — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Complete Interior Fit-out"
+            ]
+          }
+        },
+        {
+          "key": "workers_fitout_1",
+          "label": "Gypsum Partitions — Number of Workers",
+          "labelEn": "Gypsum Partitions — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Gypsum Partitions"
+            ]
+          }
+        },
+        {
+          "key": "workers_fitout_2",
+          "label": "Ceiling Installation — Number of Workers",
+          "labelEn": "Ceiling Installation — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Ceiling Installation"
+            ]
+          }
+        },
+        {
+          "key": "workers_fitout_3",
+          "label": "Flooring & Decking — Number of Workers",
+          "labelEn": "Flooring & Decking — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Flooring & Decking"
+            ]
+          }
+        },
+        {
+          "key": "workers_fitout_4",
+          "label": "Wall Cladding Installation — Number of Workers",
+          "labelEn": "Wall Cladding Installation — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Wall Cladding Installation"
+            ]
+          }
+        },
+        {
+          "key": "workers_fitout_5",
+          "label": "Joinery — Number of Workers",
+          "labelEn": "Joinery — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Joinery"
+            ]
+          }
+        },
+        {
+          "key": "workers_fitout_6",
+          "label": "Painting — Number of Workers",
+          "labelEn": "Painting — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Painting"
+            ]
+          }
+        },
+        {
+          "key": "workers_fitout_7",
+          "label": "Glass & Aluminium Works — Number of Workers",
+          "labelEn": "Glass & Aluminium Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Glass & Aluminium Works"
+            ]
+          }
+        },
+        {
+          "key": "workers_fitout_8",
+          "label": "Decorative Steel Doors & Laser-cut Features — Number of Workers",
+          "labelEn": "Decorative Steel Doors & Laser-cut Features — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Decorative Steel Doors & Laser-cut Features"
+            ]
+          }
+        },
+        {
+          "key": "workers_fitout_9",
+          "label": "Kitchen Cabinets — Number of Workers",
+          "labelEn": "Kitchen Cabinets — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout",
+            "values": [
+              "Kitchen Cabinets"
+            ]
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_1",
+          "label": "Additional work 1",
+          "labelEn": "Additional work 1",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_1",
+          "label": "Fit-out Works — Additional Work 1 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 1 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_1",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_2",
+          "label": "Additional work 2",
+          "labelEn": "Additional work 2",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_2",
+          "label": "Fit-out Works — Additional Work 2 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 2 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_2",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_3",
+          "label": "Additional work 3",
+          "labelEn": "Additional work 3",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_3",
+          "label": "Fit-out Works — Additional Work 3 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 3 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_3",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_4",
+          "label": "Additional work 4",
+          "labelEn": "Additional work 4",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_4",
+          "label": "Fit-out Works — Additional Work 4 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 4 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_4",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_5",
+          "label": "Additional work 5",
+          "labelEn": "Additional work 5",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_5",
+          "label": "Fit-out Works — Additional Work 5 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 5 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_5",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_6",
+          "label": "Additional work 6",
+          "labelEn": "Additional work 6",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_6",
+          "label": "Fit-out Works — Additional Work 6 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 6 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_6",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_7",
+          "label": "Additional work 7",
+          "labelEn": "Additional work 7",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_7",
+          "label": "Fit-out Works — Additional Work 7 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 7 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_7",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_8",
+          "label": "Additional work 8",
+          "labelEn": "Additional work 8",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_8",
+          "label": "Fit-out Works — Additional Work 8 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 8 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_8",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_9",
+          "label": "Additional work 9",
+          "labelEn": "Additional work 9",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_9",
+          "label": "Fit-out Works — Additional Work 9 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 9 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_9",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_fitout_detail_10",
+          "label": "Additional work 10",
+          "labelEn": "Additional work 10",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Fit-out Works",
+          "groupKey": "fitout"
+        },
+        {
+          "key": "workers_fitout_extra_10",
+          "label": "Fit-out Works — Additional Work 10 — Number of Workers",
+          "labelEn": "Fit-out Works — Additional Work 10 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Fit-out Works",
+          "groupKey": "fitout",
+          "visibleWhen": {
+            "field": "specialist_fitout_detail_10",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel",
+          "label": "Steel Structure Works — select all that apply",
+          "labelEn": "Steel Structure Works — select all that apply",
+          "type": "checkbox",
+          "options": [
+            "Structural Steel Works",
+            "Steel Fabrication",
+            "Steel Erection",
+            "Warehouse Structures",
+            "Steel Canopies",
+            "Steel Staircases",
+            "Mezzanine Structures",
+            "Metal Roofing",
+            "Handrails",
+            "CNC Cutting"
+          ],
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_0",
+          "label": "Structural Steel Works — Number of Workers",
+          "labelEn": "Structural Steel Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "Structural Steel Works"
+            ]
+          }
+        },
+        {
+          "key": "workers_steel_1",
+          "label": "Steel Fabrication — Number of Workers",
+          "labelEn": "Steel Fabrication — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "Steel Fabrication"
+            ]
+          }
+        },
+        {
+          "key": "workers_steel_2",
+          "label": "Steel Erection — Number of Workers",
+          "labelEn": "Steel Erection — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "Steel Erection"
+            ]
+          }
+        },
+        {
+          "key": "workers_steel_3",
+          "label": "Warehouse Structures — Number of Workers",
+          "labelEn": "Warehouse Structures — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "Warehouse Structures"
+            ]
+          }
+        },
+        {
+          "key": "workers_steel_4",
+          "label": "Steel Canopies — Number of Workers",
+          "labelEn": "Steel Canopies — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "Steel Canopies"
+            ]
+          }
+        },
+        {
+          "key": "workers_steel_5",
+          "label": "Steel Staircases — Number of Workers",
+          "labelEn": "Steel Staircases — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "Steel Staircases"
+            ]
+          }
+        },
+        {
+          "key": "workers_steel_6",
+          "label": "Mezzanine Structures — Number of Workers",
+          "labelEn": "Mezzanine Structures — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "Mezzanine Structures"
+            ]
+          }
+        },
+        {
+          "key": "workers_steel_7",
+          "label": "Metal Roofing — Number of Workers",
+          "labelEn": "Metal Roofing — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "Metal Roofing"
+            ]
+          }
+        },
+        {
+          "key": "workers_steel_8",
+          "label": "Handrails — Number of Workers",
+          "labelEn": "Handrails — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "Handrails"
+            ]
+          }
+        },
+        {
+          "key": "workers_steel_9",
+          "label": "CNC Cutting — Number of Workers",
+          "labelEn": "CNC Cutting — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel",
+            "values": [
+              "CNC Cutting"
+            ]
+          }
+        },
+        {
+          "key": "specialist_steel_detail_1",
+          "label": "Additional work 1",
+          "labelEn": "Additional work 1",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_1",
+          "label": "Steel Structure Works — Additional Work 1 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 1 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_1",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel_detail_2",
+          "label": "Additional work 2",
+          "labelEn": "Additional work 2",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_2",
+          "label": "Steel Structure Works — Additional Work 2 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 2 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_2",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel_detail_3",
+          "label": "Additional work 3",
+          "labelEn": "Additional work 3",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_3",
+          "label": "Steel Structure Works — Additional Work 3 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 3 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_3",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel_detail_4",
+          "label": "Additional work 4",
+          "labelEn": "Additional work 4",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_4",
+          "label": "Steel Structure Works — Additional Work 4 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 4 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_4",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel_detail_5",
+          "label": "Additional work 5",
+          "labelEn": "Additional work 5",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_5",
+          "label": "Steel Structure Works — Additional Work 5 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 5 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_5",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel_detail_6",
+          "label": "Additional work 6",
+          "labelEn": "Additional work 6",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_6",
+          "label": "Steel Structure Works — Additional Work 6 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 6 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_6",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel_detail_7",
+          "label": "Additional work 7",
+          "labelEn": "Additional work 7",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_7",
+          "label": "Steel Structure Works — Additional Work 7 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 7 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_7",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel_detail_8",
+          "label": "Additional work 8",
+          "labelEn": "Additional work 8",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_8",
+          "label": "Steel Structure Works — Additional Work 8 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 8 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_8",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel_detail_9",
+          "label": "Additional work 9",
+          "labelEn": "Additional work 9",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_9",
+          "label": "Steel Structure Works — Additional Work 9 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 9 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_9",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_steel_detail_10",
+          "label": "Additional work 10",
+          "labelEn": "Additional work 10",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "Steel Structure Works",
+          "groupKey": "steel"
+        },
+        {
+          "key": "workers_steel_extra_10",
+          "label": "Steel Structure Works — Additional Work 10 — Number of Workers",
+          "labelEn": "Steel Structure Works — Additional Work 10 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "Steel Structure Works",
+          "groupKey": "steel",
+          "visibleWhen": {
+            "field": "specialist_steel_detail_10",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_grc",
+          "label": "GRC Works — select all that apply",
+          "labelEn": "GRC Works — select all that apply",
+          "type": "checkbox",
+          "options": [
+            "GRC Cladding",
+            "GRC Decorative Works",
+            "GRC Columns",
+            "GRC Cornices",
+            "Other GRC Works",
+            "GRC Landscaping Elements"
+          ],
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_0",
+          "label": "GRC Cladding — Number of Workers",
+          "labelEn": "GRC Cladding — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc",
+            "values": [
+              "GRC Cladding"
+            ]
+          }
+        },
+        {
+          "key": "workers_grc_1",
+          "label": "GRC Decorative Works — Number of Workers",
+          "labelEn": "GRC Decorative Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc",
+            "values": [
+              "GRC Decorative Works"
+            ]
+          }
+        },
+        {
+          "key": "workers_grc_2",
+          "label": "GRC Columns — Number of Workers",
+          "labelEn": "GRC Columns — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc",
+            "values": [
+              "GRC Columns"
+            ]
+          }
+        },
+        {
+          "key": "workers_grc_3",
+          "label": "GRC Cornices — Number of Workers",
+          "labelEn": "GRC Cornices — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc",
+            "values": [
+              "GRC Cornices"
+            ]
+          }
+        },
+        {
+          "key": "workers_grc_4",
+          "label": "Other GRC Works — Number of Workers",
+          "labelEn": "Other GRC Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc",
+            "values": [
+              "Other GRC Works"
+            ]
+          }
+        },
+        {
+          "key": "workers_grc_5",
+          "label": "GRC Landscaping Elements — Number of Workers",
+          "labelEn": "GRC Landscaping Elements — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc",
+            "values": [
+              "GRC Landscaping Elements"
+            ]
+          }
+        },
+        {
+          "key": "specialist_grc_detail_1",
+          "label": "Additional work 1",
+          "labelEn": "Additional work 1",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_extra_1",
+          "label": "GRC Works — Additional Work 1 — Number of Workers",
+          "labelEn": "GRC Works — Additional Work 1 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc_detail_1",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_grc_detail_2",
+          "label": "Additional work 2",
+          "labelEn": "Additional work 2",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_extra_2",
+          "label": "GRC Works — Additional Work 2 — Number of Workers",
+          "labelEn": "GRC Works — Additional Work 2 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc_detail_2",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_grc_detail_3",
+          "label": "Additional work 3",
+          "labelEn": "Additional work 3",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_extra_3",
+          "label": "GRC Works — Additional Work 3 — Number of Workers",
+          "labelEn": "GRC Works — Additional Work 3 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc_detail_3",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_grc_detail_4",
+          "label": "Additional work 4",
+          "labelEn": "Additional work 4",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_extra_4",
+          "label": "GRC Works — Additional Work 4 — Number of Workers",
+          "labelEn": "GRC Works — Additional Work 4 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc_detail_4",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_grc_detail_5",
+          "label": "Additional work 5",
+          "labelEn": "Additional work 5",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_extra_5",
+          "label": "GRC Works — Additional Work 5 — Number of Workers",
+          "labelEn": "GRC Works — Additional Work 5 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc_detail_5",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_grc_detail_6",
+          "label": "Additional work 6",
+          "labelEn": "Additional work 6",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_extra_6",
+          "label": "GRC Works — Additional Work 6 — Number of Workers",
+          "labelEn": "GRC Works — Additional Work 6 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc_detail_6",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_grc_detail_7",
+          "label": "Additional work 7",
+          "labelEn": "Additional work 7",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_extra_7",
+          "label": "GRC Works — Additional Work 7 — Number of Workers",
+          "labelEn": "GRC Works — Additional Work 7 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc_detail_7",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_grc_detail_8",
+          "label": "Additional work 8",
+          "labelEn": "Additional work 8",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_extra_8",
+          "label": "GRC Works — Additional Work 8 — Number of Workers",
+          "labelEn": "GRC Works — Additional Work 8 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc_detail_8",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specialist_grc_detail_9",
+          "label": "Additional work 9",
+          "labelEn": "Additional work 9",
+          "type": "textarea",
+          "placeholder": "Describe another type of work…",
+          "group": "GRC Works",
+          "groupKey": "grc"
+        },
+        {
+          "key": "workers_grc_extra_9",
+          "label": "GRC Works — Additional Work 9 — Number of Workers",
+          "labelEn": "GRC Works — Additional Work 9 — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "group": "GRC Works",
+          "groupKey": "grc",
+          "visibleWhen": {
+            "field": "specialist_grc_detail_9",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "specializations",
+          "label": "Other Work Categories (select all that apply)",
+          "labelEn": "Other Work Categories (select all that apply)",
+          "type": "checkbox",
+          "options": [
+            "Electrical Works",
+            "Plumbing & Drainage",
+            "HVAC & Ventilation",
+            "GRG — Glassfibre Reinforced Gypsum",
+            "Joinery & Custom Cabinets",
+            "Masonry & Tiling",
+            "Painting & Wall Finishes",
+            "Waterproofing",
+            "Aluminium, Glass & Façades",
+            "Firefighting & Fire Alarm",
+            "Landscaping & External Works",
+            "Other Specialist Works"
+          ]
+        },
+        {
+          "key": "workers_other_0",
+          "label": "Electrical Works — Number of Workers",
+          "labelEn": "Electrical Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Electrical Works"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_1",
+          "label": "Plumbing & Drainage — Number of Workers",
+          "labelEn": "Plumbing & Drainage — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Plumbing & Drainage"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_2",
+          "label": "HVAC & Ventilation — Number of Workers",
+          "labelEn": "HVAC & Ventilation — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "HVAC & Ventilation"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_3",
+          "label": "GRG — Glassfibre Reinforced Gypsum — Number of Workers",
+          "labelEn": "GRG — Glassfibre Reinforced Gypsum — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "GRG — Glassfibre Reinforced Gypsum"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_4",
+          "label": "Joinery & Custom Cabinets — Number of Workers",
+          "labelEn": "Joinery & Custom Cabinets — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Joinery & Custom Cabinets"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_5",
+          "label": "Masonry & Tiling — Number of Workers",
+          "labelEn": "Masonry & Tiling — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Masonry & Tiling"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_6",
+          "label": "Painting & Wall Finishes — Number of Workers",
+          "labelEn": "Painting & Wall Finishes — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Painting & Wall Finishes"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_7",
+          "label": "Waterproofing — Number of Workers",
+          "labelEn": "Waterproofing — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Waterproofing"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_8",
+          "label": "Aluminium, Glass & Façades — Number of Workers",
+          "labelEn": "Aluminium, Glass & Façades — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Aluminium, Glass & Façades"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_9",
+          "label": "Firefighting & Fire Alarm — Number of Workers",
+          "labelEn": "Firefighting & Fire Alarm — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Firefighting & Fire Alarm"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_10",
+          "label": "Landscaping & External Works — Number of Workers",
+          "labelEn": "Landscaping & External Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Landscaping & External Works"
+            ]
+          }
+        },
+        {
+          "key": "workers_other_11",
+          "label": "Other Specialist Works — Number of Workers",
+          "labelEn": "Other Specialist Works — Number of Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1.0,
+          "placeholder": "e.g. 8",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Other Specialist Works"
+            ]
+          }
+        },
+        {
+          "key": "otherSpecialization",
+          "label": "Other Specialist Works — Describe Scope",
+          "labelEn": "Other Specialist Works — Describe Scope",
+          "type": "textarea",
+          "visibleWhen": {
+            "field": "specializations",
+            "values": [
+              "Other Specialist Works"
+            ]
+          }
+        },
+        {
+          "key": "delivery",
+          "label": "Contracting Arrangements",
+          "labelEn": "Contracting Arrangements",
+          "type": "checkbox",
+          "options": [
+            "Design Only",
+            "Labour & Materials",
+            "Labour Only",
+            "Project Management"
+          ]
+        },
+        {
+          "key": "contract",
+          "label": "Can the company manage the entire project under a single contract?",
+          "labelEn": "Can the company manage the entire project under a single contract?",
+          "type": "radio",
+          "options": [
+            "Yes",
+            "Part of the Works Only",
+            "No"
+          ]
+        },
+        {
+          "key": "properties",
+          "label": "Property Types",
+          "labelEn": "Property Types",
+          "type": "checkbox",
+          "options": [
+            "Villa",
+            "Apartment",
+            "Office",
+            "Retail",
+            "Restaurant / F&B",
+            "Hotel",
+            "Other"
+          ]
+        },
+        {
+          "key": "scope",
+          "label": "Project Scope",
+          "labelEn": "Project Scope",
+          "type": "checkbox",
+          "options": [
+            "Shell & Core Fit-out",
+            "Full Renovation",
+            "Partial Renovation",
+            "Extensions & Alterations",
+            "Civil Construction",
+            "Structural Works",
+            "MEP Installation",
+            "Fabrication & Installation",
+            "Repairs & Maintenance"
+          ]
+        },
+        {
+          "key": "specialty",
+          "label": "Project Specialties (list up to 3)",
+          "labelEn": "Project Specialties (list up to 3)",
+          "type": "text"
+        },
+        {
+          "key": "serviceArea",
+          "label": "Emirates / Districts",
+          "labelEn": "Emirates / Districts",
+          "type": "text"
+        },
+        {
+          "key": "outside",
+          "label": "Projects Outside the Service Area",
+          "labelEn": "Projects Outside the Service Area",
+          "type": "radio",
+          "options": [
+            "Not Accepted",
+            "Accepted Above a Minimum Value",
+            "Assessed per Project"
+          ]
+        },
+        {
+          "key": "languages",
+          "label": "Communication Languages",
+          "labelEn": "Communication Languages",
+          "type": "checkbox",
+          "options": [
+            "Arabic",
+            "English",
+            "Hindi",
+            "Urdu",
+            "Malayalam",
+            "Tagalog",
+            "Chinese",
+            "Other"
+          ]
+        },
+        {
+          "key": "areas",
+          "label": "Service Districts",
+          "labelEn": "Service Districts",
+          "type": "repeat",
+          "maxItems": 30,
+          "fields": [
+            {
+              "key": "emirate",
+              "label": "Emirate",
+              "labelEn": "Emirate",
+              "type": "radio",
+              "options": [
+                "Dubai",
+                "Abu Dhabi",
+                "Sharjah",
+                "Ajman",
+                "RAK",
+                "Fujairah",
+                "Umm Al Quwain"
+              ]
+            },
+            {
+              "key": "district",
+              "label": "District / Community",
+              "labelEn": "District / Community",
+              "type": "text"
+            }
+          ],
+          "role": "service_areas"
+        }
+      ]
+    },
+    {
+      "key": "verification_3",
+      "title": "Team & Capabilities",
+      "titleEn": "Team & Capabilities",
+      "fields": [
+        {
+          "key": "employees",
+          "label": "Total Direct Employees",
+          "labelEn": "Total Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "designers",
+          "label": "Of These: Designers",
+          "labelEn": "Of These: Designers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "managers",
+          "label": "Of These: Project Managers / Site Engineers",
+          "labelEn": "Of These: Project Managers / Site Engineers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "workers",
+          "label": "Of These: Construction Workers",
+          "labelEn": "Of These: Construction Workers",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "factory",
+          "label": "Workshop / Warehouse Facilities",
+          "labelEn": "Workshop / Warehouse Facilities",
+          "type": "checkbox",
+          "options": [
+            "None",
+            "Joinery",
+            "Metalwork",
+            "GRC / GRG Production",
+            "Warehouse / Store",
+            "Other"
+          ],
+          "exclusiveValue": "None"
+        },
+        {
+          "key": "facilityAddress",
+          "label": "Workshop / Warehouse Address",
+          "labelEn": "Workshop / Warehouse Address",
+          "type": "text",
+          "visibleWhen": {
+            "field": "factory",
+            "excludeValues": [
+              "None"
+            ]
+          }
+        },
+        {
+          "key": "facilityMap",
+          "label": "Workshop / Warehouse Google Maps Link",
+          "labelEn": "Workshop / Warehouse Google Maps Link",
+          "type": "url",
+          "visibleWhen": {
+            "field": "factory",
+            "excludeValues": [
+              "None"
+            ]
+          }
+        },
+        {
+          "key": "Workshop / Warehouse Evidence",
+          "label": "Workshop / Warehouse Evidence",
+          "labelEn": "Workshop / Warehouse Evidence",
+          "type": "attachment",
+          "visibleWhen": {
+            "field": "factory",
+            "excludeValues": [
+              "None"
+            ]
+          },
+          "accept": "image/jpeg,image/png,image/webp,application/pdf",
+          "maxBytes": 15728640
+        },
+        {
+          "key": "trade_0",
+          "label": "Interior Design",
+          "labelEn": "Interior Design",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Interior Design"
+        },
+        {
+          "key": "trade_direct_0",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Interior Design"
+        },
+        {
+          "key": "trade_available_0",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Interior Design"
+        },
+        {
+          "key": "trade_subcontract_0",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Interior Design"
+        },
+        {
+          "key": "trade_1",
+          "label": "Masonry & Tiling",
+          "labelEn": "Masonry & Tiling",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Masonry & Tiling"
+        },
+        {
+          "key": "trade_direct_1",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Masonry & Tiling"
+        },
+        {
+          "key": "trade_available_1",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Masonry & Tiling"
+        },
+        {
+          "key": "trade_subcontract_1",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Masonry & Tiling"
+        },
+        {
+          "key": "trade_2",
+          "label": "Painting & Wall Finishes",
+          "labelEn": "Painting & Wall Finishes",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Painting & Wall Finishes"
+        },
+        {
+          "key": "trade_direct_2",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Painting & Wall Finishes"
+        },
+        {
+          "key": "trade_available_2",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Painting & Wall Finishes"
+        },
+        {
+          "key": "trade_subcontract_2",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Painting & Wall Finishes"
+        },
+        {
+          "key": "trade_3",
+          "label": "Electrical & Plumbing",
+          "labelEn": "Electrical & Plumbing",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Electrical & Plumbing"
+        },
+        {
+          "key": "trade_direct_3",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Electrical & Plumbing"
+        },
+        {
+          "key": "trade_available_3",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Electrical & Plumbing"
+        },
+        {
+          "key": "trade_subcontract_3",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Electrical & Plumbing"
+        },
+        {
+          "key": "trade_4",
+          "label": "HVAC & Ventilation",
+          "labelEn": "HVAC & Ventilation",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "HVAC & Ventilation"
+        },
+        {
+          "key": "trade_direct_4",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "HVAC & Ventilation"
+        },
+        {
+          "key": "trade_available_4",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "HVAC & Ventilation"
+        },
+        {
+          "key": "trade_subcontract_4",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "HVAC & Ventilation"
+        },
+        {
+          "key": "trade_5",
+          "label": "Joinery & Custom Cabinets",
+          "labelEn": "Joinery & Custom Cabinets",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Joinery & Custom Cabinets"
+        },
+        {
+          "key": "trade_direct_5",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Joinery & Custom Cabinets"
+        },
+        {
+          "key": "trade_available_5",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Joinery & Custom Cabinets"
+        },
+        {
+          "key": "trade_subcontract_5",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Joinery & Custom Cabinets"
+        },
+        {
+          "key": "trade_6",
+          "label": "Waterproofing",
+          "labelEn": "Waterproofing",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Waterproofing"
+        },
+        {
+          "key": "trade_direct_6",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Waterproofing"
+        },
+        {
+          "key": "trade_available_6",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Waterproofing"
+        },
+        {
+          "key": "trade_subcontract_6",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Waterproofing"
+        },
+        {
+          "key": "trade_7",
+          "label": "Metal & Glass",
+          "labelEn": "Metal & Glass",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Metal & Glass"
+        },
+        {
+          "key": "trade_direct_7",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Metal & Glass"
+        },
+        {
+          "key": "trade_available_7",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Metal & Glass"
+        },
+        {
+          "key": "trade_subcontract_7",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Metal & Glass"
+        },
+        {
+          "key": "trade_8",
+          "label": "Civil & Concrete Works",
+          "labelEn": "Civil & Concrete Works",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Civil & Concrete Works"
+        },
+        {
+          "key": "trade_direct_8",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Civil & Concrete Works"
+        },
+        {
+          "key": "trade_available_8",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Civil & Concrete Works"
+        },
+        {
+          "key": "trade_subcontract_8",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Civil & Concrete Works"
+        },
+        {
+          "key": "trade_9",
+          "label": "Mechanical & Piping Works",
+          "labelEn": "Mechanical & Piping Works",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Mechanical & Piping Works"
+        },
+        {
+          "key": "trade_direct_9",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Mechanical & Piping Works"
+        },
+        {
+          "key": "trade_available_9",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Mechanical & Piping Works"
+        },
+        {
+          "key": "trade_subcontract_9",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Mechanical & Piping Works"
+        },
+        {
+          "key": "trade_10",
+          "label": "Interior Fit-out",
+          "labelEn": "Interior Fit-out",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Interior Fit-out"
+        },
+        {
+          "key": "trade_direct_10",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Interior Fit-out"
+        },
+        {
+          "key": "trade_available_10",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Interior Fit-out"
+        },
+        {
+          "key": "trade_subcontract_10",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Interior Fit-out"
+        },
+        {
+          "key": "trade_11",
+          "label": "Steel Structures — Fabrication & Erection",
+          "labelEn": "Steel Structures — Fabrication & Erection",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Steel Structures — Fabrication & Erection"
+        },
+        {
+          "key": "trade_direct_11",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Steel Structures — Fabrication & Erection"
+        },
+        {
+          "key": "trade_available_11",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Steel Structures — Fabrication & Erection"
+        },
+        {
+          "key": "trade_subcontract_11",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Steel Structures — Fabrication & Erection"
+        },
+        {
+          "key": "trade_12",
+          "label": "GRC — Glassfibre Reinforced Concrete",
+          "labelEn": "GRC — Glassfibre Reinforced Concrete",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "GRC — Glassfibre Reinforced Concrete"
+        },
+        {
+          "key": "trade_direct_12",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "GRC — Glassfibre Reinforced Concrete"
+        },
+        {
+          "key": "trade_available_12",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "GRC — Glassfibre Reinforced Concrete"
+        },
+        {
+          "key": "trade_subcontract_12",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "GRC — Glassfibre Reinforced Concrete"
+        },
+        {
+          "key": "trade_13",
+          "label": "GRG — Glassfibre Reinforced Gypsum",
+          "labelEn": "GRG — Glassfibre Reinforced Gypsum",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "GRG — Glassfibre Reinforced Gypsum"
+        },
+        {
+          "key": "trade_direct_13",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "GRG — Glassfibre Reinforced Gypsum"
+        },
+        {
+          "key": "trade_available_13",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "GRG — Glassfibre Reinforced Gypsum"
+        },
+        {
+          "key": "trade_subcontract_13",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "GRG — Glassfibre Reinforced Gypsum"
+        },
+        {
+          "key": "trade_14",
+          "label": "Firefighting & Fire Alarm",
+          "labelEn": "Firefighting & Fire Alarm",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Firefighting & Fire Alarm"
+        },
+        {
+          "key": "trade_direct_14",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Firefighting & Fire Alarm"
+        },
+        {
+          "key": "trade_available_14",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Firefighting & Fire Alarm"
+        },
+        {
+          "key": "trade_subcontract_14",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Firefighting & Fire Alarm"
+        },
+        {
+          "key": "trade_15",
+          "label": "Aluminium & Façade Works",
+          "labelEn": "Aluminium & Façade Works",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Aluminium & Façade Works"
+        },
+        {
+          "key": "trade_direct_15",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Aluminium & Façade Works"
+        },
+        {
+          "key": "trade_available_15",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Aluminium & Façade Works"
+        },
+        {
+          "key": "trade_subcontract_15",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Aluminium & Façade Works"
+        },
+        {
+          "key": "trade_16",
+          "label": "Landscaping & External Works",
+          "labelEn": "Landscaping & External Works",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Landscaping & External Works"
+        },
+        {
+          "key": "trade_direct_16",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Landscaping & External Works"
+        },
+        {
+          "key": "trade_available_16",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Landscaping & External Works"
+        },
+        {
+          "key": "trade_subcontract_16",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Landscaping & External Works"
+        },
+        {
+          "key": "trade_17",
+          "label": "Other Specialist Works",
+          "labelEn": "Other Specialist Works",
+          "type": "radio",
+          "options": [
+            "In-house Team",
+            "Regular Subcontractor",
+            "Ad Hoc Subcontractor",
+            "Not Offered"
+          ],
+          "group": "Other Specialist Works"
+        },
+        {
+          "key": "trade_direct_17",
+          "label": "Direct Employees",
+          "labelEn": "Direct Employees",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Other Specialist Works"
+        },
+        {
+          "key": "trade_available_17",
+          "label": "In-house Available in Next 30 Days",
+          "labelEn": "In-house Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Other Specialist Works"
+        },
+        {
+          "key": "trade_subcontract_17",
+          "label": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "labelEn": "Estimated Subcontractor Personnel Available in Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Other Specialist Works"
+        },
+        {
+          "key": "teamNotes",
+          "label": "Team & Subcontracting Notes",
+          "labelEn": "Team & Subcontracting Notes",
+          "type": "textarea"
+        }
+      ]
+    },
+    {
+      "key": "verification_4",
+      "title": "Capacity & Projects",
+      "titleEn": "Capacity & Projects",
+      "fields": [
+        {
+          "key": "minimum",
+          "label": "Minimum Construction Contract (AED)",
+          "labelEn": "Minimum Construction Contract (AED)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "designMinimum",
+          "label": "Minimum Design Fee (AED)",
+          "labelEn": "Minimum Design Fee (AED)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "typicalMin",
+          "label": "Typical Contract Value — Minimum (AED)",
+          "labelEn": "Typical Contract Value — Minimum (AED)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "typicalMax",
+          "label": "Typical Contract Value — Maximum (AED)",
+          "labelEn": "Typical Contract Value — Maximum (AED)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "largest",
+          "label": "Largest Completed Contract (AED)",
+          "labelEn": "Largest Completed Contract (AED)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "active",
+          "label": "Current Active Projects",
+          "labelEn": "Current Active Projects",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "capacity",
+          "label": "Additional Projects Possible in the Next 30 Days",
+          "labelEn": "Additional Projects Possible in the Next 30 Days",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "start",
+          "label": "Earliest Start Date",
+          "labelEn": "Earliest Start Date",
+          "type": "date"
+        },
+        {
+          "key": "completed",
+          "label": "Projects Completed in the Last 24 Months",
+          "labelEn": "Projects Completed in the Last 24 Months",
+          "type": "number",
+          "min": 0.0,
+          "step": 1
+        },
+        {
+          "key": "capacityNotes",
+          "label": "Type & Approximate Value of Additional Projects",
+          "labelEn": "Type & Approximate Value of Additional Projects",
+          "type": "text"
+        },
+        {
+          "key": "case1_name",
+          "label": "Project Name / Property Type",
+          "labelEn": "Project Name / Property Type",
+          "type": "text",
+          "group": "Project 1"
+        },
+        {
+          "key": "case1_location",
+          "label": "Location",
+          "labelEn": "Location",
+          "type": "text",
+          "group": "Project 1"
+        },
+        {
+          "key": "case1_work",
+          "label": "Work Actually Undertaken",
+          "labelEn": "Work Actually Undertaken",
+          "type": "text",
+          "group": "Project 1"
+        },
+        {
+          "key": "case1_value",
+          "label": "Contract Value (AED)",
+          "labelEn": "Contract Value (AED)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Project 1"
+        },
+        {
+          "key": "case1_area",
+          "label": "Area (m²)",
+          "labelEn": "Area (m²)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Project 1"
+        },
+        {
+          "key": "case1_date",
+          "label": "Completion Date",
+          "labelEn": "Completion Date",
+          "type": "date",
+          "group": "Project 1"
+        },
+        {
+          "key": "Project 1",
+          "label": "Project 1",
+          "labelEn": "Project 1",
+          "type": "attachment",
+          "group": "Project 1",
+          "accept": "image/jpeg,image/png,image/webp,application/pdf",
+          "maxBytes": 15728640
+        },
+        {
+          "key": "case2_name",
+          "label": "Project Name / Property Type",
+          "labelEn": "Project Name / Property Type",
+          "type": "text",
+          "group": "Project 2 (optional)"
+        },
+        {
+          "key": "case2_location",
+          "label": "Location",
+          "labelEn": "Location",
+          "type": "text",
+          "group": "Project 2 (optional)"
+        },
+        {
+          "key": "case2_work",
+          "label": "Work Actually Undertaken",
+          "labelEn": "Work Actually Undertaken",
+          "type": "text",
+          "group": "Project 2 (optional)"
+        },
+        {
+          "key": "case2_value",
+          "label": "Contract Value (AED)",
+          "labelEn": "Contract Value (AED)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Project 2 (optional)"
+        },
+        {
+          "key": "case2_area",
+          "label": "Area (m²)",
+          "labelEn": "Area (m²)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Project 2 (optional)"
+        },
+        {
+          "key": "case2_date",
+          "label": "Completion Date",
+          "labelEn": "Completion Date",
+          "type": "date",
+          "group": "Project 2 (optional)"
+        },
+        {
+          "key": "Project 2",
+          "label": "Project 2",
+          "labelEn": "Project 2",
+          "type": "attachment",
+          "group": "Project 2 (optional)",
+          "accept": "image/jpeg,image/png,image/webp,application/pdf",
+          "maxBytes": 15728640
+        },
+        {
+          "key": "case3_name",
+          "label": "Project Name / Property Type",
+          "labelEn": "Project Name / Property Type",
+          "type": "text",
+          "group": "Project 3 (optional)"
+        },
+        {
+          "key": "case3_location",
+          "label": "Location",
+          "labelEn": "Location",
+          "type": "text",
+          "group": "Project 3 (optional)"
+        },
+        {
+          "key": "case3_work",
+          "label": "Work Actually Undertaken",
+          "labelEn": "Work Actually Undertaken",
+          "type": "text",
+          "group": "Project 3 (optional)"
+        },
+        {
+          "key": "case3_value",
+          "label": "Contract Value (AED)",
+          "labelEn": "Contract Value (AED)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Project 3 (optional)"
+        },
+        {
+          "key": "case3_area",
+          "label": "Area (m²)",
+          "labelEn": "Area (m²)",
+          "type": "number",
+          "min": 0.0,
+          "step": 1,
+          "group": "Project 3 (optional)"
+        },
+        {
+          "key": "case3_date",
+          "label": "Completion Date",
+          "labelEn": "Completion Date",
+          "type": "date",
+          "group": "Project 3 (optional)"
+        },
+        {
+          "key": "Project 3",
+          "label": "Project 3",
+          "labelEn": "Project 3",
+          "type": "attachment",
+          "group": "Project 3 (optional)",
+          "accept": "image/jpeg,image/png,image/webp,application/pdf",
+          "maxBytes": 15728640
+        },
+        {
+          "key": "delivery0",
+          "label": "Written Quotation & Scope of Works",
+          "labelEn": "Written Quotation & Scope of Works",
+          "type": "radio",
+          "options": [
+            "Provided as Standard",
+            "Provided on Request",
+            "Not Offered"
+          ]
+        },
+        {
+          "key": "delivery1",
+          "label": "Formal Contract",
+          "labelEn": "Formal Contract",
+          "type": "radio",
+          "options": [
+            "Provided as Standard",
+            "Provided on Request",
+            "Not Offered"
+          ]
+        },
+        {
+          "key": "delivery2",
+          "label": "Construction Schedule",
+          "labelEn": "Construction Schedule",
+          "type": "radio",
+          "options": [
+            "Provided as Standard",
+            "Provided on Request",
+            "Not Offered"
+          ]
+        },
+        {
+          "key": "delivery3",
+          "label": "Written Warranty Terms",
+          "labelEn": "Written Warranty Terms",
+          "type": "radio",
+          "options": [
+            "Provided as Standard",
+            "Provided on Request",
+            "Not Offered"
+          ]
+        },
+        {
+          "key": "warranty",
+          "label": "Warranty Coverage & Duration",
+          "labelEn": "Warranty Coverage & Duration",
+          "type": "textarea"
+        },
+        {
+          "key": "payments",
+          "label": "Accepted Payment Methods",
+          "labelEn": "Accepted Payment Methods",
+          "type": "checkbox",
+          "options": [
+            "Bank Transfer",
+            "Cheque",
+            "Cash",
+            "Other"
+          ]
+        },
+        {
+          "key": "paymentTerms",
+          "label": "Typical Payment Milestones & Percentages",
+          "labelEn": "Typical Payment Milestones & Percentages",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "key": "verification_5",
+      "title": "On-site Verification",
+      "titleEn": "On-site Verification",
+      "fields": [
+        {
+          "key": "inspector",
+          "label": "Inspector Name",
+          "labelEn": "Inspector Name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "visitDate",
+          "label": "Visit Date",
+          "labelEn": "Visit Date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "license",
+          "label": "Trade License Number",
+          "labelEn": "Trade License Number",
+          "type": "text"
+        },
+        {
+          "key": "expiry",
+          "label": "License Expiry Date",
+          "labelEn": "License Expiry Date",
+          "type": "date"
+        },
+        {
+          "key": "activities",
+          "label": "Activities Listed on the Trade License",
+          "labelEn": "Activities Listed on the Trade License",
+          "type": "text"
+        },
+        {
+          "key": "qualifications",
+          "label": "Other Qualifications / Permits (issuer and expiry)",
+          "labelEn": "Other Qualifications / Permits (issuer and expiry)",
+          "type": "text"
+        },
+        {
+          "key": "approvals",
+          "label": "Who handles project approvals?",
+          "labelEn": "Who handles project approvals?",
+          "type": "radio",
+          "options": [
+            "Handled In-house",
+            "Handled by a Partner",
+            "Handled by the Client",
+            "Agreed per Project"
+          ]
+        },
+        {
+          "key": "Licenses & Qualifications",
+          "label": "Licenses & Qualifications",
+          "labelEn": "Licenses & Qualifications",
+          "type": "attachment",
+          "accept": "image/jpeg,image/png,image/webp,application/pdf",
+          "maxBytes": 15728640
+        },
+        {
+          "key": "licenseCheck",
+          "label": "Trade License Check",
+          "labelEn": "Trade License Check",
+          "type": "radio",
+          "options": [
+            "Not Provided",
+            "Provided — Pending Verification",
+            "Verified",
+            "Issues Identified"
+          ]
+        },
+        {
+          "key": "officeCheck",
+          "label": "Office Check",
+          "labelEn": "Office Check",
+          "type": "radio",
+          "options": [
+            "Not Verified",
+            "Verified On-site"
+          ]
+        },
+        {
+          "key": "caseCheck",
+          "label": "Project Authenticity & Actual Scope",
+          "labelEn": "Project Authenticity & Actual Scope",
+          "type": "radio",
+          "options": [
+            "Not Verified",
+            "Partially Verified",
+            "Verified"
+          ]
+        },
+        {
+          "key": "customerCheck",
+          "label": "Client Reference Check",
+          "labelEn": "Client Reference Check",
+          "type": "radio",
+          "options": [
+            "Not Conducted",
+            "Completed"
+          ]
+        },
+        {
+          "key": "conclusion",
+          "label": "Verification Outcome",
+          "labelEn": "Verification Outcome",
+          "type": "radio",
+          "options": [
+            "Ready for Project Matching",
+            "Additional Documents Required",
+            "Further Verification Required"
+          ],
+          "required": true
+        },
+        {
+          "key": "gaps",
+          "label": "Missing Documents / Issues Identified",
+          "labelEn": "Missing Documents / Issues Identified",
+          "type": "textarea"
+        },
+        {
+          "key": "verifyNotes",
+          "label": "On-site Verification Notes",
+          "labelEn": "On-site Verification Notes",
+          "type": "textarea"
+        },
+        {
+          "key": "Additional Verification Evidence",
+          "label": "Additional Verification Evidence",
+          "labelEn": "Additional Verification Evidence",
+          "type": "attachment",
+          "accept": "image/jpeg,image/png,image/webp,application/pdf",
+          "maxBytes": 15728640
+        }
+      ]
+    },
+    {
+      "key": "verification_6",
+      "title": "Review & Complete",
+      "titleEn": "Review & Complete",
+      "fields": []
+    }
+  ],
+  "notice": "Keep company claims separate from verified findings. Completing this form does not assign an A, B or C rating."
+}
