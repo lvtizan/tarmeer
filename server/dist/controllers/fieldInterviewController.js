@@ -307,6 +307,10 @@ async function saveDraft(req, res) {
         const current = await fetchAccessibleInterview(req,res,'draft',db,true);
         if(!current) return;
         const v7 = current.schema_version === verification.VERSION;
+        if(req.body.removed_attachment_urls!==undefined) {
+            if(!v7) return res.status(400).json({error:'Evidence removal deltas require the V7 survey.'});
+            if(req.body.attachments!==undefined) return res.status(400).json({error:'Send evidence removal URLs without replacing the attachment list.'});
+        }
         if(req.body.verification_data !== undefined && !v7) return res.status(400).json({error:'This record uses the legacy survey.'});
         const fields = {};
         if(v7) {
@@ -316,8 +320,8 @@ async function saveDraft(req, res) {
                 const previous=verification.parseJSON(current.verification_data)||{};
                 if(!req.body.verification_data || typeof req.body.verification_data!=='object' || Array.isArray(req.body.verification_data)) return res.status(400).json({error:'Verification answers must be an object.'});
                 const merged={...previous,...req.body.verification_data};
-                const error=verification.validateAnswers(merged,snapshot,false);
-                if(error) return res.status(400).json({error});
+                const error=verification.validateAnswersDetailed(merged,snapshot,false);
+                if(error) return res.status(400).json(error);
                 fields.verification_data=JSON.stringify(merged);
                 const companyField=snapshot.sections.flatMap(s=>s.fields).find(f=>f.role==='company_name');
                 if(companyField && merged[companyField.key]!==undefined) fields.company_name=String(merged[companyField.key]).slice(0,200);
@@ -325,6 +329,11 @@ async function saveDraft(req, res) {
         }
         if(v7 && req.body.attachments!==undefined) {
             const result=verification.validateEvidence(req.body.attachments,current.attachments);
+            if(result.error) return res.status(400).json({error:result.error});
+            fields.attachments=JSON.stringify(result.attachments);
+        }
+        if(v7 && req.body.removed_attachment_urls!==undefined) {
+            const result=verification.removeEvidence(req.body.removed_attachment_urls,current.attachments);
             if(result.error) return res.status(400).json({error:result.error});
             fields.attachments=JSON.stringify(result.attachments);
         }
@@ -413,8 +422,8 @@ async function submitInterview(req, res) {
         const current=await fetchAccessibleInterview(req,res,'draft');
         if(!current) return;
         if(current.schema_version===verification.VERSION) {
-            const error=verification.validateAnswers(verification.parseJSON(current.verification_data)||{},verification.parseJSON(current.schema_snapshot),true);
-            if(error) return res.status(400).json({error});
+            const error=verification.validateAnswersDetailed(verification.parseJSON(current.verification_data)||{},verification.parseJSON(current.schema_snapshot),true);
+            if(error) return res.status(400).json(error);
         }
         await autoBindCompanyRef(parseInt(id, 10));
         const db=await database_1.default.getConnection();
@@ -423,8 +432,8 @@ async function submitInterview(req, res) {
             const [locked]=await db.execute("SELECT * FROM company_interviews WHERE id = ? AND status = 'draft' FOR UPDATE",[id]);
             if(!locked.length) {await db.rollback();return res.status(409).json({error:'This record has already been submitted.'});}
             if(locked[0].schema_version===verification.VERSION) {
-                const error=verification.validateAnswers(verification.parseJSON(locked[0].verification_data)||{},verification.parseJSON(locked[0].schema_snapshot),true);
-                if(error) {await db.rollback();return res.status(400).json({error});}
+                const error=verification.validateAnswersDetailed(verification.parseJSON(locked[0].verification_data)||{},verification.parseJSON(locked[0].schema_snapshot),true);
+                if(error) {await db.rollback();return res.status(400).json(error);}
             }
             await db.execute("UPDATE company_interviews SET status = 'submitted', submitted_at = NOW() WHERE id = ?",[id]);
             const editorId=req.adminId||0;
@@ -594,8 +603,8 @@ async function reSubmitInterview(req, res) {
         if(req.body.verification_data !== undefined) {
             if(!req.body.verification_data || typeof req.body.verification_data!=='object' || Array.isArray(req.body.verification_data)) return res.status(400).json({error:'Verification answers must be an object.'});
             req.body.verification_data={...(verification.parseJSON(current.verification_data)||{}),...req.body.verification_data};
-            const error=verification.validateAnswers(req.body.verification_data,verification.parseJSON(current.schema_snapshot),true);
-            if(error) return res.status(400).json({error});
+            const error=verification.validateAnswersDetailed(req.body.verification_data,verification.parseJSON(current.schema_snapshot),true);
+            if(error) return res.status(400).json(error);
         }
     } else if(req.body.verification_data!==undefined) return res.status(400).json({error:'This record uses the legacy survey.'});
 

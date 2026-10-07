@@ -1212,7 +1212,7 @@ export const adminApi = new AdminApiClient();
 const FIELD_API_BASE = '/api/field';
 
 export class FieldApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(message: string, public readonly status: number, public readonly fieldKey?: string) {
     super(message);
     this.name = 'FieldApiError';
   }
@@ -1260,7 +1260,7 @@ async function fieldRequest(path: string, options: RequestInit = {}): Promise<an
   if (!res.ok) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const err = await res.json().catch(() => ({})) as any;
-    throw new FieldApiError(err.error || `Request failed: ${res.status}`, res.status);
+    throw new FieldApiError(err.error || `Request failed: ${res.status}`, res.status, typeof err.field_key === 'string' ? err.field_key : undefined);
   }
   return res.json();
 }
@@ -1325,7 +1325,7 @@ export const fieldApi = {
     if (!res.ok) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const err = await res.json().catch(() => ({})) as any;
-      throw new FieldApiError(err.error || `Upload failed: ${res.status}`, res.status);
+      throw new FieldApiError(err.error || `Upload failed: ${res.status}`, res.status, typeof err.field_key === 'string' ? err.field_key : undefined);
     }
     return res.json();
   },
@@ -1344,7 +1344,7 @@ export const fieldApi = {
     if (!res.ok) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const err = await res.json().catch(() => ({})) as any;
-      throw new FieldApiError(err.error || `Upload failed: ${res.status}`, res.status);
+      throw new FieldApiError(err.error || `Upload failed: ${res.status}`, res.status, typeof err.field_key === 'string' ? err.field_key : undefined);
     }
     return res.json();
   },

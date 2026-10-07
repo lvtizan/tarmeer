@@ -16,7 +16,13 @@
           "labelEn": "Company Name",
           "type": "text",
           "required": true,
-          "role": "company_name"
+          "role": "company_name",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 200,
+            "requireLetter": true
+          }
         },
         {
           "key": "year",
@@ -24,39 +30,73 @@
           "labelEn": "Year Established",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 1,
+          "yearPolicy": {
+            "min": 1900,
+            "maxCurrentYear": true,
+            "timeZone": "Asia/Dubai"
+          },
+          "inputPolicy": {
+            "kind": "year"
+          }
         },
         {
           "key": "contact",
           "label": "On-site Contact",
           "labelEn": "On-site Contact",
           "type": "text",
-          "required": true
+          "required": true,
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 120,
+            "requireLetter": true
+          }
         },
         {
           "key": "position",
           "label": "Job Title",
           "labelEn": "Job Title",
-          "type": "text"
+          "type": "text",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 120,
+            "requireLetter": true
+          }
         },
         {
           "key": "phone",
           "label": "Phone / WhatsApp",
           "labelEn": "Phone / WhatsApp",
           "type": "tel",
-          "required": true
+          "required": true,
+          "inputPolicy": {
+            "kind": "phone",
+            "country": "ae",
+            "maxLength": 40
+          }
         },
         {
           "key": "website",
           "label": "Website / Social Media",
           "labelEn": "Website / Social Media",
-          "type": "text"
+          "type": "text",
+          "inputPolicy": {
+            "kind": "website",
+            "maxLength": 2000,
+            "allowHandle": true
+          }
         },
         {
           "key": "email",
           "label": "Official Company Email",
           "labelEn": "Official Company Email",
-          "type": "email"
+          "type": "email",
+          "inputPolicy": {
+            "kind": "email",
+            "maxLength": 254
+          }
         },
         {
           "key": "registration",
@@ -69,7 +109,10 @@
             "Sharjah",
             "Other UAE",
             "Outside UAE"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "office",
@@ -80,20 +123,33 @@
             "Private Office",
             "Shared Office",
             "No Fixed Office"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "address",
           "label": "Office Address",
           "labelEn": "Office Address",
           "type": "text",
-          "required": true
+          "required": true,
+          "inputPolicy": {
+            "kind": "address",
+            "minLength": 3,
+            "maxLength": 500,
+            "requireLetter": true
+          }
         },
         {
           "key": "map",
           "label": "Google Maps Link",
           "labelEn": "Google Maps Link",
-          "type": "url"
+          "type": "url",
+          "inputPolicy": {
+            "kind": "map",
+            "maxLength": 2000
+          }
         },
         {
           "key": "Office Evidence",
@@ -101,21 +157,35 @@
           "labelEn": "Office Evidence",
           "type": "attachment",
           "accept": "image/jpeg,image/png,image/webp,application/pdf",
-          "maxBytes": 15728640
+          "maxBytes": 15728640,
+          "inputPolicy": {
+            "kind": "attachment"
+          }
         },
         {
           "key": "ownerName",
           "label": "Owner / Decision-maker Name (optional)",
           "labelEn": "Owner / Decision-maker Name (optional)",
           "type": "text",
-          "group": "Owner / Decision-maker"
+          "group": "Owner / Decision-maker",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 120,
+            "requireLetter": true
+          }
         },
         {
           "key": "ownerPhone",
           "label": "Owner / Decision-maker Phone",
           "labelEn": "Owner / Decision-maker Phone",
           "type": "tel",
-          "group": "Owner / Decision-maker"
+          "group": "Owner / Decision-maker",
+          "inputPolicy": {
+            "kind": "phone",
+            "country": "ae",
+            "maxLength": 40
+          }
         },
         {
           "key": "commercialName",
@@ -123,7 +193,13 @@
           "labelEn": "Commercial Contact Name",
           "type": "text",
           "group": "Commercial Contact",
-          "copyFrom": "contact"
+          "copyFrom": "contact",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 120,
+            "requireLetter": true
+          }
         },
         {
           "key": "commercialRole",
@@ -131,7 +207,13 @@
           "labelEn": "Job Title",
           "type": "text",
           "group": "Commercial Contact",
-          "copyFrom": "position"
+          "copyFrom": "position",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 120,
+            "requireLetter": true
+          }
         },
         {
           "key": "commercialPhone",
@@ -139,7 +221,12 @@
           "labelEn": "Commercial Contact Phone / WhatsApp",
           "type": "tel",
           "group": "Commercial Contact",
-          "copyFrom": "phone"
+          "copyFrom": "phone",
+          "inputPolicy": {
+            "kind": "phone",
+            "country": "ae",
+            "maxLength": 40
+          }
         },
         {
           "key": "technicalName",
@@ -147,7 +234,13 @@
           "labelEn": "Technical / Site Contact Name",
           "type": "text",
           "group": "Technical / Site Contact",
-          "copyFrom": "contact"
+          "copyFrom": "contact",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 120,
+            "requireLetter": true
+          }
         },
         {
           "key": "technicalRole",
@@ -155,7 +248,13 @@
           "labelEn": "Job Title",
           "type": "text",
           "group": "Technical / Site Contact",
-          "copyFrom": "position"
+          "copyFrom": "position",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 120,
+            "requireLetter": true
+          }
         },
         {
           "key": "technicalPhone",
@@ -163,7 +262,12 @@
           "labelEn": "Technical / Site Contact Phone / WhatsApp",
           "type": "tel",
           "group": "Technical / Site Contact",
-          "copyFrom": "phone"
+          "copyFrom": "phone",
+          "inputPolicy": {
+            "kind": "phone",
+            "country": "ae",
+            "maxLength": 40
+          }
         }
       ]
     },
@@ -190,7 +294,10 @@
             "External Works & Decoration"
           ],
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "workers_civil_0",
@@ -198,7 +305,7 @@
           "labelEn": "General Civil Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -207,6 +314,13 @@
             "values": [
               "General Civil Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -215,7 +329,7 @@
           "labelEn": "Excavation Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -224,6 +338,13 @@
             "values": [
               "Excavation Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -232,7 +353,7 @@
           "labelEn": "Concrete Casting — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -241,6 +362,13 @@
             "values": [
               "Concrete Casting"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -249,7 +377,7 @@
           "labelEn": "Blockwork & Masonry — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -258,6 +386,13 @@
             "values": [
               "Blockwork & Masonry"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -266,7 +401,7 @@
           "labelEn": "Plastering — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -275,6 +410,13 @@
             "values": [
               "Plastering"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -283,7 +425,7 @@
           "labelEn": "Waterproofing — Membrane / Combo Systems — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -292,6 +434,13 @@
             "values": [
               "Waterproofing — Membrane / Combo Systems"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -300,7 +449,7 @@
           "labelEn": "Flooring & Tiling — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -309,6 +458,13 @@
             "values": [
               "Flooring & Tiling"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -317,7 +473,7 @@
           "labelEn": "Road Paving — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -326,6 +482,13 @@
             "values": [
               "Road Paving"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -334,7 +497,7 @@
           "labelEn": "Landscaping — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -343,6 +506,13 @@
             "values": [
               "Landscaping"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -351,7 +521,7 @@
           "labelEn": "External Works & Decoration — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
@@ -360,6 +530,13 @@
             "values": [
               "External Works & Decoration"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -369,7 +546,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_1",
@@ -377,13 +561,20 @@
           "labelEn": "Civil Works — Additional Work 1 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_1",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -393,7 +584,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_2",
@@ -401,13 +599,20 @@
           "labelEn": "Civil Works — Additional Work 2 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_2",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -417,7 +622,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_3",
@@ -425,13 +637,20 @@
           "labelEn": "Civil Works — Additional Work 3 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_3",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -441,7 +660,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_4",
@@ -449,13 +675,20 @@
           "labelEn": "Civil Works — Additional Work 4 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_4",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -465,7 +698,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_5",
@@ -473,13 +713,20 @@
           "labelEn": "Civil Works — Additional Work 5 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_5",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -489,7 +736,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_6",
@@ -497,13 +751,20 @@
           "labelEn": "Civil Works — Additional Work 6 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_6",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -513,7 +774,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_7",
@@ -521,13 +789,20 @@
           "labelEn": "Civil Works — Additional Work 7 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_7",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -537,7 +812,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_8",
@@ -545,13 +827,20 @@
           "labelEn": "Civil Works — Additional Work 8 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_8",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -561,7 +850,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_9",
@@ -569,13 +865,20 @@
           "labelEn": "Civil Works — Additional Work 9 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_9",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -585,7 +888,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Civil Works",
-          "groupKey": "civil"
+          "groupKey": "civil",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_civil_extra_10",
@@ -593,13 +903,20 @@
           "labelEn": "Civil Works — Additional Work 10 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Civil Works",
           "groupKey": "civil",
           "visibleWhen": {
             "field": "specialist_civil_detail_10",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -620,7 +937,10 @@
             "Mechanical Equipment Installation"
           ],
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "workers_mechanical_0",
@@ -628,7 +948,7 @@
           "labelEn": "HVAC Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -637,6 +957,13 @@
             "values": [
               "HVAC Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -645,7 +972,7 @@
           "labelEn": "Chilled Water Systems — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -654,6 +981,13 @@
             "values": [
               "Chilled Water Systems"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -662,7 +996,7 @@
           "labelEn": "Plumbing — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -671,6 +1005,13 @@
             "values": [
               "Plumbing"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -679,7 +1020,7 @@
           "labelEn": "Firefighting System Installation — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -688,6 +1029,13 @@
             "values": [
               "Firefighting System Installation"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -696,7 +1044,7 @@
           "labelEn": "Fire Protection — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -705,6 +1053,13 @@
             "values": [
               "Fire Protection"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -713,7 +1068,7 @@
           "labelEn": "Drainage Systems — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -722,6 +1077,13 @@
             "values": [
               "Drainage Systems"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -730,7 +1092,7 @@
           "labelEn": "Water Supply Systems — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -739,6 +1101,13 @@
             "values": [
               "Water Supply Systems"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -747,7 +1116,7 @@
           "labelEn": "Pump Installation — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -756,6 +1125,13 @@
             "values": [
               "Pump Installation"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -764,7 +1140,7 @@
           "labelEn": "Ducting — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -773,6 +1149,13 @@
             "values": [
               "Ducting"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -781,7 +1164,7 @@
           "labelEn": "Mechanical Equipment Installation — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
@@ -790,6 +1173,13 @@
             "values": [
               "Mechanical Equipment Installation"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -799,7 +1189,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_1",
@@ -807,13 +1204,20 @@
           "labelEn": "Mechanical Works — Additional Work 1 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_1",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -823,7 +1227,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_2",
@@ -831,13 +1242,20 @@
           "labelEn": "Mechanical Works — Additional Work 2 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_2",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -847,7 +1265,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_3",
@@ -855,13 +1280,20 @@
           "labelEn": "Mechanical Works — Additional Work 3 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_3",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -871,7 +1303,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_4",
@@ -879,13 +1318,20 @@
           "labelEn": "Mechanical Works — Additional Work 4 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_4",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -895,7 +1341,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_5",
@@ -903,13 +1356,20 @@
           "labelEn": "Mechanical Works — Additional Work 5 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_5",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -919,7 +1379,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_6",
@@ -927,13 +1394,20 @@
           "labelEn": "Mechanical Works — Additional Work 6 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_6",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -943,7 +1417,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_7",
@@ -951,13 +1432,20 @@
           "labelEn": "Mechanical Works — Additional Work 7 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_7",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -967,7 +1455,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_8",
@@ -975,13 +1470,20 @@
           "labelEn": "Mechanical Works — Additional Work 8 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_8",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -991,7 +1493,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_9",
@@ -999,13 +1508,20 @@
           "labelEn": "Mechanical Works — Additional Work 9 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_9",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1015,7 +1531,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Mechanical Works",
-          "groupKey": "mechanical"
+          "groupKey": "mechanical",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_mechanical_extra_10",
@@ -1023,13 +1546,20 @@
           "labelEn": "Mechanical Works — Additional Work 10 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Mechanical Works",
           "groupKey": "mechanical",
           "visibleWhen": {
             "field": "specialist_mechanical_detail_10",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1050,7 +1580,10 @@
             "Kitchen Cabinets"
           ],
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "workers_fitout_0",
@@ -1058,7 +1591,7 @@
           "labelEn": "Complete Interior Fit-out — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1067,6 +1600,13 @@
             "values": [
               "Complete Interior Fit-out"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1075,7 +1615,7 @@
           "labelEn": "Gypsum Partitions — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1084,6 +1624,13 @@
             "values": [
               "Gypsum Partitions"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1092,7 +1639,7 @@
           "labelEn": "Ceiling Installation — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1101,6 +1648,13 @@
             "values": [
               "Ceiling Installation"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1109,7 +1663,7 @@
           "labelEn": "Flooring & Decking — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1118,6 +1672,13 @@
             "values": [
               "Flooring & Decking"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1126,7 +1687,7 @@
           "labelEn": "Wall Cladding Installation — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1135,6 +1696,13 @@
             "values": [
               "Wall Cladding Installation"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1143,7 +1711,7 @@
           "labelEn": "Joinery — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1152,6 +1720,13 @@
             "values": [
               "Joinery"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1160,7 +1735,7 @@
           "labelEn": "Painting — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1169,6 +1744,13 @@
             "values": [
               "Painting"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1177,7 +1759,7 @@
           "labelEn": "Glass & Aluminium Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1186,6 +1768,13 @@
             "values": [
               "Glass & Aluminium Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1194,7 +1783,7 @@
           "labelEn": "Decorative Steel Doors & Laser-cut Features — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1203,6 +1792,13 @@
             "values": [
               "Decorative Steel Doors & Laser-cut Features"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1211,7 +1807,7 @@
           "labelEn": "Kitchen Cabinets — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
@@ -1220,6 +1816,13 @@
             "values": [
               "Kitchen Cabinets"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1229,7 +1832,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_1",
@@ -1237,13 +1847,20 @@
           "labelEn": "Fit-out Works — Additional Work 1 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_1",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1253,7 +1870,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_2",
@@ -1261,13 +1885,20 @@
           "labelEn": "Fit-out Works — Additional Work 2 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_2",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1277,7 +1908,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_3",
@@ -1285,13 +1923,20 @@
           "labelEn": "Fit-out Works — Additional Work 3 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_3",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1301,7 +1946,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_4",
@@ -1309,13 +1961,20 @@
           "labelEn": "Fit-out Works — Additional Work 4 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_4",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1325,7 +1984,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_5",
@@ -1333,13 +1999,20 @@
           "labelEn": "Fit-out Works — Additional Work 5 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_5",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1349,7 +2022,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_6",
@@ -1357,13 +2037,20 @@
           "labelEn": "Fit-out Works — Additional Work 6 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_6",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1373,7 +2060,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_7",
@@ -1381,13 +2075,20 @@
           "labelEn": "Fit-out Works — Additional Work 7 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_7",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1397,7 +2098,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_8",
@@ -1405,13 +2113,20 @@
           "labelEn": "Fit-out Works — Additional Work 8 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_8",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1421,7 +2136,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_9",
@@ -1429,13 +2151,20 @@
           "labelEn": "Fit-out Works — Additional Work 9 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_9",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1445,7 +2174,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Fit-out Works",
-          "groupKey": "fitout"
+          "groupKey": "fitout",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_fitout_extra_10",
@@ -1453,13 +2189,20 @@
           "labelEn": "Fit-out Works — Additional Work 10 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Fit-out Works",
           "groupKey": "fitout",
           "visibleWhen": {
             "field": "specialist_fitout_detail_10",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1480,7 +2223,10 @@
             "CNC Cutting"
           ],
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "workers_steel_0",
@@ -1488,7 +2234,7 @@
           "labelEn": "Structural Steel Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1497,6 +2243,13 @@
             "values": [
               "Structural Steel Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1505,7 +2258,7 @@
           "labelEn": "Steel Fabrication — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1514,6 +2267,13 @@
             "values": [
               "Steel Fabrication"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1522,7 +2282,7 @@
           "labelEn": "Steel Erection — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1531,6 +2291,13 @@
             "values": [
               "Steel Erection"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1539,7 +2306,7 @@
           "labelEn": "Warehouse Structures — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1548,6 +2315,13 @@
             "values": [
               "Warehouse Structures"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1556,7 +2330,7 @@
           "labelEn": "Steel Canopies — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1565,6 +2339,13 @@
             "values": [
               "Steel Canopies"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1573,7 +2354,7 @@
           "labelEn": "Steel Staircases — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1582,6 +2363,13 @@
             "values": [
               "Steel Staircases"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1590,7 +2378,7 @@
           "labelEn": "Mezzanine Structures — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1599,6 +2387,13 @@
             "values": [
               "Mezzanine Structures"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1607,7 +2402,7 @@
           "labelEn": "Metal Roofing — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1616,6 +2411,13 @@
             "values": [
               "Metal Roofing"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1624,7 +2426,7 @@
           "labelEn": "Handrails — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1633,6 +2435,13 @@
             "values": [
               "Handrails"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1641,7 +2450,7 @@
           "labelEn": "CNC Cutting — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
@@ -1650,6 +2459,13 @@
             "values": [
               "CNC Cutting"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1659,7 +2475,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_1",
@@ -1667,13 +2490,20 @@
           "labelEn": "Steel Structure Works — Additional Work 1 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_1",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1683,7 +2513,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_2",
@@ -1691,13 +2528,20 @@
           "labelEn": "Steel Structure Works — Additional Work 2 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_2",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1707,7 +2551,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_3",
@@ -1715,13 +2566,20 @@
           "labelEn": "Steel Structure Works — Additional Work 3 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_3",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1731,7 +2589,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_4",
@@ -1739,13 +2604,20 @@
           "labelEn": "Steel Structure Works — Additional Work 4 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_4",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1755,7 +2627,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_5",
@@ -1763,13 +2642,20 @@
           "labelEn": "Steel Structure Works — Additional Work 5 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_5",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1779,7 +2665,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_6",
@@ -1787,13 +2680,20 @@
           "labelEn": "Steel Structure Works — Additional Work 6 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_6",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1803,7 +2703,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_7",
@@ -1811,13 +2718,20 @@
           "labelEn": "Steel Structure Works — Additional Work 7 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_7",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1827,7 +2741,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_8",
@@ -1835,13 +2756,20 @@
           "labelEn": "Steel Structure Works — Additional Work 8 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_8",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1851,7 +2779,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_9",
@@ -1859,13 +2794,20 @@
           "labelEn": "Steel Structure Works — Additional Work 9 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_9",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1875,7 +2817,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "Steel Structure Works",
-          "groupKey": "steel"
+          "groupKey": "steel",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_steel_extra_10",
@@ -1883,13 +2832,20 @@
           "labelEn": "Steel Structure Works — Additional Work 10 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "Steel Structure Works",
           "groupKey": "steel",
           "visibleWhen": {
             "field": "specialist_steel_detail_10",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1906,7 +2862,10 @@
             "GRC Landscaping Elements"
           ],
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "workers_grc_0",
@@ -1914,7 +2873,7 @@
           "labelEn": "GRC Cladding — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
@@ -1923,6 +2882,13 @@
             "values": [
               "GRC Cladding"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1931,7 +2897,7 @@
           "labelEn": "GRC Decorative Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
@@ -1940,6 +2906,13 @@
             "values": [
               "GRC Decorative Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1948,7 +2921,7 @@
           "labelEn": "GRC Columns — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
@@ -1957,6 +2930,13 @@
             "values": [
               "GRC Columns"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1965,7 +2945,7 @@
           "labelEn": "GRC Cornices — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
@@ -1974,6 +2954,13 @@
             "values": [
               "GRC Cornices"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1982,7 +2969,7 @@
           "labelEn": "Other GRC Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
@@ -1991,6 +2978,13 @@
             "values": [
               "Other GRC Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -1999,7 +2993,7 @@
           "labelEn": "GRC Landscaping Elements — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
@@ -2008,6 +3002,13 @@
             "values": [
               "GRC Landscaping Elements"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2017,7 +3018,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_grc_extra_1",
@@ -2025,13 +3033,20 @@
           "labelEn": "GRC Works — Additional Work 1 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
           "visibleWhen": {
             "field": "specialist_grc_detail_1",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2041,7 +3056,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_grc_extra_2",
@@ -2049,13 +3071,20 @@
           "labelEn": "GRC Works — Additional Work 2 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
           "visibleWhen": {
             "field": "specialist_grc_detail_2",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2065,7 +3094,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_grc_extra_3",
@@ -2073,13 +3109,20 @@
           "labelEn": "GRC Works — Additional Work 3 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
           "visibleWhen": {
             "field": "specialist_grc_detail_3",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2089,7 +3132,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_grc_extra_4",
@@ -2097,13 +3147,20 @@
           "labelEn": "GRC Works — Additional Work 4 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
           "visibleWhen": {
             "field": "specialist_grc_detail_4",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2113,7 +3170,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_grc_extra_5",
@@ -2121,13 +3185,20 @@
           "labelEn": "GRC Works — Additional Work 5 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
           "visibleWhen": {
             "field": "specialist_grc_detail_5",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2137,7 +3208,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_grc_extra_6",
@@ -2145,13 +3223,20 @@
           "labelEn": "GRC Works — Additional Work 6 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
           "visibleWhen": {
             "field": "specialist_grc_detail_6",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2161,7 +3246,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_grc_extra_7",
@@ -2169,13 +3261,20 @@
           "labelEn": "GRC Works — Additional Work 7 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
           "visibleWhen": {
             "field": "specialist_grc_detail_7",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2185,7 +3284,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_grc_extra_8",
@@ -2193,13 +3299,20 @@
           "labelEn": "GRC Works — Additional Work 8 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
           "visibleWhen": {
             "field": "specialist_grc_detail_8",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2209,7 +3322,14 @@
           "type": "textarea",
           "placeholder": "Describe another type of work…",
           "group": "GRC Works",
-          "groupKey": "grc"
+          "groupKey": "grc",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
+          }
         },
         {
           "key": "workers_grc_extra_9",
@@ -2217,13 +3337,20 @@
           "labelEn": "GRC Works — Additional Work 9 — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "group": "GRC Works",
           "groupKey": "grc",
           "visibleWhen": {
             "field": "specialist_grc_detail_9",
             "notEmpty": true
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2244,7 +3371,10 @@
             "Firefighting & Fire Alarm",
             "Landscaping & External Works",
             "Other Specialist Works"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "workers_other_0",
@@ -2252,13 +3382,20 @@
           "labelEn": "Electrical Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Electrical Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2267,13 +3404,20 @@
           "labelEn": "Plumbing & Drainage — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Plumbing & Drainage"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2282,13 +3426,20 @@
           "labelEn": "HVAC & Ventilation — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "HVAC & Ventilation"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2297,13 +3448,20 @@
           "labelEn": "GRG — Glassfibre Reinforced Gypsum — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "GRG — Glassfibre Reinforced Gypsum"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2312,13 +3470,20 @@
           "labelEn": "Joinery & Custom Cabinets — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Joinery & Custom Cabinets"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2327,13 +3492,20 @@
           "labelEn": "Masonry & Tiling — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Masonry & Tiling"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2342,13 +3514,20 @@
           "labelEn": "Painting & Wall Finishes — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Painting & Wall Finishes"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2357,13 +3536,20 @@
           "labelEn": "Waterproofing — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Waterproofing"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2372,13 +3558,20 @@
           "labelEn": "Aluminium, Glass & Façades — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Aluminium, Glass & Façades"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2387,13 +3580,20 @@
           "labelEn": "Firefighting & Fire Alarm — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Firefighting & Fire Alarm"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2402,13 +3602,20 @@
           "labelEn": "Landscaping & External Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Landscaping & External Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2417,13 +3624,20 @@
           "labelEn": "Other Specialist Works — Number of Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1.0,
+          "step": 1,
           "placeholder": "e.g. 8",
           "visibleWhen": {
             "field": "specializations",
             "values": [
               "Other Specialist Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
           }
         },
         {
@@ -2436,6 +3650,13 @@
             "values": [
               "Other Specialist Works"
             ]
+          },
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": true,
+            "requireLetter": true
           }
         },
         {
@@ -2448,7 +3669,10 @@
             "Labour & Materials",
             "Labour Only",
             "Project Management"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "contract",
@@ -2459,7 +3683,10 @@
             "Yes",
             "Part of the Works Only",
             "No"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "properties",
@@ -2474,7 +3701,10 @@
             "Restaurant / F&B",
             "Hotel",
             "Other"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "scope",
@@ -2491,19 +3721,36 @@
             "MEP Installation",
             "Fabrication & Installation",
             "Repairs & Maintenance"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "specialty",
           "label": "Project Specialties (list up to 3)",
           "labelEn": "Project Specialties (list up to 3)",
-          "type": "text"
+          "type": "text",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": false,
+            "requireLetter": true
+          }
         },
         {
           "key": "serviceArea",
           "label": "Emirates / Districts",
           "labelEn": "Emirates / Districts",
-          "type": "text"
+          "type": "text",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": false,
+            "requireLetter": true
+          }
         },
         {
           "key": "outside",
@@ -2514,7 +3761,10 @@
             "Not Accepted",
             "Accepted Above a Minimum Value",
             "Assessed per Project"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "languages",
@@ -2530,10 +3780,14 @@
             "Tagalog",
             "Chinese",
             "Other"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "areas",
+          "role": "service_areas",
           "label": "Service Districts",
           "labelEn": "Service Districts",
           "type": "repeat",
@@ -2552,16 +3806,27 @@
                 "RAK",
                 "Fujairah",
                 "Umm Al Quwain"
-              ]
+              ],
+              "inputPolicy": {
+                "kind": "choice"
+              }
             },
             {
               "key": "district",
               "label": "District / Community",
               "labelEn": "District / Community",
-              "type": "text"
+              "type": "text",
+              "inputPolicy": {
+                "kind": "name",
+                "minLength": 1,
+                "maxLength": 200,
+                "requireLetter": true
+              }
             }
           ],
-          "role": "service_areas"
+          "inputPolicy": {
+            "kind": "repeat"
+          }
         }
       ]
     },
@@ -2576,7 +3841,14 @@
           "labelEn": "Total Direct Employees",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 1,
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "designers",
@@ -2584,7 +3856,14 @@
           "labelEn": "Of These: Designers",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 1,
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "managers",
@@ -2592,7 +3871,14 @@
           "labelEn": "Of These: Project Managers / Site Engineers",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 1,
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "workers",
@@ -2600,7 +3886,14 @@
           "labelEn": "Of These: Construction Workers",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 1,
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "factory",
@@ -2615,7 +3908,10 @@
             "Warehouse / Store",
             "Other"
           ],
-          "exclusiveValue": "None"
+          "exclusiveValue": "None",
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "facilityAddress",
@@ -2627,6 +3923,12 @@
             "excludeValues": [
               "None"
             ]
+          },
+          "inputPolicy": {
+            "kind": "address",
+            "minLength": 3,
+            "maxLength": 500,
+            "requireLetter": true
           }
         },
         {
@@ -2639,6 +3941,10 @@
             "excludeValues": [
               "None"
             ]
+          },
+          "inputPolicy": {
+            "kind": "map",
+            "maxLength": 2000
           }
         },
         {
@@ -2653,7 +3959,10 @@
             ]
           },
           "accept": "image/jpeg,image/png,image/webp,application/pdf",
-          "maxBytes": 15728640
+          "maxBytes": 15728640,
+          "inputPolicy": {
+            "kind": "attachment"
+          }
         },
         {
           "key": "trade_0",
@@ -2666,7 +3975,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Interior Design"
+          "group": "Interior Design",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_0",
@@ -2675,7 +3987,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Interior Design"
+          "group": "Interior Design",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_0",
@@ -2684,7 +4003,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Interior Design"
+          "group": "Interior Design",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_0",
@@ -2693,7 +4019,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Interior Design"
+          "group": "Interior Design",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_1",
@@ -2706,7 +4039,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Masonry & Tiling"
+          "group": "Masonry & Tiling",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_1",
@@ -2715,7 +4051,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Masonry & Tiling"
+          "group": "Masonry & Tiling",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_1",
@@ -2724,7 +4067,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Masonry & Tiling"
+          "group": "Masonry & Tiling",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_1",
@@ -2733,7 +4083,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Masonry & Tiling"
+          "group": "Masonry & Tiling",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_2",
@@ -2746,7 +4103,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Painting & Wall Finishes"
+          "group": "Painting & Wall Finishes",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_2",
@@ -2755,7 +4115,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Painting & Wall Finishes"
+          "group": "Painting & Wall Finishes",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_2",
@@ -2764,7 +4131,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Painting & Wall Finishes"
+          "group": "Painting & Wall Finishes",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_2",
@@ -2773,7 +4147,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Painting & Wall Finishes"
+          "group": "Painting & Wall Finishes",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_3",
@@ -2786,7 +4167,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Electrical & Plumbing"
+          "group": "Electrical & Plumbing",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_3",
@@ -2795,7 +4179,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Electrical & Plumbing"
+          "group": "Electrical & Plumbing",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_3",
@@ -2804,7 +4195,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Electrical & Plumbing"
+          "group": "Electrical & Plumbing",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_3",
@@ -2813,7 +4211,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Electrical & Plumbing"
+          "group": "Electrical & Plumbing",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_4",
@@ -2826,7 +4231,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "HVAC & Ventilation"
+          "group": "HVAC & Ventilation",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_4",
@@ -2835,7 +4243,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "HVAC & Ventilation"
+          "group": "HVAC & Ventilation",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_4",
@@ -2844,7 +4259,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "HVAC & Ventilation"
+          "group": "HVAC & Ventilation",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_4",
@@ -2853,7 +4275,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "HVAC & Ventilation"
+          "group": "HVAC & Ventilation",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_5",
@@ -2866,7 +4295,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Joinery & Custom Cabinets"
+          "group": "Joinery & Custom Cabinets",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_5",
@@ -2875,7 +4307,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Joinery & Custom Cabinets"
+          "group": "Joinery & Custom Cabinets",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_5",
@@ -2884,7 +4323,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Joinery & Custom Cabinets"
+          "group": "Joinery & Custom Cabinets",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_5",
@@ -2893,7 +4339,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Joinery & Custom Cabinets"
+          "group": "Joinery & Custom Cabinets",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_6",
@@ -2906,7 +4359,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Waterproofing"
+          "group": "Waterproofing",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_6",
@@ -2915,7 +4371,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Waterproofing"
+          "group": "Waterproofing",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_6",
@@ -2924,7 +4387,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Waterproofing"
+          "group": "Waterproofing",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_6",
@@ -2933,7 +4403,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Waterproofing"
+          "group": "Waterproofing",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_7",
@@ -2946,7 +4423,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Metal & Glass"
+          "group": "Metal & Glass",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_7",
@@ -2955,7 +4435,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Metal & Glass"
+          "group": "Metal & Glass",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_7",
@@ -2964,7 +4451,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Metal & Glass"
+          "group": "Metal & Glass",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_7",
@@ -2973,7 +4467,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Metal & Glass"
+          "group": "Metal & Glass",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_8",
@@ -2986,7 +4487,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Civil & Concrete Works"
+          "group": "Civil & Concrete Works",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_8",
@@ -2995,7 +4499,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Civil & Concrete Works"
+          "group": "Civil & Concrete Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_8",
@@ -3004,7 +4515,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Civil & Concrete Works"
+          "group": "Civil & Concrete Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_8",
@@ -3013,7 +4531,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Civil & Concrete Works"
+          "group": "Civil & Concrete Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_9",
@@ -3026,7 +4551,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Mechanical & Piping Works"
+          "group": "Mechanical & Piping Works",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_9",
@@ -3035,7 +4563,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Mechanical & Piping Works"
+          "group": "Mechanical & Piping Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_9",
@@ -3044,7 +4579,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Mechanical & Piping Works"
+          "group": "Mechanical & Piping Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_9",
@@ -3053,7 +4595,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Mechanical & Piping Works"
+          "group": "Mechanical & Piping Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_10",
@@ -3066,7 +4615,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Interior Fit-out"
+          "group": "Interior Fit-out",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_10",
@@ -3075,7 +4627,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Interior Fit-out"
+          "group": "Interior Fit-out",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_10",
@@ -3084,7 +4643,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Interior Fit-out"
+          "group": "Interior Fit-out",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_10",
@@ -3093,7 +4659,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Interior Fit-out"
+          "group": "Interior Fit-out",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_11",
@@ -3106,7 +4679,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Steel Structures — Fabrication & Erection"
+          "group": "Steel Structures — Fabrication & Erection",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_11",
@@ -3115,7 +4691,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Steel Structures — Fabrication & Erection"
+          "group": "Steel Structures — Fabrication & Erection",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_11",
@@ -3124,7 +4707,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Steel Structures — Fabrication & Erection"
+          "group": "Steel Structures — Fabrication & Erection",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_11",
@@ -3133,7 +4723,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Steel Structures — Fabrication & Erection"
+          "group": "Steel Structures — Fabrication & Erection",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_12",
@@ -3146,7 +4743,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "GRC — Glassfibre Reinforced Concrete"
+          "group": "GRC — Glassfibre Reinforced Concrete",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_12",
@@ -3155,7 +4755,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "GRC — Glassfibre Reinforced Concrete"
+          "group": "GRC — Glassfibre Reinforced Concrete",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_12",
@@ -3164,7 +4771,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "GRC — Glassfibre Reinforced Concrete"
+          "group": "GRC — Glassfibre Reinforced Concrete",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_12",
@@ -3173,7 +4787,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "GRC — Glassfibre Reinforced Concrete"
+          "group": "GRC — Glassfibre Reinforced Concrete",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_13",
@@ -3186,7 +4807,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "GRG — Glassfibre Reinforced Gypsum"
+          "group": "GRG — Glassfibre Reinforced Gypsum",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_13",
@@ -3195,7 +4819,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "GRG — Glassfibre Reinforced Gypsum"
+          "group": "GRG — Glassfibre Reinforced Gypsum",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_13",
@@ -3204,7 +4835,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "GRG — Glassfibre Reinforced Gypsum"
+          "group": "GRG — Glassfibre Reinforced Gypsum",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_13",
@@ -3213,7 +4851,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "GRG — Glassfibre Reinforced Gypsum"
+          "group": "GRG — Glassfibre Reinforced Gypsum",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_14",
@@ -3226,7 +4871,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Firefighting & Fire Alarm"
+          "group": "Firefighting & Fire Alarm",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_14",
@@ -3235,7 +4883,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Firefighting & Fire Alarm"
+          "group": "Firefighting & Fire Alarm",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_14",
@@ -3244,7 +4899,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Firefighting & Fire Alarm"
+          "group": "Firefighting & Fire Alarm",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_14",
@@ -3253,7 +4915,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Firefighting & Fire Alarm"
+          "group": "Firefighting & Fire Alarm",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_15",
@@ -3266,7 +4935,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Aluminium & Façade Works"
+          "group": "Aluminium & Façade Works",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_15",
@@ -3275,7 +4947,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Aluminium & Façade Works"
+          "group": "Aluminium & Façade Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_15",
@@ -3284,7 +4963,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Aluminium & Façade Works"
+          "group": "Aluminium & Façade Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_15",
@@ -3293,7 +4979,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Aluminium & Façade Works"
+          "group": "Aluminium & Façade Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_16",
@@ -3306,7 +4999,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Landscaping & External Works"
+          "group": "Landscaping & External Works",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_16",
@@ -3315,7 +5011,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Landscaping & External Works"
+          "group": "Landscaping & External Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_16",
@@ -3324,7 +5027,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Landscaping & External Works"
+          "group": "Landscaping & External Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_16",
@@ -3333,7 +5043,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Landscaping & External Works"
+          "group": "Landscaping & External Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_17",
@@ -3346,7 +5063,10 @@
             "Ad Hoc Subcontractor",
             "Not Offered"
           ],
-          "group": "Other Specialist Works"
+          "group": "Other Specialist Works",
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "trade_direct_17",
@@ -3355,7 +5075,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Other Specialist Works"
+          "group": "Other Specialist Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_available_17",
@@ -3364,7 +5091,14 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Other Specialist Works"
+          "group": "Other Specialist Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "trade_subcontract_17",
@@ -3373,13 +5107,26 @@
           "type": "number",
           "min": 0.0,
           "step": 1,
-          "group": "Other Specialist Works"
+          "group": "Other Specialist Works",
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "teamNotes",
           "label": "Team & Subcontracting Notes",
           "labelEn": "Team & Subcontracting Notes",
-          "type": "textarea"
+          "type": "textarea",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 1,
+            "maxLength": 10000,
+            "allowNewlines": true
+          }
         }
       ]
     },
@@ -3394,7 +5141,14 @@
           "labelEn": "Minimum Construction Contract (AED)",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 0.01,
+          "inputPolicy": {
+            "kind": "amount",
+            "min": 0,
+            "max": 1000000000000,
+            "precision": 2,
+            "integer": false
+          }
         },
         {
           "key": "designMinimum",
@@ -3402,7 +5156,14 @@
           "labelEn": "Minimum Design Fee (AED)",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 0.01,
+          "inputPolicy": {
+            "kind": "amount",
+            "min": 0,
+            "max": 1000000000000,
+            "precision": 2,
+            "integer": false
+          }
         },
         {
           "key": "typicalMin",
@@ -3410,7 +5171,14 @@
           "labelEn": "Typical Contract Value — Minimum (AED)",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 0.01,
+          "inputPolicy": {
+            "kind": "amount",
+            "min": 0,
+            "max": 1000000000000,
+            "precision": 2,
+            "integer": false
+          }
         },
         {
           "key": "typicalMax",
@@ -3418,7 +5186,14 @@
           "labelEn": "Typical Contract Value — Maximum (AED)",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 0.01,
+          "inputPolicy": {
+            "kind": "amount",
+            "min": 0,
+            "max": 1000000000000,
+            "precision": 2,
+            "integer": false
+          }
         },
         {
           "key": "largest",
@@ -3426,7 +5201,14 @@
           "labelEn": "Largest Completed Contract (AED)",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 0.01,
+          "inputPolicy": {
+            "kind": "amount",
+            "min": 0,
+            "max": 1000000000000,
+            "precision": 2,
+            "integer": false
+          }
         },
         {
           "key": "active",
@@ -3434,7 +5216,14 @@
           "labelEn": "Current Active Projects",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 1,
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "capacity",
@@ -3442,13 +5231,28 @@
           "labelEn": "Additional Projects Possible in the Next 30 Days",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 1,
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "start",
           "label": "Earliest Start Date",
           "labelEn": "Earliest Start Date",
-          "type": "date"
+          "type": "date",
+          "datePolicy": {
+            "minYear": 1900,
+            "maxYearsFromToday": 5,
+            "timeZone": "Asia/Dubai"
+          },
+          "inputPolicy": {
+            "kind": "date"
+          }
         },
         {
           "key": "completed",
@@ -3456,34 +5260,66 @@
           "labelEn": "Projects Completed in the Last 24 Months",
           "type": "number",
           "min": 0.0,
-          "step": 1
+          "step": 1,
+          "inputPolicy": {
+            "kind": "count",
+            "min": 0,
+            "max": 100000,
+            "precision": 0,
+            "integer": true
+          }
         },
         {
           "key": "capacityNotes",
           "label": "Type & Approximate Value of Additional Projects",
           "labelEn": "Type & Approximate Value of Additional Projects",
-          "type": "text"
+          "type": "text",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 1,
+            "maxLength": 2000,
+            "allowNewlines": false
+          }
         },
         {
           "key": "case1_name",
           "label": "Project Name / Property Type",
           "labelEn": "Project Name / Property Type",
           "type": "text",
-          "group": "Project 1"
+          "group": "Project 1",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 200,
+            "requireLetter": true
+          }
         },
         {
           "key": "case1_location",
           "label": "Location",
           "labelEn": "Location",
           "type": "text",
-          "group": "Project 1"
+          "group": "Project 1",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 200,
+            "requireLetter": true
+          }
         },
         {
           "key": "case1_work",
           "label": "Work Actually Undertaken",
           "labelEn": "Work Actually Undertaken",
           "type": "text",
-          "group": "Project 1"
+          "group": "Project 1",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": false,
+            "requireLetter": true
+          }
         },
         {
           "key": "case1_value",
@@ -3491,8 +5327,15 @@
           "labelEn": "Contract Value (AED)",
           "type": "number",
           "min": 0.0,
-          "step": 1,
-          "group": "Project 1"
+          "step": 0.01,
+          "group": "Project 1",
+          "inputPolicy": {
+            "kind": "amount",
+            "min": 0,
+            "max": 1000000000000,
+            "precision": 2,
+            "integer": false
+          }
         },
         {
           "key": "case1_area",
@@ -3500,15 +5343,30 @@
           "labelEn": "Area (m²)",
           "type": "number",
           "min": 0.0,
-          "step": 1,
-          "group": "Project 1"
+          "step": 0.001,
+          "group": "Project 1",
+          "inputPolicy": {
+            "kind": "area",
+            "min": 0,
+            "max": 1000000000,
+            "precision": 3,
+            "integer": false
+          }
         },
         {
           "key": "case1_date",
           "label": "Completion Date",
           "labelEn": "Completion Date",
           "type": "date",
-          "group": "Project 1"
+          "datePolicy": {
+            "minYear": 1900,
+            "maxYearsFromToday": 0,
+            "timeZone": "Asia/Dubai"
+          },
+          "group": "Project 1",
+          "inputPolicy": {
+            "kind": "date"
+          }
         },
         {
           "key": "Project 1",
@@ -3517,28 +5375,50 @@
           "type": "attachment",
           "group": "Project 1",
           "accept": "image/jpeg,image/png,image/webp,application/pdf",
-          "maxBytes": 15728640
+          "maxBytes": 15728640,
+          "inputPolicy": {
+            "kind": "attachment"
+          }
         },
         {
           "key": "case2_name",
           "label": "Project Name / Property Type",
           "labelEn": "Project Name / Property Type",
           "type": "text",
-          "group": "Project 2 (optional)"
+          "group": "Project 2 (optional)",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 200,
+            "requireLetter": true
+          }
         },
         {
           "key": "case2_location",
           "label": "Location",
           "labelEn": "Location",
           "type": "text",
-          "group": "Project 2 (optional)"
+          "group": "Project 2 (optional)",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 200,
+            "requireLetter": true
+          }
         },
         {
           "key": "case2_work",
           "label": "Work Actually Undertaken",
           "labelEn": "Work Actually Undertaken",
           "type": "text",
-          "group": "Project 2 (optional)"
+          "group": "Project 2 (optional)",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": false,
+            "requireLetter": true
+          }
         },
         {
           "key": "case2_value",
@@ -3546,8 +5426,15 @@
           "labelEn": "Contract Value (AED)",
           "type": "number",
           "min": 0.0,
-          "step": 1,
-          "group": "Project 2 (optional)"
+          "step": 0.01,
+          "group": "Project 2 (optional)",
+          "inputPolicy": {
+            "kind": "amount",
+            "min": 0,
+            "max": 1000000000000,
+            "precision": 2,
+            "integer": false
+          }
         },
         {
           "key": "case2_area",
@@ -3555,15 +5442,30 @@
           "labelEn": "Area (m²)",
           "type": "number",
           "min": 0.0,
-          "step": 1,
-          "group": "Project 2 (optional)"
+          "step": 0.001,
+          "group": "Project 2 (optional)",
+          "inputPolicy": {
+            "kind": "area",
+            "min": 0,
+            "max": 1000000000,
+            "precision": 3,
+            "integer": false
+          }
         },
         {
           "key": "case2_date",
           "label": "Completion Date",
           "labelEn": "Completion Date",
           "type": "date",
-          "group": "Project 2 (optional)"
+          "datePolicy": {
+            "minYear": 1900,
+            "maxYearsFromToday": 0,
+            "timeZone": "Asia/Dubai"
+          },
+          "group": "Project 2 (optional)",
+          "inputPolicy": {
+            "kind": "date"
+          }
         },
         {
           "key": "Project 2",
@@ -3572,28 +5474,50 @@
           "type": "attachment",
           "group": "Project 2 (optional)",
           "accept": "image/jpeg,image/png,image/webp,application/pdf",
-          "maxBytes": 15728640
+          "maxBytes": 15728640,
+          "inputPolicy": {
+            "kind": "attachment"
+          }
         },
         {
           "key": "case3_name",
           "label": "Project Name / Property Type",
           "labelEn": "Project Name / Property Type",
           "type": "text",
-          "group": "Project 3 (optional)"
+          "group": "Project 3 (optional)",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 200,
+            "requireLetter": true
+          }
         },
         {
           "key": "case3_location",
           "label": "Location",
           "labelEn": "Location",
           "type": "text",
-          "group": "Project 3 (optional)"
+          "group": "Project 3 (optional)",
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 200,
+            "requireLetter": true
+          }
         },
         {
           "key": "case3_work",
           "label": "Work Actually Undertaken",
           "labelEn": "Work Actually Undertaken",
           "type": "text",
-          "group": "Project 3 (optional)"
+          "group": "Project 3 (optional)",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": false,
+            "requireLetter": true
+          }
         },
         {
           "key": "case3_value",
@@ -3601,8 +5525,15 @@
           "labelEn": "Contract Value (AED)",
           "type": "number",
           "min": 0.0,
-          "step": 1,
-          "group": "Project 3 (optional)"
+          "step": 0.01,
+          "group": "Project 3 (optional)",
+          "inputPolicy": {
+            "kind": "amount",
+            "min": 0,
+            "max": 1000000000000,
+            "precision": 2,
+            "integer": false
+          }
         },
         {
           "key": "case3_area",
@@ -3610,15 +5541,30 @@
           "labelEn": "Area (m²)",
           "type": "number",
           "min": 0.0,
-          "step": 1,
-          "group": "Project 3 (optional)"
+          "step": 0.001,
+          "group": "Project 3 (optional)",
+          "inputPolicy": {
+            "kind": "area",
+            "min": 0,
+            "max": 1000000000,
+            "precision": 3,
+            "integer": false
+          }
         },
         {
           "key": "case3_date",
           "label": "Completion Date",
           "labelEn": "Completion Date",
           "type": "date",
-          "group": "Project 3 (optional)"
+          "datePolicy": {
+            "minYear": 1900,
+            "maxYearsFromToday": 0,
+            "timeZone": "Asia/Dubai"
+          },
+          "group": "Project 3 (optional)",
+          "inputPolicy": {
+            "kind": "date"
+          }
         },
         {
           "key": "Project 3",
@@ -3627,7 +5573,10 @@
           "type": "attachment",
           "group": "Project 3 (optional)",
           "accept": "image/jpeg,image/png,image/webp,application/pdf",
-          "maxBytes": 15728640
+          "maxBytes": 15728640,
+          "inputPolicy": {
+            "kind": "attachment"
+          }
         },
         {
           "key": "delivery0",
@@ -3638,7 +5587,10 @@
             "Provided as Standard",
             "Provided on Request",
             "Not Offered"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "delivery1",
@@ -3649,7 +5601,10 @@
             "Provided as Standard",
             "Provided on Request",
             "Not Offered"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "delivery2",
@@ -3660,7 +5615,10 @@
             "Provided as Standard",
             "Provided on Request",
             "Not Offered"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "delivery3",
@@ -3671,13 +5629,22 @@
             "Provided as Standard",
             "Provided on Request",
             "Not Offered"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "warranty",
           "label": "Warranty Coverage & Duration",
           "labelEn": "Warranty Coverage & Duration",
-          "type": "textarea"
+          "type": "textarea",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 1,
+            "maxLength": 10000,
+            "allowNewlines": true
+          }
         },
         {
           "key": "payments",
@@ -3689,13 +5656,22 @@
             "Cheque",
             "Cash",
             "Other"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choices"
+          }
         },
         {
           "key": "paymentTerms",
           "label": "Typical Payment Milestones & Percentages",
           "labelEn": "Typical Payment Milestones & Percentages",
-          "type": "text"
+          "type": "text",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 1,
+            "maxLength": 2000,
+            "allowNewlines": false
+          }
         }
       ]
     },
@@ -3709,38 +5685,78 @@
           "label": "Inspector Name",
           "labelEn": "Inspector Name",
           "type": "text",
-          "required": true
+          "required": true,
+          "inputPolicy": {
+            "kind": "name",
+            "minLength": 1,
+            "maxLength": 120,
+            "requireLetter": true
+          }
         },
         {
           "key": "visitDate",
           "label": "Visit Date",
           "labelEn": "Visit Date",
           "type": "date",
-          "required": true
+          "required": true,
+          "datePolicy": {
+            "minYear": 1900,
+            "maxYearsFromToday": 0,
+            "timeZone": "Asia/Dubai"
+          },
+          "inputPolicy": {
+            "kind": "date"
+          }
         },
         {
           "key": "license",
           "label": "Trade License Number",
           "labelEn": "Trade License Number",
-          "type": "text"
+          "type": "text",
+          "inputPolicy": {
+            "kind": "identifier",
+            "minLength": 1,
+            "maxLength": 100
+          }
         },
         {
           "key": "expiry",
           "label": "License Expiry Date",
           "labelEn": "License Expiry Date",
-          "type": "date"
+          "type": "date",
+          "datePolicy": {
+            "minYear": 1900,
+            "maxYearsFromToday": 30,
+            "timeZone": "Asia/Dubai"
+          },
+          "inputPolicy": {
+            "kind": "date"
+          }
         },
         {
           "key": "activities",
           "label": "Activities Listed on the Trade License",
           "labelEn": "Activities Listed on the Trade License",
-          "type": "text"
+          "type": "text",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 2,
+            "maxLength": 2000,
+            "allowNewlines": false,
+            "requireLetter": true
+          }
         },
         {
           "key": "qualifications",
           "label": "Other Qualifications / Permits (issuer and expiry)",
           "labelEn": "Other Qualifications / Permits (issuer and expiry)",
-          "type": "text"
+          "type": "text",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 1,
+            "maxLength": 2000,
+            "allowNewlines": false
+          }
         },
         {
           "key": "approvals",
@@ -3752,7 +5768,10 @@
             "Handled by a Partner",
             "Handled by the Client",
             "Agreed per Project"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "Licenses & Qualifications",
@@ -3760,7 +5779,10 @@
           "labelEn": "Licenses & Qualifications",
           "type": "attachment",
           "accept": "image/jpeg,image/png,image/webp,application/pdf",
-          "maxBytes": 15728640
+          "maxBytes": 15728640,
+          "inputPolicy": {
+            "kind": "attachment"
+          }
         },
         {
           "key": "licenseCheck",
@@ -3772,7 +5794,10 @@
             "Provided — Pending Verification",
             "Verified",
             "Issues Identified"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "officeCheck",
@@ -3782,7 +5807,10 @@
           "options": [
             "Not Verified",
             "Verified On-site"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "caseCheck",
@@ -3793,7 +5821,10 @@
             "Not Verified",
             "Partially Verified",
             "Verified"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "customerCheck",
@@ -3803,7 +5834,10 @@
           "options": [
             "Not Conducted",
             "Completed"
-          ]
+          ],
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "conclusion",
@@ -3815,19 +5849,34 @@
             "Additional Documents Required",
             "Further Verification Required"
           ],
-          "required": true
+          "required": true,
+          "inputPolicy": {
+            "kind": "choice"
+          }
         },
         {
           "key": "gaps",
           "label": "Missing Documents / Issues Identified",
           "labelEn": "Missing Documents / Issues Identified",
-          "type": "textarea"
+          "type": "textarea",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 1,
+            "maxLength": 10000,
+            "allowNewlines": true
+          }
         },
         {
           "key": "verifyNotes",
           "label": "On-site Verification Notes",
           "labelEn": "On-site Verification Notes",
-          "type": "textarea"
+          "type": "textarea",
+          "inputPolicy": {
+            "kind": "text",
+            "minLength": 1,
+            "maxLength": 10000,
+            "allowNewlines": true
+          }
         },
         {
           "key": "Additional Verification Evidence",
@@ -3835,7 +5884,10 @@
           "labelEn": "Additional Verification Evidence",
           "type": "attachment",
           "accept": "image/jpeg,image/png,image/webp,application/pdf",
-          "maxBytes": 15728640
+          "maxBytes": 15728640,
+          "inputPolicy": {
+            "kind": "attachment"
+          }
         }
       ]
     },

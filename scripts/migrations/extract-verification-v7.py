@@ -30,6 +30,8 @@ for panel in soup.select('[data-panel]'):
   for attr in ('min','max','step'):
    if el.has_attr(attr): field[attr]=float(el[attr])
   if typ=='number' and not el.has_attr('step'): field['step']=1
+  if key=='year': field['yearPolicy']={'min':1900,'maxCurrentYear':True,'timeZone':'Asia/Dubai'}
+  if typ=='date': field['datePolicy']={'minYear':1900,'maxYearsFromToday':30 if key=='expiry' else 5 if key=='start' else 0,'timeZone':'Asia/Dubai'}
   if el.has_attr('placeholder'): field['placeholder']=el['placeholder']
   if group: field['group']=text(group.select_one('h3')); field['groupKey']=group['data-specialist-group']
   if trade: field['group']=text(trade.select_one('legend'))
@@ -52,6 +54,38 @@ for panel in soup.select('[data-panel]'):
  if int(panel['data-panel'])==1:
   section['fields'].append({'key':'areas','role':'service_areas','label':'Service Districts','labelEn':'Service Districts','type':'repeat','maxItems':30,'fields':[{'key':'emirate','label':'Emirate','labelEn':'Emirate','type':'radio','options':['Dubai','Abu Dhabi','Sharjah','Ajman','RAK','Fujairah','Umm Al Quwain']},{'key':'district','label':'District / Community','labelEn':'District / Community','type':'text'}]})
  sections.append(section)
+def add_policy(field):
+ key=field['key']; typ=field['type']
+ simple={'radio':'choice','checkbox':'choices','attachment':'attachment','repeat':'repeat','date':'date','email':'email'}
+ kind=simple.get(typ)
+ if typ=='number': kind='year' if key=='year' else 'amount' if '(AED)' in field['label'] else 'area' if key.endswith('_area') else 'count'
+ if typ=='tel': kind='phone'
+ if typ=='url': kind='map'
+ if typ in ('text','textarea'):
+  kind='website' if key=='website' else 'identifier' if key=='license' else 'address' if key in ('address','facilityAddress') else 'name' if key in ('company','contact','position','ownerName','commercialName','commercialRole','technicalName','technicalRole','inspector') or key.endswith(('_name','_location')) else 'text'
+ policy={'kind':kind}
+ if kind in ('count','amount','area'):
+  precision=2 if kind=='amount' else 3 if kind=='area' else 0
+  policy.update({'min':0,'max':1000000000000 if kind=='amount' else 1000000000 if kind=='area' else 100000,'precision':precision,'integer':kind=='count'})
+  field['step']=0.01 if kind=='amount' else 0.001 if kind=='area' else 1
+ elif kind=='phone': policy.update({'country':'ae','maxLength':40})
+ elif kind=='name': policy.update({'minLength':1,'maxLength':200 if key=='company' or key.endswith(('_name','_location')) else 120,'requireLetter':True})
+ elif kind=='address': policy.update({'minLength':3,'maxLength':500,'requireLetter':True})
+ elif kind=='identifier': policy.update({'minLength':1,'maxLength':100})
+ elif kind in ('website','map'):
+  policy.update({'maxLength':2000})
+  if kind=='website': policy['allowHandle']=True
+ elif kind=='email': policy.update({'maxLength':254})
+ elif kind=='text':
+  work=key.startswith('specialist_') or key=='otherSpecialization' or key.endswith('_work') or key in ('specialty','serviceArea','activities')
+  policy.update({'minLength':2 if work else 1,'maxLength':2000 if work or typ=='text' else 10000,'allowNewlines':typ=='textarea'})
+  if work: policy['requireLetter']=True
+ field['inputPolicy']=policy
+ for child in field.get('fields',[]):
+  add_policy(child)
+  if child['key']=='district': child['inputPolicy']={'kind':'name','minLength':1,'maxLength':200,'requireLetter':True}
+for section in sections:
+ for field in section['fields']: add_policy(field)
 schema={'version':'tarmeer-verification-v7','country':'ae','title':'Contractor Verification','currency':'AED','source_sha256':hashlib.sha256(source.encode()).hexdigest(),'sections':sections,'notice':'Keep company claims separate from verified findings. Completing this form does not assign an A, B or C rating.'}
 with open(sys.argv[2],'w',encoding='utf-8') as out: json.dump(schema,out,ensure_ascii=False,indent=2); out.write('\n')
 print('Extracted',sum(len(s['fields']) for s in sections),'fields across',len(sections),'steps')

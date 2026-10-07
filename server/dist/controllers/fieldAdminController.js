@@ -122,8 +122,8 @@ async function editInterview(req,res) {
             if(!req.body.verification_data || typeof req.body.verification_data!=='object' || Array.isArray(req.body.verification_data)) return res.status(400).json({error:'Verification answers must be an object.'});
             const data={...(verification.parseJSON(current.verification_data)||{}),...req.body.verification_data};
             const snapshot=verification.parseJSON(current.schema_snapshot);
-            const error=verification.validateAnswers(data,snapshot,current.status==='submitted');
-            if(error) return res.status(400).json({error});
+            const error=verification.validateAnswersDetailed(data,snapshot,current.status==='submitted');
+            if(error) return res.status(400).json(error);
             fields.verification_data=JSON.stringify(data);
             const companyField=snapshot.sections.flatMap(s=>s.fields).find(f=>f.role==='company_name');
             if(companyField && data[companyField.key]!==undefined) fields.company_name=String(data[companyField.key]).slice(0,200);

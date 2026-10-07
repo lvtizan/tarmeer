@@ -6,7 +6,7 @@ import vm from 'node:vm';
 
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
-function client(status = 200) {
+function client(status = 200, errorBody = { error: 'Draft not found.' }) {
   const values = new Map();
   const storage = {
     getItem: k => values.get(k) ?? null,
@@ -25,7 +25,7 @@ function client(status = 200) {
     },
     fetch: async (url, options) => {
       calls.push({ url, options });
-      return { ok: status < 400, status, json: async () => status >= 400 ? { error: 'Draft not found.' } : url === '/api/field/interviews'
+      return { ok: status < 400, status, json: async () => status >= 400 ? errorBody : url === '/api/field/interviews'
         ? { id: 41, draft_token: 'private-draft-token' } : { ok: true } };
     },
   };
@@ -85,4 +85,11 @@ test('admin interview detail, update and delete carry selected country', async (
   const c = client(401);
   await assert.rejects(c.fieldApi.uploadPhoto(41, new Blob(['photo'])), error => error.status === 401);
   await assert.rejects(c.fieldApi.uploadAttachment(41, new File(['proof'], 'proof.pdf')), error => error.status === 401);
+});
+
+test('structured validation field key survives transport without inventing malformed keys', async () => {
+  const c = client(400, {error:'Semantic validation failed.',field_key:'db_owned_dynamic_key'});
+  await assert.rejects(c.fieldApi.saveDraft(41,{}), error=>error.fieldKey==='db_owned_dynamic_key' && error.status===400);
+  const malformed=client(400,{error:'Invalid.',field_key:{secret:'ignored'}});
+  await assert.rejects(malformed.fieldApi.submit(41), error=>error.fieldKey===undefined);
 });
