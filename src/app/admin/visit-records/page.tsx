@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useLayoutEffect, useCallback, useRef, Suspense } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, Suspense, type CSSProperties } from 'react';
 import { adminApi, fieldApi } from '@/lib/adminApi';
 import { showConfirm } from '@/components/ui/ConfirmModal';
 import { Spinner } from '@/components/ui/Spinner';
@@ -148,6 +148,27 @@ function AdminVisitRecordsContent() {
   const [bindSearching, setBindSearching] = useState(false);
   const [bindError, setBindError] = useState(false);
   const [binding, setBinding] = useState(false);
+  const detailBackRef = useRef<HTMLButtonElement>(null);
+  const detailOverviewRef = useRef<HTMLDivElement>(null);
+  const [detailBackHeight, setDetailBackHeight] = useState(0);
+  const [detailOverviewHeight, setDetailOverviewHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const nodes = [detailBackRef.current, detailOverviewRef.current].filter((node): node is HTMLButtonElement | HTMLDivElement => node !== null);
+    if (!nodes.length || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const backHeight = Math.ceil(detailBackRef.current?.getBoundingClientRect().height || 0);
+      const overviewHeight = Math.ceil(detailOverviewRef.current?.getBoundingClientRect().height || 0);
+      setDetailBackHeight(current => current === backHeight ? current : backHeight);
+      setDetailOverviewHeight(current => current === overviewHeight ? current : overviewHeight);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    nodes.forEach(node => observer.observe(node));
+    return () => observer.disconnect();
+  }, [detail, bindOpen]);
+
+  const recordStickyOffset = detailBackHeight + detailOverviewHeight + 16;
 
   const loadSchema = useCallback(async () => {
     const request = ++schemaRequest.current;
@@ -369,8 +390,9 @@ function AdminVisitRecordsContent() {
     return (
       <div className="space-y-4">
         <button
+          ref={detailBackRef}
           onClick={closeDetail}
-          className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
+          className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800 xl:sticky xl:top-0 xl:z-30 xl:bg-[#fafaf9]/95 xl:py-3"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
           {t('Back to Records', '返回访谈列表')}
@@ -382,7 +404,7 @@ function AdminVisitRecordsContent() {
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : (
           <>
-            <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5">
+            <div ref={detailOverviewRef} style={{ '--record-detail-back-height': `${detailBackHeight}px` } as CSSProperties} className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 xl:sticky xl:top-[var(--record-detail-back-height)] xl:z-20">
               {/* Title row: company name + status badge */}
               <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                 <div className="min-w-0">
@@ -645,11 +667,11 @@ function AdminVisitRecordsContent() {
             })()}
 
             {parseRecordSchema(detail.schema_snapshot).length > 0 ? (
-              <VerificationRecordSections record={detail as unknown as Record<string, unknown>} schema={detail.schema_snapshot}/>
+              <VerificationRecordSections record={detail as unknown as Record<string, unknown>} schema={detail.schema_snapshot} stickyOffset={recordStickyOffset}/>
             ) : !schemaLoaded ? <div className="flex justify-center py-4"><Spinner /></div> : (
               <>
                 {schemaError && <p role="alert" className="text-sm text-red-600">{t('Survey labels could not be loaded. Saved answers are shown below.', '问卷标签加载失败，下方仍显示已保存的答案。')} <button onClick={loadSchema} className="underline">{t('Retry', '重试')}</button></p>}
-                <VerificationRecordSections record={detail as unknown as Record<string, unknown>} schema={activeSchema}/>
+                <VerificationRecordSections record={detail as unknown as Record<string, unknown>} schema={activeSchema} stickyOffset={recordStickyOffset}/>
               </>
             )}
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { buildRecordSections, hasRecordValue, parseRecordSchema, safeRecordUrl, type RecordField } from './VerificationRecordModel';
 
 function RecordValue({ value, field, depth = 0 }: { value: unknown; field?: RecordField; depth?: number }) {
@@ -24,24 +24,101 @@ function RecordValue({ value, field, depth = 0 }: { value: unknown; field?: Reco
 const recordSectionId = (key: string) => `record-section-${key}`;
 const decodeHash = (hash: string) => { try { return decodeURIComponent(hash); } catch { return hash; } };
 
-export default function VerificationRecordSections({ record, schema }: { record: Record<string, unknown>; schema: unknown }) {
+export default function VerificationRecordSections({ record, schema, stickyOffset = 0 }: { record: Record<string, unknown>; schema: unknown; stickyOffset?: number }) {
   const sections = useMemo(() => buildRecordSections(record, schema), [record, schema]);
   const hasSnapshot = parseRecordSchema(record.schema_snapshot).length > 0;
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [scrollportHeight, setScrollportHeight] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
   const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const query = window.matchMedia('(min-width: 1280px)');
+    const update = () => setIsDesktop(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop) {
+      setScrollportHeight(0);
+      return;
+    }
+    const scrollport = navRef.current?.closest('main');
+    if (!scrollport || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setScrollportHeight(scrollport.clientHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(scrollport);
+    return () => observer.disconnect();
+  }, [isDesktop]);
+
+  useEffect(() => {
+    const measure = () => setViewportHeight(window.visualViewport?.height || window.innerHeight);
+    measure();
+    window.addEventListener('resize', measure);
+    window.visualViewport?.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.visualViewport?.removeEventListener('resize', measure);
+    };
+  }, []);
+
+  useEffect(() => {
     setActiveIndex(0);
+  }, [sections]);
+
+  useEffect(() => {
     if (!sections.length) return;
     const nodes = sections.map(section => document.getElementById(recordSectionId(section.key))).filter((node): node is HTMLElement => !!node);
     if (!nodes.length) return;
+    const scrollport = isDesktop ? nodes[0].closest('main') : null;
+    const rootHeight = isDesktop ? scrollportHeight : viewportHeight;
+    const availableHeight = Math.max(1, rootHeight - (isDesktop ? stickyOffset : 0));
+    const observationBand = Math.min(160, availableHeight);
+    const topInset = isDesktop ? Math.min(stickyOffset, Math.max(0, rootHeight - observationBand)) : 0;
+    const bottomInset = Math.max(0, rootHeight - topInset - observationBand);
+    const scrollSource = nodes[0].closest('main') || document.scrollingElement;
+    const isAtEnd = () => Boolean(
+      scrollSource
+      && scrollSource.scrollHeight > scrollSource.clientHeight + 2
+      && scrollSource.scrollHeight - scrollSource.scrollTop - scrollSource.clientHeight <= 2,
+    );
     const observer = new IntersectionObserver(entries => {
+      if (isAtEnd()) {
+        setActiveIndex(nodes.length - 1);
+        return;
+      }
       const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
       if (visible) setActiveIndex(Number((visible.target as HTMLElement).dataset.sectionIndex));
-    }, { rootMargin: '-18% 0px -62% 0px', threshold: [0.1, 0.35, 0.6] });
+    }, {
+      root: scrollport,
+      rootMargin: `-${topInset}px 0px -${bottomInset}px 0px`,
+      threshold: [0.1, 0.35, 0.6],
+    });
     nodes.forEach(node => observer.observe(node));
-    return () => observer.disconnect();
-  }, [sections]);
+    const selectActiveFromScrollPosition = () => {
+      if (isAtEnd()) {
+        setActiveIndex(nodes.length - 1);
+        return;
+      }
+      const observationTop = scrollport
+        ? scrollport.getBoundingClientRect().top + topInset
+        : topInset;
+      const currentIndex = nodes.reduce((current, node, index) => (
+        node.getBoundingClientRect().top <= observationTop + 1 ? index : current
+      ), 0);
+      setActiveIndex(currentIndex);
+    };
+    scrollSource?.addEventListener('scroll', selectActiveFromScrollPosition, { passive: true });
+    selectActiveFromScrollPosition();
+    return () => {
+      observer.disconnect();
+      scrollSource?.removeEventListener('scroll', selectActiveFromScrollPosition);
+    };
+  }, [isDesktop, scrollportHeight, sections, stickyOffset, viewportHeight]);
 
   useEffect(() => {
     const selectHashTarget = () => {
@@ -64,17 +141,17 @@ export default function VerificationRecordSections({ record, schema }: { record:
     if (!nav || !link) return;
     const navRect = nav.getBoundingClientRect();
     const linkRect = link.getBoundingClientRect();
-    if (window.matchMedia('(min-width: 1280px)').matches) {
+    if (isDesktop) {
       nav.scrollTop += linkRect.top - navRect.top - (nav.clientHeight - link.clientHeight) / 2;
     } else {
       nav.scrollLeft += linkRect.left - navRect.left - (nav.clientWidth - link.clientWidth) / 2;
     }
-  }, [activeIndex, sections]);
+  }, [activeIndex, isDesktop, sections]);
 
   if (!sections.length) return <p className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-500">No questionnaire answers saved.</p>;
 
-  return <div className="mx-auto min-w-0 max-w-[1500px] xl:grid xl:grid-cols-[232px_minmax(0,1fr)] xl:gap-7">
-    <aside className="print:hidden xl:sticky xl:top-24 xl:flex xl:max-h-[calc(100dvh-10rem)] xl:self-start xl:flex-col">
+  return <div style={{ '--record-overview-offset': `${stickyOffset}px` } as CSSProperties} className="mx-auto min-w-0 max-w-[1500px] xl:grid xl:grid-cols-[232px_minmax(0,1fr)] xl:gap-7">
+    <aside style={isDesktop && scrollportHeight > stickyOffset ? { maxHeight: `${scrollportHeight - stickyOffset}px` } : undefined} className="print:hidden xl:sticky xl:top-[var(--record-overview-offset)] xl:flex xl:max-h-[calc(100dvh-4rem-var(--record-overview-offset))] xl:self-start xl:flex-col">
       <nav ref={navRef} aria-label="Record sections" className="flex gap-2 overflow-x-auto pb-2 xl:min-h-0 xl:flex-1 xl:flex-col xl:overflow-x-hidden xl:overflow-y-auto xl:rounded-xl xl:border xl:border-stone-200 xl:bg-white xl:p-2">
         {sections.map((section, index) => {
           const selected = activeIndex === index;
@@ -93,7 +170,7 @@ export default function VerificationRecordSections({ record, schema }: { record:
         const known = new Set(section.fields.flatMap(field => [field.key, `${field.key}__other`]));
         const fields: RecordField[] = [...section.fields, ...Object.keys(section.data).filter(key => !known.has(key)).map(key => ({ key, label: key }))];
         const filled = section.fields.filter(field => hasRecordValue(section.data[field.key]) || hasRecordValue(section.data[`${field.key}__other`])).length;
-        return <section key={section.key} id={recordSectionId(section.key)} data-section-index={index} className="scroll-mt-24 overflow-hidden rounded-xl border border-stone-200 bg-white">
+        return <section key={section.key} id={recordSectionId(section.key)} data-section-index={index} className="scroll-mt-24 overflow-hidden rounded-xl border border-stone-200 bg-white xl:scroll-mt-[var(--record-overview-offset)]">
           <div className="flex items-center justify-between gap-3 border-b border-stone-100 bg-stone-50 px-4 py-3 sm:px-5"><h2 className="break-words text-sm font-semibold text-stone-700">{section.titleEn || section.title}</h2><span className="shrink-0 text-xs text-stone-400">{filled}/{section.fields.length}</span></div>
           <dl className="divide-y divide-stone-100">{fields.map((field, fieldIndex) => <div key={field.key} className="grid grid-cols-1 gap-1.5 px-4 py-3.5 print:break-inside-avoid sm:grid-cols-[minmax(140px,220px)_minmax(0,1fr)] sm:gap-5 sm:px-5">{field.group && field.group !== fields[fieldIndex - 1]?.group && <h3 className="mb-1 border-b border-stone-100 pb-2 text-xs font-semibold text-[#b8864a] sm:col-span-2">{field.group}</h3>}<dt className="break-words text-sm text-stone-500">{field.labelEn || field.label}</dt><dd className="min-w-0"><RecordValue value={section.data[field.key]} field={field} />{hasRecordValue(section.data[`${field.key}__other`]) && <div className="mt-1"><RecordValue value={section.data[`${field.key}__other`]} /></div>}</dd></div>)}</dl>
           {!fields.length && <p className="p-4 text-sm text-stone-400">No answers saved.</p>}
