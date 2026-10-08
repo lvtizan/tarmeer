@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { adminApi, fieldApi } from '@/lib/adminApi';
 import { showConfirm } from '@/components/ui/ConfirmModal';
 import { Spinner } from '@/components/ui/Spinner';
@@ -117,7 +116,6 @@ const STATUS_OPTIONS = [
 function AdminVisitRecordsContent() {
   const { t } = useAdminT();
   const { country } = useAdminCountry();
-  const searchParams = useSearchParams();
   const [records, setRecords] = useState<VisitRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState(false);
@@ -126,6 +124,7 @@ function AdminVisitRecordsContent() {
   const [recordsCountry, setRecordsCountry] = useState(country);
   const [detailCountry, setDetailCountry] = useState(country);
   const countryRef = useRef(country);
+  const detailCountryRef = useRef(country);
   useLayoutEffect(() => { countryRef.current = country; }, [country]);
   const listRequest = useRef(0);
   const schemaRequest = useRef(0);
@@ -134,6 +133,7 @@ function AdminVisitRecordsContent() {
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const selectedIdRef = useRef<number | null>(null);
   const [detail, setDetail] = useState<VisitRecordDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -214,11 +214,13 @@ function AdminVisitRecordsContent() {
     });
   };
 
-  const openDetail = async (id: number) => {
+  const openDetail = useCallback(async (id: number) => {
     const request = ++detailRequest.current;
     ++bindRequest.current;
     const requestedCountry = country;
+    detailCountryRef.current = country;
     setDetailCountry(country); setDetailError(false); setEditLogs([]);
+    selectedIdRef.current = id;
     setSelectedId(id);
     setDetail(null);
     setDetailLoading(true);
@@ -231,16 +233,44 @@ function AdminVisitRecordsContent() {
       setDetail(record); setEditLogs(data.edit_logs || []);
     } catch { if (request === detailRequest.current && countryRef.current === requestedCountry) setDetailError(true); }
     finally { if (request === detailRequest.current && countryRef.current === requestedCountry) setDetailLoading(false); }
+  }, [country]);
+
+  const showDetail = (id: number) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('detail', String(id));
+    url.hash = '';
+    window.history.pushState({}, '', `${url.pathname}${url.search}`);
+    void openDetail(id);
   };
 
-  // Auto-open a record when navigating back from company detail (?detail=N)
+  const closeDetail = () => {
+    ++detailRequest.current; ++bindRequest.current;
+    selectedIdRef.current = null;
+    setSelectedId(null); setDetail(null); setLightboxUrl(null); setEditLogs([]);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('detail');
+    url.hash = '';
+    window.history.pushState({}, '', `${url.pathname}${url.search}`);
+  };
+
+  // Keep the selected record in the URL so a section hash can be copied or restored with browser history.
   useEffect(() => {
-    const detailId = searchParams.get('detail');
-    if (detailId && /^\d+$/.test(detailId) && Number(detailId) > 0) {
-      openDetail(Number(detailId));
-    }
+    const syncDetailFromUrl = () => {
+      const detailId = new URLSearchParams(window.location.search).get('detail');
+      if (detailId && /^\d+$/.test(detailId) && Number(detailId) > 0) {
+        const id = Number(detailId);
+        if (selectedIdRef.current !== id || detailCountryRef.current !== country) void openDetail(id);
+        return;
+      }
+      ++detailRequest.current; ++bindRequest.current;
+      selectedIdRef.current = null;
+      setSelectedId(null); setDetail(null); setLightboxUrl(null); setEditLogs([]);
+    };
+    syncDetailFromUrl();
+    window.addEventListener('popstate', syncDetailFromUrl);
+    return () => window.removeEventListener('popstate', syncDetailFromUrl);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [openDetail]);
 
   // 绑定公司：按访谈所属国家搜索（国家数据隔离），选中后 PATCH company_ref
   const handleBindSearch = async (q: string) => {
@@ -339,7 +369,7 @@ function AdminVisitRecordsContent() {
     return (
       <div className="space-y-4">
         <button
-          onClick={() => { ++detailRequest.current; ++bindRequest.current; setSelectedId(null); setDetail(null); setLightboxUrl(null); setEditLogs([]); }}
+          onClick={closeDetail}
           className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
@@ -793,9 +823,9 @@ function AdminVisitRecordsContent() {
               <div
                 key={r.id}
                 className={`bg-white rounded-xl border flex items-stretch cursor-pointer transition-colors ${selected.has(r.id) ? 'border-amber-300 bg-amber-50/30' : 'border-stone-200'}`}
-                onClick={() => openDetail(r.id)}
+                onClick={() => showDetail(r.id)}
                 role="button" tabIndex={0}
-                onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); void openDetail(r.id); } }}
+                onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); showDetail(r.id); } }}
               >
                 {/* Checkbox — large touch target on left */}
                 <div
@@ -870,7 +900,7 @@ function AdminVisitRecordsContent() {
                   <tr
                     key={r.id}
                     className={`border-b border-stone-50 hover:bg-stone-50 transition-colors cursor-pointer ${selected.has(r.id) ? 'bg-amber-50/40' : ''}`}
-                    onClick={() => openDetail(r.id)}
+                    onClick={() => showDetail(r.id)}
                   >
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <input
