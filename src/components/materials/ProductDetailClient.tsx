@@ -6,7 +6,7 @@
 // 表单桌面 sticky 侧栏 + 移动端内容底部双位置（参照专家页模式）。
 
 import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import CatalogEntry from './CatalogEntry';
 import Link from 'next/link';
 import { BadgeCheck, ArrowLeft, ChevronRight, PlayCircle } from 'lucide-react';
 import SmartImage from '@/components/ui/SmartImage';
@@ -25,17 +25,6 @@ import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import ProductPriceLine from './ProductPriceLine';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { getMaterialGallery, getMaterialSpecifications } from '@/lib/materialGallery';
-
-// pdf.js 阅读器懒加载：只在客户端、独立 chunk，不进初始包（不看图册的用户零成本）
-// loading 占位预留 16:9 空间 → 避免标题短暂悬在塌陷的空白上 + 布局抖动(CLS)
-const CatalogReader = dynamic(() => import('./CatalogReader'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex w-full aspect-video items-center justify-center rounded-2xl bg-[#1c1917]">
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/25 border-t-[#e6c88f]" />
-    </div>
-  ),
-});
 
 interface ProductDetailClientProps {
   product: PublicMaterialProduct;
@@ -251,14 +240,6 @@ export default function ProductDetailClient({ product, related, catalogs = [], r
               </section>
             )}
 
-            {/* 产品图册（供应商 PDF → 电子书）— 无 catalog 时 CatalogReader 返回 null 自动隐藏 */}
-            {catalogs.length > 0 && (
-              <div>
-                <h2 className="text-lg font-semibold text-[#1c1917] mb-4">Product Catalog</h2>
-                <CatalogReader catalogs={catalogs} />
-              </div>
-            )}
-
             {/* Specifications — 空则整块隐藏 */}
             {specifications.length === 0 && <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-700">Specifications have not yet been supplied. Include your requirements in the inquiry.</p>}
             {specifications.length > 0 && (
@@ -306,6 +287,13 @@ export default function ProductDetailClient({ product, related, catalogs = [], r
               </div>
             )}
 
+
+            {catalogs.length > 0 && (
+              <section aria-labelledby="product-catalog-heading">
+                <h2 id="product-catalog-heading" className="mb-4 text-lg font-semibold text-[#1c1917]">Product Catalog</h2>
+                <CatalogEntry catalogs={catalogs} />
+              </section>
+            )}
 
             {/* 移动端表单（sticky 侧栏桌面 only，内容底部补充显示） */}
             <div className="lg:hidden space-y-4">

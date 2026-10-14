@@ -208,6 +208,13 @@ try {
   ng('供应商项目图库平衡布局', commandTail(e));
 }
 try {
+  execSync('node scripts/harness/catalog-entry.mjs', { cwd: ROOT, stdio: 'pipe' });
+  execSync('node scripts/harness/catalog-reader-focus.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('紧凑目录入口、按需阅读与焦点恢复');
+} catch (e) {
+  ng('紧凑目录入口、按需阅读与焦点恢复', commandTail(e));
+}
+try {
   execSync('node scripts/harness/supplier-product-video.mjs', { cwd: ROOT, stdio: 'pipe' });
   ok('供应商产品视频 URL 安全与播放契约');
 } catch (e) {

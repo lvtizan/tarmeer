@@ -201,7 +201,7 @@ export default function SupplierProductLibrary({ products, categoryLabel, onOpen
                       className={fullSlab ? 'group min-w-0' : 'group min-w-0 [content-visibility:auto] [contain-intrinsic-size:auto_210px] sm:[contain-intrinsic-size:auto_280px] lg:[contain-intrinsic-size:auto_320px]'}
                     >
                       <div className={`relative ${fullSlab ? 'aspect-[1/3]' : 'aspect-[4/3]'} overflow-hidden rounded-xl border border-stone-200 bg-white`}>
-                        <MaterialImage key={product.image_url} src={product.image_url} alt={title} variant={fullSlab ? 'thumb' : 'medium'} />
+                        <MaterialImage key={product.image_url} src={product.image_url} alt={title} variant={fullSlab ? 'thumb' : 'medium'} fit={fullSlab ? 'cover' : 'contain'} />
                         {enableProductDetails ? <Link href={`/materials/products/${product.id}`} aria-label={`View ${title}`} className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-[#b8864a]" /> : <button type="button" onClick={() => onOpenProduct(product)} aria-label={`View ${title}`} className="absolute inset-0" />}
                         <button type="button" onClick={() => onOpenProduct(product)} aria-label={`Enlarge ${title}`} className="absolute right-2 top-2 rounded-full bg-white/95 p-2 text-stone-800 shadow-sm"><ZoomIn className="h-4 w-4" /></button>
                         {product.video_url && <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[10px] font-semibold text-white"><Play className="h-3 w-3 fill-current" /> Video</span>}

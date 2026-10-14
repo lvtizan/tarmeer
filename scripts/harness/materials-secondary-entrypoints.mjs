@@ -29,7 +29,7 @@ function component(file,state) {
   if(name.endsWith('/country'))return {countryFromLang:()=>({code:'ae'})};
   if(name.endsWith('/SiteLocaleContext'))return {useSiteLocale:()=>({lang:'en'})};
   if(name.endsWith('/materialMacros'))return {PREMIUM_MATERIALS:[],fetchMacroProducts:()=>{throw Error('Unexpected effect during static render')}};
-  if(name==='./MaterialImage')return {default:({src,alt})=>createElement('img',{src,alt,'data-material-image':'true'})};
+  if(name==='./MaterialImage')return {default:({src,alt,fit})=>createElement('img',{src,alt,'data-fit':fit,'data-material-image':'true'})};
   if(name==='./ProductPriceLine')return {default:()=>createElement('p',null,'Request a quote')};
   throw Error(name);
  }});return exports.default;
@@ -51,6 +51,8 @@ check('translated Collection field preserves original series browsing',library.g
 const slab={...fixture,specs:[...fixture.specs,{label:'Display format',value:'Full slab'}]};
 const slabHtml=renderToStaticMarkup(createElement(component('SupplierProductLibrary.tsx'),{products:[slab],categoryLabel:()=> 'Stone',onOpenProduct(){},enableProductDetails:true}));
 check('declared slab uses full-height portrait display',slabHtml.includes('aspect-[1/3]'));
+check('declared slab cover fills the portrait card without white side gutters',slabHtml.includes('data-fit="cover"'));
+check('ordinary supplier images retain complete image presentation',nonAe.includes('data-fit="contain"'));
 check('slab grid fits more narrow boards on wide screens',slabHtml.includes('2xl:grid-cols-7'));
 check('slab rows do not reserve landscape-sized visibility placeholders',!slabHtml.includes('contain-intrinsic-size'));
 check('ordinary materials retain their landscape cards',nonAe.includes('aspect-[4/3]'));

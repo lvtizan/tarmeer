@@ -26,6 +26,8 @@ import SupplierProductLibrary from './SupplierProductLibrary';
 import SupplierVrShowroom from './SupplierVrShowroom';
 
 // PDF 图册电子书阅读器（pdf.js/预渲染 WebP），懒加载单独 chunk
+import CatalogEntry from './CatalogEntry';
+
 const CatalogReader = dynamic(() => import('./CatalogReader'), {
   ssr: false,
   loading: () => (
@@ -309,6 +311,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
   );
 
   const categoryList = parseCategories(supplier.categories);
+  const compactCatalog = supplier?.id === 242 && slug === 'supplier-1127';
   const heroImage = products.length > 0 ? products[0].image_url : null;
   // 公开去标识：可见标题用品类通用名(与 SEO 一致),不显示遮蔽后的星号厂家名
   const publicTitle = supplierPublicTitle(supplier.categories);
@@ -415,7 +418,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
             {/* 右：PDF 电子书（供应商有 catalog 才显示；桌面右侧、移动端在文案下方），复用 flooring hero 同款控件 */}
             {catalogs.length > 0 && (
               <div className="w-full">
-                <CatalogReader catalogs={catalogs} />
+                {compactCatalog ? <CatalogEntry catalogs={catalogs} /> : <CatalogReader catalogs={catalogs} />}
               </div>
             )}
           </div>

@@ -35,7 +35,7 @@ async function fetchWithProgress(url: string, onProgress: (pct: number | null) =
   }));
 }
 
-export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[] }) {
+export default function CatalogReader({ catalogs, initialFullscreen = false, onClose }: { catalogs: SupplierCatalog[]; initialFullscreen?: boolean; onClose?: () => void }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [numPages, setNumPages] = useState(0);
   const [curPage, setCurPage] = useState(1);
@@ -44,7 +44,11 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<number | null>(null); // 首页加载进度 %（null=不确定态）
   const [error, setError] = useState(false);
-  const [fs, setFs] = useState(false);
+  const [fs, setFs] = useState(initialFullscreen);
+  const readerRef = useRef<HTMLDivElement>(null);
+  const fullscreenButtonRef = useRef<HTMLButtonElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const closeFullscreen = useCallback(() => { if (onClose) onClose(); else setFs(false); }, [onClose]);
 
   const layer0 = useRef<HTMLImageElement>(null);
   const layer1 = useRef<HTMLImageElement>(null);
@@ -215,20 +219,38 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
 
   // 全屏时锁滚动 + 键盘翻页
   useEffect(() => {
-    if (fs) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
+    if (!fs) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousFocus = returnFocusRef.current || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    document.body.style.overflow = 'hidden';
+    readerRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+      else fullscreenButtonRef.current?.focus({ preventScroll: true });
+      returnFocusRef.current = null;
+    };
+  }, [fs]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!fs) return;
       if (e.key === 'ArrowLeft') showPage(curPage - 1);
       else if (e.key === 'ArrowRight') showPage(curPage + 1);
-      else if (e.key === 'Escape') setFs(false);
+      else if (e.key === 'Escape') closeFullscreen();
+      else if (e.key === 'Tab') {
+        const controls = Array.from(readerRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') || []).filter(node => node.getClientRects().length && getComputedStyle(node).opacity !== '0');
+        const first = controls[0], last = controls[controls.length - 1];
+        if (!first) { e.preventDefault(); return; }
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === readerRef.current)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (document.activeElement === last || document.activeElement === readerRef.current)) { e.preventDefault(); first.focus(); }
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
     };
-  }, [fs, curPage, showPage]);
+  }, [fs, curPage, showPage, closeFullscreen]);
 
   // 全屏切换用 portal（逃出 hero 的 z-10 堆叠上下文）会重挂 <img>，命令式 src 丢失 → 切换后重绘当前页
   const fsMounted = useRef(false);
@@ -241,6 +263,11 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
 
   const reader = (
     <div
+      ref={readerRef}
+      role={fs ? 'dialog' : undefined}
+      aria-modal={fs ? true : undefined}
+      aria-label={fs ? 'Supplier catalog reader' : undefined}
+      tabIndex={fs ? -1 : undefined}
       className={
         fs
           ? 'fixed inset-0 z-[9999] bg-[#141110] flex flex-col'
@@ -298,9 +325,10 @@ export default function CatalogReader({ catalogs }: { catalogs: SupplierCatalog[
         {/* 右上工具 */}
         <div className="absolute top-2.5 right-2.5 z-[6] flex items-center gap-1.5">
           <button
+            ref={fullscreenButtonRef}
             type="button"
-            onClick={() => setFs((v) => !v)}
-            aria-label={fs ? 'Exit fullscreen' : 'Fullscreen'}
+            onClick={event => { if (fs) closeFullscreen(); else { returnFocusRef.current = event.currentTarget; setFs(true); } }}
+            aria-label={fs ? (onClose ? 'Close catalog' : 'Exit fullscreen') : 'Fullscreen'}
             className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/45 text-white backdrop-blur transition hover:bg-black/70"
           >
             {fs ? <X className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
