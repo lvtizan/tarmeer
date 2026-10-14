@@ -60,3 +60,10 @@ VN 公司爬虫图片：走 AGENTS.md 第三步的 rsync（`public/images/vn-com
 ## 姊妹文档
 
 图片相关 DB 操作 → `tarmeer-database-ops`；上线后图片 404/403 排查 → `tarmeer-debugging`。
+
+
+## [2026-10-14] 商品图片加载完成后仍显示 Loading
+- **现象**：供应商 supplier-1127 产品列表中，图片已下载完成（complete=true、naturalWidth=1200），但仍显示 Loading image… 且图片透明；材料目录和商品详情共用同一组件，也存在风险。
+- **根因**：MaterialImage 仅依赖 onLoad/onError 更新状态，未处理 SSR hydration 前或缓存中已经完成的图片。
+- **修复**：挂载及每次回退/重试后检查当前图片的 complete/naturalWidth，同步成功或失败状态；按 src 隔离加载与回退状态；新增 material-image-loading.mjs 回归用例。
+- **预防规则**：图片加载提示不能只依赖 DOM 事件；必须覆盖缓存成功、缓存失败、原图回退、重试和 src 切换。浏览器验收检查已加载图片旁不存在加载提示，也没有 opacity-0。
