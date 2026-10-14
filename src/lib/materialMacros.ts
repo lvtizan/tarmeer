@@ -2,6 +2,7 @@
 // 大类 = 供应商标签归一后的 10 个干净材料类；Premium = 战略新材料主推线(暂无产品数据，占位引导询价)。
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { normalizeProductPriceFields, type ProductPriceFields } from '@/lib/supplierProductUnits';
+import type { ProductSpec } from '@/lib/materialsApi';
 
 // SSR 走内网直连(API_INTERNAL_URL→localhost:3002)，禁止公网 NEXT_PUBLIC_API_URL 绕 nginx 回自己(429 事故)；对齐 publicApi.ts。
 const API_BASE =
@@ -151,6 +152,7 @@ export type SearchProduct = ProductPriceFields & {
   category: string | null;
   supplier_slug: string | null;
   supplier_name: string | null;
+  specs?: ProductSpec[];
 };
 export type SearchSupplier = {
   id: number;

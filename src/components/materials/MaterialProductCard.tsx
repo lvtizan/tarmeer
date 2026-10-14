@@ -1,12 +1,14 @@
 'use client';
 
 // 新材料产品卡 — 目录产品流 / 详情页 Related 网格共用
-// 铁律：封面 aspect-video；图片走 SmartImage variant（内部 resolveVariantUrl 取 -thumb，缺变体自动回退原图）
+// 普通商品保留横版完整图；整板商品用纹理局部搭配完整板材预览。
 // 右上角放大镜 → 就地弹出该材料的图廊（复用 flooring Lightbox，全站放大交互一致）。
 import { useState } from 'react';
 import Link from 'next/link';
 import { Play, ZoomIn } from 'lucide-react';
 import MaterialImage from './MaterialImage';
+import FullSlabPreview from './FullSlabPreview';
+import { isFullSlabProduct } from '@/lib/materialGallery';
 import { materialProductTitle } from '@/lib/materialsProcurement';
 import Lightbox, { type LightboxShot } from '@/components/flooring/Lightbox';
 import { resolveImageUrl } from '@/lib/imageUrl';
@@ -20,6 +22,7 @@ export default function MaterialProductCard({ product }: { product: PublicMateri
   const [index, setIndex] = useState(0);
   const catLabel = useProductCategoryLabels();
   const title = materialProductTitle(product);
+  const fullSlab = isFullSlabProduct(product);
 
   // 图廊用该材料的多图（image_urls），解析成可直接 <img> 的绝对/静态路径
   const images = (product.image_urls.length ? product.image_urls : product.image_url ? [product.image_url] : [])
@@ -33,8 +36,9 @@ export default function MaterialProductCard({ product }: { product: PublicMateri
 
   return (
     <div className="group relative">
-        <div className="relative aspect-video overflow-hidden rounded-2xl border border-stone-200 bg-stone-100">
-          <MaterialImage key={product.image_url} src={product.image_url} alt={title} />
+        <div className={`relative ${fullSlab ? 'aspect-square' : 'aspect-video'} overflow-hidden rounded-2xl border border-stone-200 bg-stone-100`}>
+          <MaterialImage key={product.image_url} src={product.image_url} alt={fullSlab ? `${title} — texture detail` : title} fit={fullSlab ? 'cover' : 'contain'} />
+          {fullSlab && <FullSlabPreview src={product.image_url} />}
           <Link href={`/materials/products/${product.id}`} aria-label={`View ${title}`} className="absolute inset-0" />
           {product.video_url && (
             <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">

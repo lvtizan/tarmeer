@@ -52,9 +52,8 @@ assert.match(featured, /import HubProductCard from ['"]\.\/HubProductCard['"]/);
 assert.match(search, /import HubProductCard from ['"]\.\/HubProductCard['"]/);
 assert.match(featured, /<HubProductCard key=\{product\.id\} product=\{product\}/);
 assert.match(search, /<HubProductCard key=\{product\.id\} product=\{product\}/);
-assert.match(card, /relative aspect-\[4\/3\] overflow-hidden rounded-xl/);
+// Ordinary/full-slab ratios and image fit are covered by the rendered card suite below.
 assert.match(card, /materialProductTitle\(product\)/);
-assert.match(card, /<MaterialImage[^>]*alt=\{title\}/);
 assert.match(card, /line-clamp-2 min-h-10/);
 assert.match(card, /<ProductPriceLine product=\{product\}/);
 assert.match(card, /Availability to confirm/);

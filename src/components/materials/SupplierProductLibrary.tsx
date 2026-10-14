@@ -12,6 +12,7 @@ import {
   indexSupplierProducts,
 } from '@/lib/supplierProductLibrary';
 import type { Product } from './SupplierDetailClient';
+import { isFullSlabProduct } from '@/lib/materialGallery';
 
 type Density = 'comfortable' | 'compact';
 
@@ -26,6 +27,7 @@ export default function SupplierProductLibrary({ products, categoryLabel, onOpen
   const [query, setQuery] = useState('');
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [density, setDensity] = useState<Density>('comfortable');
+  const slabLayout = products.length > 0 && products.every(isFullSlabProduct);
 
   const indexedProducts = useMemo(() => indexSupplierProducts(products, categoryLabel), [products, categoryLabel]);
 
@@ -181,20 +183,25 @@ export default function SupplierProductLibrary({ products, categoryLabel, onOpen
 
             {visibleProducts.length > 0 ? (
               <div className={`grid gap-x-4 gap-y-6 ${
-                density === 'compact'
+                slabLayout
+                  ? density === 'compact'
+                    ? 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-9'
+                    : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7'
+                  : density === 'compact'
                   ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
                   : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5'
               }`}>
                 {visibleProducts.map((product) => {
                   const series = seriesByProductId.get(product.id)!;
                   const title = materialProductTitle({ ...product, title: product.title_translated || product.title });
+                  const fullSlab = isFullSlabProduct(product);
                   return (
                     <article
                       key={product.id}
-                      className="group min-w-0 [content-visibility:auto] [contain-intrinsic-size:auto_210px] sm:[contain-intrinsic-size:auto_280px] lg:[contain-intrinsic-size:auto_320px]"
+                      className={fullSlab ? 'group min-w-0' : 'group min-w-0 [content-visibility:auto] [contain-intrinsic-size:auto_210px] sm:[contain-intrinsic-size:auto_280px] lg:[contain-intrinsic-size:auto_320px]'}
                     >
-                      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-stone-200 bg-white">
-                        <MaterialImage key={product.image_url} src={product.image_url} alt={title} />
+                      <div className={`relative ${fullSlab ? 'aspect-[1/3]' : 'aspect-[4/3]'} overflow-hidden rounded-xl border border-stone-200 bg-white`}>
+                        <MaterialImage key={product.image_url} src={product.image_url} alt={title} variant={fullSlab ? 'thumb' : 'medium'} />
                         {enableProductDetails ? <Link href={`/materials/products/${product.id}`} aria-label={`View ${title}`} className="absolute inset-0 rounded-xl focus-visible:ring-2 focus-visible:ring-[#b8864a]" /> : <button type="button" onClick={() => onOpenProduct(product)} aria-label={`View ${title}`} className="absolute inset-0" />}
                         <button type="button" onClick={() => onOpenProduct(product)} aria-label={`Enlarge ${title}`} className="absolute right-2 top-2 rounded-full bg-white/95 p-2 text-stone-800 shadow-sm"><ZoomIn className="h-4 w-4" /></button>
                         {product.video_url && <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-1 text-[10px] font-semibold text-white"><Play className="h-3 w-3 fill-current" /> Video</span>}
@@ -202,7 +209,7 @@ export default function SupplierProductLibrary({ products, categoryLabel, onOpen
                       <div className="pt-2.5">
                         <p className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a8773e]">{series}</p>
                         {enableProductDetails ? <Link href={`/materials/products/${product.id}`} className="mt-0.5 block line-clamp-2 rounded-sm text-sm font-medium text-stone-800 hover:text-[#b8864a] focus-visible:ring-2 focus-visible:ring-[#b8864a]">{title}</Link> : <button type="button" onClick={() => onOpenProduct(product)} className="mt-0.5 block text-left text-sm font-medium text-stone-800">{title}</button>}
-                        {density === 'comfortable' && (() => {
+                        {!fullSlab && density === 'comfortable' && (() => {
                           const description = sanitizeDescription(product.description_translated || product.description);
                           return description ? <p className="mt-1 line-clamp-1 text-xs text-stone-500">{description}</p> : null;
                         })()}

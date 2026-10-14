@@ -325,6 +325,7 @@ async function getMaterialSearch(req, res) {
         const results = rows.map((r) => ({
             id: r.id,
             ...supplierRedact_1.maskSupplierValue(require('../lib/materialProcurement').metadata(r), r.supplier_real_name, r.supplier_real_name_zh),
+            specs: supplierRedact_1.maskSupplierValue(require('../lib/productJsonFields').parseJsonArray(r.specs), r.supplier_real_name, r.supplier_real_name_zh),
             title: maskTitle(r.title, r.supplier_real_name, r.supplier_real_name_zh),
             image_url: r.image_url,
             video_url: (0, materialVideo_1.normalizeMaterialVideoUrl)(r.video_url),

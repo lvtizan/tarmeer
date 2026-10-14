@@ -8,6 +8,8 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import * as library from '../../src/lib/supplierProductLibrary.ts';
 import * as procurement from '../../src/lib/materialsProcurement.ts';
 import * as navigation from '../../src/lib/materialsNavigation.ts';
+const gallery = {};
+vm.runInNewContext(ts.transpileModule(readFileSync(new URL('../../src/lib/materialGallery.ts', import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:gallery,URL,require:()=>library});
 const fixture={id:17,title:'Stone Panel',title_translated:'Stone Panel',image_url:'/panel.webp',image_urls:['/panel.webp'],category:'stone',supplier_id:9,supplier_slug:'partner-9',supplier_name:'Stone Supplier',specs:[{label:'Collection',value:'Natural Stone'}]};
 let count=0;
 const check=(label,value)=>{assert.ok(value,label);console.log('PASS '+label);count++};
@@ -19,6 +21,7 @@ function component(file,state) {
   if(name==='next/link')return {default:({children,...props})=>createElement('a',props,children)};
   if(name==='lucide-react')return new Proxy({}, {get:()=>()=>null});
   if(name.endsWith('/supplierProductLibrary'))return library;
+  if(name.endsWith('/materialGallery'))return gallery;
   if(name.endsWith('/materialsProcurement'))return procurement;
   if(name.endsWith('/materialsNavigation'))return navigation;
   if(name.endsWith('/materialDescription'))return {sanitizeDescription:()=>''};
@@ -45,4 +48,10 @@ for(const [name,Component,props]of[
 const nonAe=renderToStaticMarkup(createElement(component('SupplierProductLibrary.tsx'),{products:[fixture],categoryLabel:()=> 'Stone',onOpenProduct(){},enableProductDetails:false}));
 check('non-AE supplier gallery does not link to the AE-only detail route',!nonAe.includes('/materials/products/')&&nonAe.includes('aria-label="View Stone Panel"'));
 check('translated Collection field preserves original series browsing',library.getSupplierProductSeries(fixture,()=> 'Stone')==='Natural Stone');
+const slab={...fixture,specs:[...fixture.specs,{label:'Display format',value:'Full slab'}]};
+const slabHtml=renderToStaticMarkup(createElement(component('SupplierProductLibrary.tsx'),{products:[slab],categoryLabel:()=> 'Stone',onOpenProduct(){},enableProductDetails:true}));
+check('declared slab uses full-height portrait display',slabHtml.includes('aspect-[1/3]'));
+check('slab grid fits more narrow boards on wide screens',slabHtml.includes('2xl:grid-cols-7'));
+check('slab rows do not reserve landscape-sized visibility placeholders',!slabHtml.includes('contain-intrinsic-size'));
+check('ordinary materials retain their landscape cards',nonAe.includes('aspect-[4/3]'));
 console.log(`${count}/${count} PASS`);

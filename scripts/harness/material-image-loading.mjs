@@ -167,4 +167,21 @@ check('alt changes preserve successful loading; eager settings remain supported'
   visible(view); assert.equal(view.image().props.alt, 'New label');
   assert.equal(view.image().props.loading, 'eager'); assert.equal(view.image().props.fetchPriority, 'high');
 });
+check('thumbnail selection loads its own cached variant and resets medium state', () => {
+  const thumb = '/api/uploads/stone-thumb.webp';
+  const view = mount(original, { [medium]: success });
+  view.update({ variant: 'thumb' });
+  assert.equal(view.image().props.src, thumb); assert(view.loading());
+  view.image().props.onError(); view.render();
+  assert.equal(view.image().props.src, original);
+});
+check('texture cover fit can change without resetting the loaded image', () => {
+  const view = mount(original, { [medium]: success });
+  assert.match(view.image().props.className, /object-contain/);
+  view.update({ fit: 'cover' }); visible(view);
+  assert.match(view.image().props.className, /object-cover/);
+  assert.doesNotMatch(view.image().props.className, /object-contain/);
+  view.update({ fit: 'contain' }); visible(view);
+  assert.match(view.image().props.className, /object-contain/);
+});
 console.log(`material-image-loading: ${count}/${count} PASS`);

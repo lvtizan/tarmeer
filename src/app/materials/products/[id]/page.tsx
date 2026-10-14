@@ -169,7 +169,7 @@ export default async function MaterialProductPage({ params, searchParams }: Page
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbJsonLd) }}
       />
-      <ProductDetailClient product={product} related={related} catalogs={catalogs} returnTo={returnTo} />
+      <ProductDetailClient key={product.id} product={product} related={related} catalogs={catalogs} returnTo={returnTo} />
     </>
   );
 }

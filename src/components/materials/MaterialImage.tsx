@@ -3,21 +3,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ImageOff, RotateCw } from 'lucide-react';
 import { resolveImageUrl, resolveVariantUrl } from '@/lib/imageUrl';
 
-type MaterialImageProps = { src?: string | null; alt: string; eager?: boolean };
+type MaterialImageProps = { src?: string | null; alt: string; eager?: boolean; variant?: 'thumb' | 'medium'; fit?: 'contain' | 'cover' };
 
 /** Keep loading, fallback and retry state scoped to the current product image. */
 export default function MaterialImage(props: MaterialImageProps) {
-  return <MaterialImageState key={props.src || ''} {...props} />;
+  return <MaterialImageState key={`${props.src || ''}:${props.variant || 'medium'}`} {...props} />;
 }
 
 /** Stable product image with an explicit missing/error state and an original-image retry. */
-function MaterialImageState({ src, alt, eager = false }: MaterialImageProps) {
+function MaterialImageState({ src, alt, eager = false, variant: imageVariant = 'medium', fit = 'contain' }: MaterialImageProps) {
   const original = src ? resolveImageUrl(src) : '';
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [fallback, setFallback] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const variant = src ? resolveVariantUrl(src, 'medium') : '';
+  const variant = src ? resolveVariantUrl(src, imageVariant) : '';
   const url = fallback ? original : variant;
   const imgRef = useRef<HTMLImageElement>(null);
   const handleError = useCallback(() => {
@@ -42,7 +42,7 @@ function MaterialImageState({ src, alt, eager = false }: MaterialImageProps) {
     </div> : <>
       {!loaded && <span className="absolute inset-0 flex items-center justify-center text-xs text-stone-600" role="status">Loading image…</span>}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img ref={imgRef} key={`${url}:${attempt}`} src={url} alt={alt} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : undefined} width={1200} height={900} onLoad={() => setLoaded(true)} onError={handleError} className={`relative h-full w-full object-contain ${loaded ? '' : 'opacity-0'}`} />
+      <img ref={imgRef} key={`${url}:${attempt}`} src={url} alt={alt} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : undefined} width={1200} height={900} onLoad={() => setLoaded(true)} onError={handleError} className={`relative h-full w-full ${fit === 'cover' ? 'object-cover' : 'object-contain'} ${loaded ? '' : 'opacity-0'}`} />
     </>}
   </div>;
 }
