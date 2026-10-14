@@ -290,6 +290,15 @@ class AdminApiClient {
     this.clearToken();
   }
 
+  async referenceSearch(q: string, country?: string): Promise<{
+    suppliers: Array<{ id: number; name: string }>;
+    products: Array<{ id: number; title: string; supplierId: number; supplierName: string }>;
+  }> {
+    const params = new URLSearchParams({ q });
+    if (country) params.set('country', country);
+    return this.request(`/reference-search?${params}`);
+  }
+
   async globalSearch(q: string): Promise<{
     homeownerLeads: Array<{ id: number; name: string; phone: string; city: string; source: string; crmStatus: string; type: 'homeowner'; createdAt: string }>;
     companyLeads: Array<{ id: number; name: string; phone: string; city: string; companyName: string; channel: string; companyType: string; crmStatus: string; type: 'company'; createdAt: string }>;

@@ -608,6 +608,8 @@ export default function AdminSupplierDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // 返回目标：从上架统计(?from=report)进来则回到该报表并带回日期筛选，否则回外层供应商列表
+  const requestedProduct = searchParams.get('productId');
+  const focusedProductId = requestedProduct && /^[1-9]\d*$/.test(requestedProduct) && Number.isSafeInteger(Number(requestedProduct)) ? Number(requestedProduct) : null;
   const fromReport = searchParams.get('from') === 'report';
   const backHref = fromReport
     ? `/admin/supplier-report?rf=${encodeURIComponent(searchParams.get('rf') || '')}&rt=${encodeURIComponent(searchParams.get('rt') || '')}`
@@ -624,6 +626,9 @@ export default function AdminSupplierDetailPage() {
   const [projects, setProjects] = useState<Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[]; is_published?: number; description?: string; budget?: string }>>([]);
   const [catalogs, setCatalogs] = useState<Array<{ id: number; title: string; file_url?: string; file_size?: number; render_status?: 'pending' | 'processing' | 'ready' | 'failed'; render_error?: string | null; catalog_visible?: number; source_sha256?: string | null; published_sha256?: string | null }>>([]);
   const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!loading && focusedProductId) document.getElementById('products')?.scrollIntoView({ block: 'start' });
+  }, [loading, focusedProductId]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -1151,7 +1156,7 @@ export default function AdminSupplierDetailPage() {
           </section>
 
           {/* Products */}
-          <section>
+          <section id="products" className="scroll-mt-24">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wider flex items-center gap-2">
                 <Package className="w-4 h-4" />
@@ -1208,12 +1213,13 @@ export default function AdminSupplierDetailPage() {
                 </div>
               </div>
             )}
+            {focusedProductId && <div className="mb-3 rounded-xl border border-[#b8864a]/30 bg-white p-3 text-sm flex items-center justify-between gap-3"><span>{products.some(p => p.id === focusedProductId) ? t(`Located Product ${focusedProductId}`, `已定位商品 #${focusedProductId}`) : t(`Product ${focusedProductId} is not in this supplier`, `本供应商中未找到商品 #${focusedProductId}`)}</span><button className="text-[#b8864a] shrink-0" onClick={() => { const next = new URLSearchParams(searchParams.toString()); next.delete('productId'); router.replace(`/admin/suppliers/${id}${next.size ? `?${next}` : ''}#products`); }}>{t('Show all products', '查看全部商品')}</button></div>}
             {products.length === 0 ? (
               <div className="bg-white rounded-xl border border-stone-200 p-8 text-center text-stone-400 text-sm">{t('No products yet', '暂无产品')}</div>
             ) : (
               <div className="bg-white rounded-xl border border-stone-200 p-4">
                 <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
-                  {products.map((p) => {
+                  {products.filter(p => !focusedProductId || p.id === focusedProductId).map((p) => {
                     const isCover = !!supplier.cover_image_url && supplier.cover_image_url === p.image_url;
                     const priceLabel = formatProductPrice(
                       p.price == null ? null : Number(p.price), p.price_unit, !!p.price_from,
@@ -1250,6 +1256,7 @@ export default function AdminSupplierDetailPage() {
                             {t('Replace Image', '更换图片')}
                           </button>
                         </div>
+                        <p className="text-[11px] font-medium text-stone-600 mt-1">Product {p.id}</p>
                         {p.category && <p className="text-[10px] text-[#b8864a] uppercase tracking-wide mt-1">{p.category}</p>}
                         {p.title && <p className="text-[11px] text-stone-500 truncate">{p.title}</p>}
                         {priceLabel && <p className="text-[11px] font-semibold text-[#b8864a]">{priceLabel}</p>}

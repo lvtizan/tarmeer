@@ -60,6 +60,7 @@ const expertController_1 = require("../controllers/expertController");
 const analyticsAdminController_1 = require("../controllers/analyticsAdminController");
 const supplierAdminController_1 = require("../controllers/supplierAdminController");
 const globalSearchController_1 = require("../controllers/globalSearchController");
+const adminReferenceSearchController_1 = require("../controllers/adminReferenceSearchController");
 const companyController_1 = require("../controllers/companyController");
 const roleAdmin = __importStar(require("../controllers/roleAdminController"));
 const companyMergeController_1 = require("../controllers/companyMergeController");
@@ -130,7 +131,7 @@ router.use((req, res, next) => {
     const granted = Object.keys(permissions).filter((key) => permissions[key] === true);
     const supplierOnly = req.admin?.role === 'sub_admin' && granted.length > 0
         && granted.every((key) => key === 'can_view_suppliers' || key === 'can_approve_suppliers');
-    const allowed = req.path === '/profile' || req.path.startsWith('/suppliers') || req.path.startsWith('/partner-sync');
+    const allowed = req.path === '/profile' || req.path === '/reference-search' || req.path.startsWith('/suppliers') || req.path.startsWith('/partner-sync');
     if (supplierOnly && !allowed)
         return res.status(403).json({ error: 'Supplier-only administrator access.' });
     next();
@@ -138,6 +139,7 @@ router.use((req, res, next) => {
 // Profile
 router.get('/profile', adminController_1.getProfile);
 router.get('/search', globalSearchController_1.globalSearch);
+router.get('/reference-search', (0, adminAuth_1.requirePermission)('can_view_suppliers'), adminReferenceSearchController_1.adminReferenceSearch);
 router.put('/password', adminController_1.changePassword);
 // Stats (requires can_view_stats permission)
 router.get('/stats/overview', (0, adminAuth_1.requirePermission)('can_view_stats'), designerAdminController_1.getStatsOverview);

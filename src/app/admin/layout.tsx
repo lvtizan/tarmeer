@@ -367,8 +367,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           </button>
           <TarmeerLogo />
           <div className="hidden md:flex justify-center">
-            {/* 供应商专属管理员不显示全局搜索(避免搜到其它装企/用户/线索) */}
-            {!supplierScoped && <AdminGlobalSearch />}
+            {/* 供应商专属管理员仅查编号，不请求其它装企/用户/线索。 */}
+            <AdminGlobalSearch referenceOnly={supplierScoped} />
           </div>
           <div className="hidden md:flex justify-end items-center gap-2">
             <CountrySwitcher />

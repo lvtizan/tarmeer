@@ -4,10 +4,16 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X, Users, Building2, MessageSquare, Package } from 'lucide-react';
 import { adminApi } from '@/lib/adminApi';
+import { useAdminCountry } from '@/contexts/AdminCountryContext';
+import { useAdmin } from '@/contexts/AdminContext';
 import CopyButton from '@/components/ui/CopyButton';
 
 type SearchResults = Awaited<ReturnType<typeof adminApi.globalSearch>>;
+type ReferenceResults = Awaited<ReturnType<typeof adminApi.referenceSearch>>;
+const EMPTY_RESULTS: SearchResults = { homeownerLeads: [], companyLeads: [], users: [], registeredCompanies: [], directoryCompanies: [], suppliers: [], partnerCompanies: [] };
 type FlatResult =
+  | { kind: 'supplierReference'; item: ReferenceResults['suppliers'][0] }
+  | { kind: 'productReference'; item: ReferenceResults['products'][0] }
   | { kind: 'homeowner'; item: SearchResults['homeownerLeads'][0] }
   | { kind: 'company'; item: SearchResults['companyLeads'][0] }
   | { kind: 'user'; item: SearchResults['users'][0] }
@@ -33,8 +39,15 @@ function highlight(text: string, q: string) {
   );
 }
 
-export default function AdminGlobalSearch() {
+export default function AdminGlobalSearch({ referenceOnly = false }: { referenceOnly?: boolean }) {
+  const { country } = useAdminCountry();
+  const { admin, hasPermission } = useAdmin();
+  const canReferences = hasPermission('can_view_suppliers');
+  const [references, setReferences] = useState<ReferenceResults>({ suppliers: [], products: [] });
+  const [error, setError] = useState('');
+  const requestId = useRef(0);
   const [q, setQ] = useState('');
+  const queryEligible = q.trim().length >= 2 || /^[1-9]$/.test(q.trim());
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -45,27 +58,47 @@ export default function AdminGlobalSearch() {
   const router = useRouter();
 
   const search = useCallback(async (val: string) => {
-    if (val.length < 2) { setResults(null); setLoading(false); return; }
+    const current = ++requestId.current;
     setLoading(true);
+    setError('');
+    const isReference = /^(?:(?:supplier|product)\s*#?\s*)?[1-9]\d*$/i.test(val.trim());
+    const explicitReference = /^(?:supplier|product)\b/i.test(val.trim()) && isReference;
     try {
-      const data = await adminApi.globalSearch(val);
-      setResults(data);
+      const [data, refs] = await Promise.allSettled([
+        explicitReference || referenceOnly ? Promise.resolve(EMPTY_RESULTS) : adminApi.globalSearch(val),
+        isReference && canReferences ? adminApi.referenceSearch(val, admin?.role === 'super_admin' ? country : undefined) : Promise.resolve({ suppliers: [], products: [] }),
+      ]);
+      if (current !== requestId.current) return;
+      setResults(data.status === 'fulfilled' ? data.value : EMPTY_RESULTS);
+      setReferences(refs.status === 'fulfilled' ? refs.value : { suppliers: [], products: [] });
+      if (refs.status === 'rejected') setError('编号查询失败，请重试或检查供应商权限');
+      else if (data.status === 'rejected' && !refs.value.suppliers.length && !refs.value.products.length) setError('搜索失败，请重试或检查账号权限');
     } catch {
+      if (current !== requestId.current) return;
       setResults(null);
+      setReferences({ suppliers: [], products: [] });
+      setError('搜索失败，请重试或检查账号权限');
     } finally {
-      setLoading(false);
+      if (current === requestId.current) setLoading(false);
     }
-  }, []);
+  }, [country, canReferences, referenceOnly, admin?.role]);
 
   useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (q.length < 2) { setResults(null); return; }
+    ++requestId.current;
+    setResults(null);
+    setReferences({ suppliers: [], products: [] });
+    setCursor(-1);
+    setError('');
+    setLoading(false);
+    if (!queryEligible) return;
     timerRef.current = setTimeout(() => search(q), 300);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [q, search]);
+    return () => { ++requestId.current; if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [q, search, queryEligible]);
 
   // Flatten results for keyboard nav
   const flat: FlatResult[] = results ? [
+    ...references.suppliers.map(item => ({ kind: 'supplierReference' as const, item })),
+    ...references.products.map(item => ({ kind: 'productReference' as const, item })),
     ...results.homeownerLeads.map(item => ({ kind: 'homeowner' as const, item })),
     ...results.companyLeads.map(item => ({ kind: 'company' as const, item })),
     ...results.users.map(item => ({ kind: 'user' as const, item })),
@@ -78,7 +111,9 @@ export default function AdminGlobalSearch() {
     setOpen(false);
     setQ('');
     setResults(null);
-    if (r.kind === 'homeowner') router.push(`/admin/inquiries?type=homeowner&search=${encodeURIComponent(r.item.phone)}`);
+    if (r.kind === 'supplierReference') router.push(`/admin/suppliers/${r.item.id}`);
+    else if (r.kind === 'productReference') router.push(`/admin/suppliers/${r.item.supplierId}?productId=${r.item.id}#products`);
+    else if (r.kind === 'homeowner') router.push(`/admin/inquiries?type=homeowner&search=${encodeURIComponent(r.item.phone)}`);
     else if (r.kind === 'company') router.push(`/admin/inquiries?type=company&search=${encodeURIComponent(r.item.phone)}`);
     else if (r.kind === 'user') router.push(`/admin/activity-log/user/${r.item.id}`);
     else if (r.kind === 'registeredCompany') router.push(`/admin/profile-companies/${r.item.id}`);
@@ -90,7 +125,7 @@ export default function AdminGlobalSearch() {
     if (!open) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); setCursor(c => Math.min(c + 1, flat.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setCursor(c => Math.max(c - 1, 0)); }
-    else if (e.key === 'Enter' && cursor >= 0) { navigateTo(flat[cursor]); }
+    else if (e.key === 'Enter' && cursor >= 0 && flat[cursor]) { navigateTo(flat[cursor]); }
     else if (e.key === 'Escape') { setOpen(false); inputRef.current?.blur(); }
   };
 
@@ -104,7 +139,7 @@ export default function AdminGlobalSearch() {
   }, []);
 
   const hasResults = results && flat.length > 0;
-  const showPanel = open && q.length >= 2;
+  const showPanel = open && queryEligible;
 
   return (
     <div ref={panelRef} className="relative w-[520px]">
@@ -114,11 +149,11 @@ export default function AdminGlobalSearch() {
         <input
           ref={inputRef}
           value={q}
-          onChange={e => { setQ(e.target.value); setOpen(true); setCursor(-1); }}
+          onChange={e => { ++requestId.current; setResults(null); setReferences({ suppliers: [], products: [] }); setQ(e.target.value); setOpen(true); setCursor(-1); }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="搜索用户、公司、线索..."
-          className="w-full h-10 pl-9 pr-8 rounded-2xl border border-stone-200 bg-stone-50 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/20 focus:border-[#B8864A] focus:bg-white transition"
+          placeholder={referenceOnly ? "搜索 Supplier / Product 编号，如 162 或 1943" : "搜索用户、公司、线索或 Supplier / Product 编号..."}
+          className="w-full h-10 pl-9 pr-8 rounded-2xl border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/20 focus:border-[#B8864A] focus:bg-white transition"
         />
         {q && (
           <button onClick={() => { setQ(''); setResults(null); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
@@ -134,13 +169,28 @@ export default function AdminGlobalSearch() {
             <div className="px-4 py-3 text-sm text-stone-400">搜索中...</div>
           )}
 
-          {!loading && !hasResults && q.length >= 2 && (
+          {error && <div role="alert" className="px-4 py-3 text-sm text-red-600">{error}</div>}
+          {!loading && !error && !hasResults && queryEligible && (
             <div className="px-4 py-6 text-sm text-stone-400 text-center">未找到「{q}」相关结果</div>
           )}
 
           {!loading && hasResults && (() => {
             let idx = 0;
             const sections = [];
+
+            if (references.suppliers.length || references.products.length) {
+              sections.push(<div key="references">
+                <div className="flex items-center gap-2 px-4 pt-3 pb-1.5"><Package className="w-3.5 h-3.5 text-stone-400" /><span className="text-[11px] font-semibold text-stone-400">编号精确匹配 · 原始资料</span></div>
+                {references.suppliers.map(item => {
+                  const i = idx++;
+                  return <button key={`ref-s-${item.id}`} onClick={() => navigateTo({ kind: 'supplierReference', item })} className={`w-full text-left px-4 py-2.5 hover:bg-stone-50 ${cursor === i ? 'bg-stone-50' : ''}`}><div className="text-sm font-medium truncate">{item.name}</div><div className="text-xs text-stone-500 mt-0.5">供应商 · Supplier #{item.id}</div></button>;
+                })}
+                {references.products.map(item => {
+                  const i = idx++;
+                  return <button key={`ref-p-${item.id}`} onClick={() => navigateTo({ kind: 'productReference', item })} className={`w-full text-left px-4 py-2.5 hover:bg-stone-50 ${cursor === i ? 'bg-stone-50' : ''}`}><div className="text-sm font-medium truncate">{item.title || `Product ${item.id}`}</div><div className="text-xs text-stone-500 mt-0.5">商品 · Product {item.id} · Supplier #{item.supplierId}</div><div className="text-xs text-stone-500 truncate">{item.supplierName}</div></button>;
+                })}
+              </div>);
+            }
 
             if (results.homeownerLeads.length > 0) {
               sections.push(
@@ -318,6 +368,7 @@ export default function AdminGlobalSearch() {
                 </div>
               );
             }
+
 
             return <>{sections}<div className="h-2" /></>;
           })()}

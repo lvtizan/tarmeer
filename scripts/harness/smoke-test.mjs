@@ -208,6 +208,13 @@ try {
   ng('供应商项目图库平衡布局', commandTail(e));
 }
 try {
+  execSync('node scripts/harness/admin-reference-search.mjs', { cwd: ROOT, stdio: 'pipe' });
+  execSync('node scripts/harness/admin-reference-search-ui.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('后台供应商/商品编号查找、权限与国家隔离');
+} catch (e) {
+  ng('后台供应商/商品编号查找', commandTail(e));
+}
+try {
   execSync('node scripts/harness/catalog-entry.mjs', { cwd: ROOT, stdio: 'pipe' });
   execSync('node scripts/harness/catalog-reader-focus.mjs', { cwd: ROOT, stdio: 'pipe' });
   ok('紧凑目录入口、按需阅读与焦点恢复');
