@@ -28,6 +28,11 @@ function memoryConnection(options = {}) {
     sourcing_requests: ['product_id'], partner_sync_products: ['mapped_product_id'], supplier_project_materials: ['supplier_product_id'],
   };
   const initialRows = options.targetRows || Array.from({ length: 193 }, (_, index) => ({ id: index + 1, supplier_profile_id: 242, title: `old ${index}` }));
+  const dbRows = (rows) => options.jsonArrays ? rows.map((row) => {
+    const copy = { ...row };
+    for (const key of ['image_urls', 'specs', 'certifications', 'application_scenes']) if (typeof copy[key] === 'string') copy[key] = JSON.parse(copy[key]);
+    return copy;
+  }) : rows;
   const conn = {
     events: [], inserts: [], commits: 0, rollbacks: 0,
     state: { profile: { ...importer.TARGET }, targetRows: structuredClone(initialRows), projects: Array.from({ length: 6 }, (_, index) => ({ id: index + 1, supplier_profile_id: 242 })), catalogs: [{ id: 1, supplier_profile_id: 242 }], otherRows: [{ id: 900, supplier_profile_id: 9, title: 'other' }] },
@@ -41,7 +46,7 @@ function memoryConnection(options = {}) {
       if (sql.includes('FROM `supplier_profiles`')) return [[this.state.profile]];
       if (sql.includes('FROM `supplier_projects`')) return [this.state.projects];
       if (sql.includes('FROM `supplier_catalogs`')) return [this.state.catalogs];
-      if (sql.includes('FROM `supplier_products`')) return [sql.includes('supplier_profile_id <>') ? this.state.otherRows : this.state.targetRows];
+      if (sql.includes('FROM `supplier_products`')) return [dbRows(sql.includes('supplier_profile_id <>') ? this.state.otherRows : this.state.targetRows)];
       if (sql === importer.DELETE_SQL) { assert.deepEqual(params, [242]); this.events.push('delete:242'); this.state.targetRows = []; return [{ affectedRows: initialRows.length }]; }
       if (sql.startsWith('INSERT INTO supplier_products')) {
         this.inserts.push(params); this.events.push('insert');
@@ -148,6 +153,15 @@ await asyncTest('makes an already imported identical manifest a no-op', async ()
   const result = await importer.runImport({ conn, manifest: data, apply: true, expectedBeforeSha: dry.expected_before_sha, fileSystem: memoryFs(events) });
   assert.equal(result.status, 'NO_OP_ALREADY_APPLIED'); assert.equal(conn.inserts.length, 0); assert(!conn.events.includes('delete:242'));
 });
+await asyncTest('accepts mysql2 JSON arrays after apply and on idempotent reapply', async () => {
+  const conn = memoryConnection({ jsonArrays: true }); const data = manifest(); const files = memoryFs([]);
+  const dry = await importer.runImport({ conn, manifest: data, apply: false, fileSystem: files });
+  const applied = await importer.runImport({ conn, manifest: data, apply: true, expectedBeforeSha: dry.expected_before_sha, fileSystem: files });
+  assert.equal(applied.status, 'APPLY_PASS');
+  const secondDry = await importer.runImport({ conn, manifest: data, apply: false, fileSystem: files });
+  const noOp = await importer.runImport({ conn, manifest: data, apply: true, expectedBeforeSha: secondDry.expected_before_sha, fileSystem: files });
+  assert.equal(noOp.status, 'NO_OP_ALREADY_APPLIED');
+});
 await asyncTest('rejects a missing cache variant before DELETE', async () => {
   const conn = memoryConnection(); const data = manifest(); const dry = await importer.runImport({ conn, manifest: data, apply: false, fileSystem: memoryFs([]) });
   const brokenFs = { existsSync: (file) => !file.endsWith('-thumb.webp'), statSync: () => ({ size: 1 }), writeFileSync: () => { throw new Error('backup must not be created'); } };
@@ -165,4 +179,4 @@ for (const [label, expectedError, mutate] of [
   assert.equal(conn.commits, 0); assert.deepEqual(conn.state.targetRows, before);
 });
 
-if (!process.exitCode) console.log(`${passed}/36 PASS`);
+if (!process.exitCode) console.log(`${passed}/37 PASS`);

@@ -118,7 +118,7 @@ function intendedRow(product) {
   };
 }
 function normalizeDbValue(column, value) {
-  if (['image_urls', 'specs', 'certifications', 'application_scenes'].includes(column) && typeof value === 'string') return stableJson(JSON.parse(value));
+  if (['image_urls', 'specs', 'certifications', 'application_scenes'].includes(column) && typeof value === 'string') return JSON.parse(value);
   return value == null ? null : value;
 }
 function isIntendedDataset(rows, products) {
