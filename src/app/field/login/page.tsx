@@ -2,11 +2,13 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function FieldLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -61,27 +63,46 @@ export default function FieldLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1.5">Email</label>
+            <label htmlFor="field-login-email" className="block text-xs font-medium text-stone-500 mb-1.5">Email</label>
             <input
+              id="field-login-email"
               type="email"
+              autoComplete="username"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
               autoFocus
               placeholder="your@email.com"
-              className="w-full h-11 px-4 rounded-xl border border-stone-200 bg-stone-50 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:border-[#b8864a] focus:bg-white"
+              className="w-full h-11 px-4 rounded-xl border border-stone-200 bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:border-[#b8864a] focus:bg-white"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-stone-500 mb-1.5">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              className="w-full h-11 px-4 rounded-xl border border-stone-200 bg-stone-50 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:border-[#b8864a] focus:bg-white"
-            />
+            <label htmlFor="field-login-password" className="block text-xs font-medium text-stone-500 mb-1.5">Password</label>
+            <div className="relative">
+              <input
+                id="field-login-password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full h-11 pl-4 pr-14 rounded-xl border border-stone-200 bg-white text-[15px] focus:outline-none focus:ring-2 focus:ring-[#b8864a]/20 focus:border-[#b8864a]"
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-controls="field-login-password"
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword(value => !value)}
+                className="absolute inset-y-0 right-1 inline-flex min-h-11 w-11 items-center justify-center rounded-lg text-stone-500 hover:text-[#8b6537] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8864a]"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+              </button>
+            </div>
           </div>
           <button
             type="submit"
