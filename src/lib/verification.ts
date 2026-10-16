@@ -1,5 +1,6 @@
 export interface VerificationInputPolicy {kind:string;minLength?:number;maxLength?:number;min?:number;max?:number;precision?:number;integer?:boolean;country?:string;requireLetter?:boolean;allowHandle?:boolean;allowNewlines?:boolean;}
 export interface VerificationField {
+  custom?: boolean; retired?: boolean;
   inputPolicy?:VerificationInputPolicy;
   key: string; label: string; labelEn?: string; type: string; options?: (string | {label:string; value:string})[];
   datePolicy?: {minYear:number;maxYearsFromToday:number;timeZone:string};
@@ -29,7 +30,21 @@ export function parseVerificationData(raw: unknown): VerificationData {
   };
   return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalize(entry)]));
 }
+/** Review repeat rows using schema labels, hiding retired fields without changing saved answers. */
+export function verificationReviewText(value:VerificationValue|undefined,field?:VerificationField):string {
+  if(value===undefined || value===null || value==='')return '';
+  if(!Array.isArray(value))return String(value);
+  return value.map(row=>{
+    if(typeof row==='string')return row;
+    if(field?.fields)return field.fields.filter(child=>visibleField(child,row as VerificationData)).map(child=>{
+      const text=verificationReviewText(row[child.key] as VerificationValue|undefined,child);
+      return text?`${child.labelEn||child.label}: ${text}`:'';
+    }).filter(Boolean).join(', ');
+    return Object.entries(row).map(([key,item])=>`${key}: ${String(item)}`).join(', ');
+  }).filter(Boolean).join(' · ');
+}
 export function visibleField(field:VerificationField, data:VerificationData):boolean {
+  if (field.retired) return false;
   if (!field.visibleWhen) return true;
   const rule=field.visibleWhen; const value=data[rule.field];
   const present=rule.excludeValues ? (Array.isArray(value) && value.some(v=>typeof v==='string'&&!rule.excludeValues!.includes(v))) : rule.values ? rule.values.some(v=>Array.isArray(value)?value.includes(v as never):value===v) : typeof value==='string'?!!value.trim():Array.isArray(value)?value.length>0:false;

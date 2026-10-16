@@ -24,6 +24,28 @@ const database_1 = __importDefault(require("../config/database"));
 const config_1 = __importDefault(require("../config"));
 const emailService_1 = require("../services/emailService");
 const activityLogger_1 = require("../lib/activityLogger");
+const SUB_ADMIN_PERMISSION_KEYS = new Set(['can_approve', 'can_approve_suppliers', 'can_sort', 'can_view_stats', 'can_view_interviews', 'can_edit_survey_schema', 'can_manage_field_staff', 'can_view_suppliers']);
+function safeSubAdminPermissions(next, existing = {}) {
+    let previous = existing;
+    if (typeof previous === 'string') {
+        try { previous = JSON.parse(previous); }
+        catch { previous = {}; }
+    }
+    const safe = {};
+    // Retain recognised settings that were not sent by an older admin client.
+    // Unknown keys are never carried forward or persisted.
+    for (const key of SUB_ADMIN_PERMISSION_KEYS) {
+        if (previous && typeof previous === 'object' && previous[key] === true)
+            safe[key] = true;
+        if (next && typeof next === 'object' && Object.prototype.hasOwnProperty.call(next, key)) {
+            // Schema editing changes the published questionnaire.  It must be
+            // explicitly granted by a JSON boolean, never truthy form input.
+            safe[key] = key === 'can_edit_survey_schema' ? next[key] === true : Boolean(next[key]);
+        }
+    }
+    return safe;
+}
+exports.safeSubAdminPermissions = safeSubAdminPermissions;
 // Check if system is installed (has any admin)
 async function checkInstallation(req, res) {
     try {
@@ -221,15 +243,7 @@ async function createSubAdmin(req, res) {
         return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     }
     // Validate permissions
-    const validPerms = ['can_approve', 'can_approve_suppliers', 'can_sort', 'can_view_stats', 'can_view_interviews', 'can_manage_field_staff', 'can_view_suppliers'];
-    const permsObj = {};
-    if (permissions) {
-        for (const key of Object.keys(permissions)) {
-            if (validPerms.includes(key)) {
-                permsObj[key] = !!permissions[key];
-            }
-        }
-    }
+    const permsObj = safeSubAdminPermissions(permissions);
     try {
         // Check if email already exists
         const [existing] = await database_1.default.execute('SELECT id FROM admin_users WHERE email = ?', [email.toLowerCase().trim()]);
@@ -324,7 +338,7 @@ async function updateAdmin(req, res) {
     const { id } = req.params;
     const { fullName, permissions, isActive } = req.body;
     try {
-        const [existing] = await database_1.default.execute('SELECT id, role FROM admin_users WHERE id = ?', [id]);
+        const [existing] = await database_1.default.execute('SELECT id, role, permissions FROM admin_users WHERE id = ?', [id]);
         const admins = existing;
         if (admins.length === 0) {
             return res.status(404).json({ error: 'Admin not found.' });
@@ -343,7 +357,7 @@ async function updateAdmin(req, res) {
         }
         if (permissions !== undefined && targetAdmin.role === 'sub_admin') {
             updates.push('permissions = ?');
-            values.push(JSON.stringify(permissions));
+            values.push(JSON.stringify(safeSubAdminPermissions(permissions, targetAdmin.permissions)));
         }
         if (isActive !== undefined) {
             updates.push('is_active = ?');

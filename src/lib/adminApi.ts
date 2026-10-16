@@ -16,6 +16,7 @@ export interface AdminUser {
     can_sort?: boolean;
     can_view_stats?: boolean;
     can_view_interviews?: boolean;
+    can_edit_survey_schema?: boolean;
     can_manage_field_staff?: boolean;
     can_approve_suppliers?: boolean;
     can_view_suppliers?: boolean;
@@ -1274,7 +1275,24 @@ async function fieldRequest(path: string, options: RequestInit = {}): Promise<an
   return res.json();
 }
 
+// Schema configuration is an admin action even when a field-staff session also exists.
+// Ordinary questionnaire/draft requests retain their existing field-token precedence.
+function schemaEditorRequest(path:string,options:RequestInit={}) {
+  const adminToken=typeof window!=='undefined'?localStorage.getItem('admin_token'):null;
+  return fieldRequest(path,{...options,headers:{...(options.headers||{}),...(adminToken?{Authorization:`Bearer ${adminToken}`}:{})}});
+}
+
+export interface SurveySchemaEditorContext { canEdit: boolean; revision?: string; draftRevision?: string; schema?: import('./verification').VerificationSchema; }
+export interface SurveySchemaMutation {
+  country: string; draftId: number; revision: string; draftRevision: string;
+  action: 'rename' | 'add' | 'delete'; sectionKey: string; fieldPath: string[]; label?: string;
+}
+
 export const fieldApi = {
+  getSchemaEditorContext: (country: string, draftId: number): Promise<SurveySchemaEditorContext> =>
+    schemaEditorRequest(`/survey-schema/editor?${new URLSearchParams({country,draftId:String(draftId)})}`),
+  editSchemaField: (mutation: SurveySchemaMutation): Promise<{schema: import('./verification').VerificationSchema;revision:string;draftRevision:string}> =>
+    schemaEditorRequest('/survey-schema/editor', {method:'PATCH',body:JSON.stringify(mutation)}),
   createDraft: async (data?: { country?: string; schema_version?: string }) => {
     const created = await fieldRequest('/interviews', {
       method: 'POST',

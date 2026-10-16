@@ -56,6 +56,7 @@ console.log('\n[2/3] Backend route existence');
 const ADMIN_ROUTES = [
   ['GET',    '/api/admin/companies'],
   ['POST',   '/api/admin/suppliers'],
+  ['PATCH',  '/api/field/survey-schema/editor'],
   ['GET',    '/api/admin/suppliers/product-review'],
   ['GET',    '/api/admin/staff'],
   ['PATCH',  '/api/admin/staff/1/permissions'],   // was missing — caused 404/CORS fail
@@ -206,6 +207,14 @@ try {
   ok('供应商项目图库 1–6+ 图平衡布局');
 } catch (e) {
   ng('供应商项目图库平衡布局', commandTail(e));
+}
+try {
+  execSync('node scripts/harness/survey-schema-editor.mjs', { cwd: ROOT, stdio: 'pipe', timeout: 30000 });
+  execSync('node scripts/harness/survey-schema-editor-ui.mjs', { cwd: ROOT, stdio: 'pipe', timeout: 30000 });
+  execSync('node scripts/harness/survey-schema-editor-db.mjs', { cwd: ROOT, stdio: 'pipe', timeout: 30000 });
+  ok('问卷字段管理权限、增删改名、配置并发与历史数据保留');
+} catch (e) {
+  ng('问卷字段管理', commandTail(e));
 }
 try {
   execSync('node scripts/harness/admin-reference-search.mjs', { cwd: ROOT, stdio: 'pipe' });

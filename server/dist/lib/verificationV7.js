@@ -67,16 +67,21 @@ function sanitizeInterview(row) {
 function fieldsOf(schema) { return (schema?.sections || []).flatMap(s=>s.fields || []); }
 function validateAnswersDetailed(data, schema, complete = false, now = new Date()) {
     schema=withDatePolicies(schema);
-    const schemaKeys=new Set(fieldsOf(schema).map(field=>field.key));
+    // Retired custom fields stay in a snapshot so old draft/submitted answers can
+    // still be read, exported and resubmitted.  They are known keys, but no
+    // longer participate in required validation. Retained values still obey their
+    // original type and size policy; retirement is not a validation bypass.
+    const allFields=fieldsOf(schema);
+    const schemaKeys=new Set(allFields.map(field=>field.key));
     const failure=(error,fieldKey)=>({error,...(schemaKeys.has(fieldKey)?{field_key:fieldKey}:{})});
     if (!data || typeof data !== 'object' || Array.isArray(data)) return failure('Verification answers must be an object.');
     if (Buffer.byteLength(JSON.stringify(data)) > 512*1024) return failure('Verification answers exceed the size limit.');
-    const fields = fieldsOf(schema); const known = new Set(fields.map(f=>f.key));
+    const fields = allFields; const known = schemaKeys;
     for (const key of Object.keys(data)) if (!known.has(key)) return failure(`Unknown verification field: ${key}`,key);
     for (const field of fields) {
         const value = data[field.key];
         const blank = value === undefined || value === null || (typeof value === 'string' && !value.trim()) || (Array.isArray(value) && !value.length);
-        if (complete && field.required && (blank || (typeof value === 'string' && !value.trim()))) return failure(`${field.label} is required.`,field.key);
+        if (complete && !field.retired && field.required && (blank || (typeof value === 'string' && !value.trim()))) return failure(`${field.label} is required.`,field.key);
         if (blank) continue;
         const policyError=inputPolicyError(value,field.inputPolicy);
         if(policyError) return failure(`${field.label}: ${policyError}`,field.key);

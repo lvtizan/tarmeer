@@ -4,6 +4,7 @@ const express_1 = require("express");
 const adminAuth_1 = require("../middleware/adminAuth");
 const fieldInterviewController_1 = require("../controllers/fieldInterviewController");
 const surveyQuestionsController_1 = require("../controllers/surveyQuestionsController");
+const surveySchemaEditorController_1 = require("../controllers/surveySchemaEditorController");
 const router = (0, express_1.Router)();
 
 // Honour an authenticated operator's fixed country even on public form endpoints.
@@ -13,6 +14,10 @@ router.use((req,res,next)=> {
 });
 // Public routes (no auth needed)
 router.get('/survey-schema', fieldInterviewController_1.getSurveySchema);
+// The context endpoint is intentionally readable without authentication so the
+// public form can decide whether to render edit controls. It never returns a
+// schema unless the already-authenticated request has schema-edit permission.
+router.get('/survey-schema/editor', surveySchemaEditorController_1.getSurveySchemaEditor);
 router.get('/survey-questions', surveyQuestionsController_1.listQuestions);
 // 问卷公开填写（无需登录）：国家归属按站点 x-country；interviewer_id 为空
 router.post('/interviews', fieldInterviewController_1.createDraft);
@@ -29,6 +34,10 @@ router.use(adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin);
 // 禁止跨国家关联（sub_admin/field_staff 用本人国家，super_admin 可 ?country= 指定）。
 // 注：sub_admin 本就能通过 /api/admin/interviews/:id 绑定公司，此处仅补齐"搜索"能力。
 router.get('/companies/search', fieldInterviewController_1.searchCompanies);
+// Keep this before requireFieldOrSuperAdmin: permitted sub_admins may edit the
+// V7 schema, while field_staff are rejected by the controller even if a forged
+// permission flag is supplied.
+router.patch('/survey-schema/editor', surveySchemaEditorController_1.updateSurveySchemaEditor);
 // 以下为外勤/超管专用（加载完整访谈数据、重提）= admin 编辑专用，保持登录避免数据暴露
 router.use(adminAuth_1.requireFieldOrSuperAdmin);
 router.get('/interviews/:id/load', fieldInterviewController_1.loadInterview);

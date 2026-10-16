@@ -77,7 +77,7 @@ try {
   if(field.type==='attachment') continue;
   answers[field.key]=field.type==='checkbox'?[]:field.type==='repeat'?[{emirate:'Dubai',district:'JVC'}]:'';
  }
- Object.assign(answers,{company:'HARNESS V7 persisted',contact:'Ali',phone:'+971501234567',address:'Dubai',inspector:'Inspector',visitDate:'2026-10-07',conclusion:'Ready for Project Matching',specialist_civil:['General Civil Works'],workers_civil_0:'0',employees:'4',trade_direct_0:'2',trade_available_0:'1',case3_name:'Project 3',ownerName:'Optional owner',commercialPhone:'+97150',specialist_civil_detail_10:'Extra work',workers_civil_extra_10:'2'});
+ Object.assign(answers,{company:'HARNESS V7 persisted',contact:'Ali',phone:'+971501234567',address:'Dubai',inspector:'Inspector',visitDate:'2026-10-07',conclusion:'Ready for Project Matching',specialist_civil:['General Civil Works'],workers_civil_0:'0',employees:'4',trade_direct_0:'2',trade_available_0:'1',case3_name:'Project 3',ownerName:'Optional owner',commercialPhone:'+971501234567',specialist_civil_detail_10:'Extra work',workers_civil_extra_10:'2'});
  await check('strict validation rejects unsupported fields, negative counts and incomplete submission',async()=>{
   assert.equal((await hit('/draft/'+draft.id,'PATCH',{verification_data:{employees:'-1'}},headers)).status,400);
   assert.equal((await hit('/draft/'+draft.id,'PATCH',{verification_data:{lost_field:'x'}},headers)).status,400);
