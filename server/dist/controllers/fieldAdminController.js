@@ -238,7 +238,7 @@ async function updateStaffPermissions(req, res) {
         if (key in permissions) safe[key] = Boolean(permissions[key]);
     }
     try {
-        await database_1.default.execute('UPDATE admin_users SET permissions = ? WHERE id = ? AND role = ?', [JSON.stringify(safe), id, 'field_staff']);
+        await database_1.default.execute('UPDATE admin_users SET permissions = JSON_MERGE_PATCH(COALESCE(permissions, JSON_OBJECT()), CAST(? AS JSON)) WHERE id = ? AND role = ?', [JSON.stringify(safe), id, 'field_staff']);
         res.json({ ok: true });
     }
     catch (e) {

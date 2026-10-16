@@ -96,11 +96,17 @@ await test('schema-edit permission is granted only by a real boolean and unknown
   assert.equal(adminController.safeSubAdminPermissions({ can_edit_survey_schema: true }).can_edit_survey_schema, true);
   assert.equal('invented' in adminController.safeSubAdminPermissions({ invented: true }), false);
 });
-await test('field_staff cannot edit even with a forged schema permission', async () => {
-  const res = await context({ query: { country: 'ae', draftId: 19 }, admin: admin('field_staff', 'ae', { can_edit_survey_schema: true }) });
-  assert.deepEqual(res.body, { canEdit: false });
-  const denied = await patch({ body: baseBody('rename', { label: 'Blocked' }), admin: admin('field_staff', 'ae', { can_edit_survey_schema: true }) });
-  assert.equal(denied.code, 403); assert.equal(state.commits, 0);
+await test('field staff are denied by default and require a true DB capability in AE', async () => {
+  reset();
+  for(const [country,permissions] of [['ae',{}],['ae',{can_edit_survey_schema:'true'}],['ae',{can_edit_survey_schema:1}],['vn',{can_edit_survey_schema:true}]]){
+    const operator=admin('field_staff',country,permissions);
+    assert.deepEqual((await context({query:{country:'ae',draftId:19},admin:operator})).body,{canEdit:false});
+    assert.equal((await patch({body:baseBody('rename',{label:'Blocked'}),admin:operator})).code,403);
+  }
+  assert.equal(state.commits,0);
+  const operator=admin('field_staff','ae',{can_edit_survey_schema:true});
+  assert.equal((await context({query:{country:'ae',draftId:19},admin:operator})).body.canEdit,true);
+  assert.equal((await patch({body:baseBody('rename',{label:'Granted staff edit'}),admin:operator})).code,200);
 });
 await test('sub-admin requires its AE country and exact permission; super-admin must explicitly choose AE', async () => {
   let res = await context({ query: { country: 'ae', draftId: 19 }, admin: admin('sub_admin', 'vn', { can_edit_survey_schema: true }) });

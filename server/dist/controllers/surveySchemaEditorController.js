@@ -57,20 +57,20 @@ function permissionsOf(admin) {
     return asObject(admin.permissions) || {};
 }
 
-// Field staff are deliberately excluded even if someone writes a forged
-// permission bit to their row.  Only the two roles below can ever edit.
+// Named field staff can be explicitly granted this capability without gaining
+// any other administrator role or permission. The flag comes from the DB.
 function canEdit(req, country) {
     const admin = req.admin;
     if (country !== AE || !admin) return false;
     if (admin.role === 'super_admin') return true;
-    return admin.role === 'sub_admin'
+    return ['sub_admin', 'field_staff'].includes(admin.role)
         && admin.country === AE
         && permissionsOf(admin).can_edit_survey_schema === true;
 }
 
 function explicitCountry(req, source) {
     const requested = source === 'body' ? req.body?.country : req.query?.country;
-    // A super admin must explicitly pick AE.  A sub-admin is fixed to their
+    // A super admin must explicitly pick AE.  A delegated editor is fixed to their
     // database country and must not be able to use a query/body override.
     if (requested !== AE) return false;
     return canEdit(req, AE);

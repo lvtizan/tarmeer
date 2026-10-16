@@ -19,7 +19,7 @@ try{
  await conn.query("CREATE TABLE company_interviews(id INT AUTO_INCREMENT PRIMARY KEY,country VARCHAR(5),status VARCHAR(20),schema_version VARCHAR(60),schema_snapshot JSON,verification_data JSON)");
  await conn.query("CREATE TABLE admin_users(id INT AUTO_INCREMENT PRIMARY KEY,email VARCHAR(150),password VARCHAR(255),full_name VARCHAR(100),role VARCHAR(30),permissions JSON,is_active TINYINT DEFAULT 1,country VARCHAR(5) DEFAULT 'ae')");
  await conn.query('CREATE TABLE admin_activity_logs(id INT AUTO_INCREMENT PRIMARY KEY,admin_id INT,action VARCHAR(80),target_type VARCHAR(80),target_id INT,details JSON)');
- for(const [id,role,permission,country]of[[1,'super_admin',false,'ae'],[2,'sub_admin',true,'ae'],[3,'sub_admin',false,'ae'],[4,'field_staff',true,'ae'],[5,'sub_admin',true,'vn']])await conn.execute('INSERT INTO admin_users(id,email,full_name,role,permissions,country)VALUES(?,?,?,?,?,?)',[id,`fixture${id}@test.local`,'Fixture',role,JSON.stringify({can_edit_survey_schema:permission}),country]);
+ for(const [id,role,permission,country]of[[1,'super_admin',false,'ae'],[2,'sub_admin',true,'ae'],[3,'sub_admin',false,'ae'],[4,'field_staff',true,'ae'],[5,'sub_admin',true,'vn'],[6,'field_staff',false,'ae'],[7,'field_staff',true,'vn'],[8,'field_staff','true','ae']])await conn.execute('INSERT INTO admin_users(id,email,full_name,role,permissions,country)VALUES(?,?,?,?,?,?)',[id,`fixture${id}@test.local`,'Fixture',role,JSON.stringify({can_edit_survey_schema:permission}),country]);
  const version='tarmeer-verification-v7';
  const schema={version,country:'ae',sections:[{key:'s',title:'Dynamic fixture',fields:[{key:'contact',label:'Original contact',type:'text',required:true,inputPolicy:{maxLength:80}},{key:'team',label:'Team',type:'repeat',fields:[{key:'member',label:'Member',type:'text'}]}]}]};
  const original=JSON.stringify(schema);await conn.execute('INSERT INTO survey_schema VALUES(7,?),(1,?)',[original,'[{"key":"legacy","fields":[]}]']);
@@ -27,16 +27,30 @@ try{
  const express=require('express'),jwt=require('jsonwebtoken');
  const auth=require(path.join(root,'server/dist/middleware/adminAuth'));const controller=require(path.join(root,'server/dist/controllers/surveySchemaEditorController'));const admins=require(path.join(root,'server/dist/controllers/adminController'));pool=require(path.join(root,'server/dist/config/database')).default;
  const secret=require(path.join(root,'server/dist/config')).default.jwt.secret;
- const tokens=new Map([1,2,3,4,5].map(id=>[id,jwt.sign({adminId:id,type:'admin'},secret,{expiresIn:'5m'})]));
+ const staff=require(path.join(root,'server/dist/controllers/fieldAdminController'));
+ const tokens=new Map([1,2,3,4,5,6,7,8].map(id=>[id,jwt.sign({adminId:id,type:'admin'},secret,{expiresIn:'5m'})]));
  const app=express();app.use(express.json());app.use((req,res,next)=>req.headers.authorization?auth.authenticateAdmin(req,res,()=>auth.requireAdmin(req,res,next)):next());
  app.get('/editor',controller.getSurveySchemaEditor);app.patch('/editor',auth.authenticateAdmin,auth.requireAdmin,controller.updateSurveySchemaEditor);
+ app.patch('/staff/:id/permissions',auth.authenticateAdmin,auth.requireAdmin,auth.requirePermission('can_manage_field_staff'),staff.updateStaffPermissions);
  app.post('/admins',auth.authenticateAdmin,auth.requireAdmin,auth.requireSuperAdmin,admins.createSubAdmin);app.patch('/admins/:id',auth.authenticateAdmin,auth.requireAdmin,auth.requireSuperAdmin,admins.updateAdmin);
  server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});const base=`http://127.0.0.1:${server.address().port}`;
  const hit=async(method,url,id,body)=>{const r=await fetch(base+url,{method,headers:{'content-type':'application/json',...(id?{authorization:'Bearer '+tokens.get(id)}:{})},...(body?{body:JSON.stringify(body)}:{})});return{status:r.status,body:await r.json()};};
  const context=async(id=1)=>(await hit('GET','/editor?country=ae&draftId=1',id)).body;
  const mutation=async(action,extra={},id=1,ctx)=>{ctx||=await context(id);return hit('PATCH','/editor',id,{country:'ae',draftId:1,revision:ctx.revision,draftRevision:ctx.draftRevision,action,sectionKey:'s',fieldPath:['contact'],...extra});};
- await check('public and unpermitted roles cannot discover editor capabilities or write',async()=>{for(const id of [undefined,3,4,5]){assert.equal((await hit('GET','/editor?country=ae&draftId=1',id)).body.canEdit,false);assert.equal((await hit('PATCH','/editor',id,{country:'ae',action:'add'})).status,id?403:401);}});
+ await check('public and unpermitted roles cannot discover editor capabilities or write',async()=>{for(const id of [undefined,3,5,6,7,8]){assert.equal((await hit('GET','/editor?country=ae&draftId=1',id)).body.canEdit,false);assert.equal((await hit('PATCH','/editor',id,{country:'ae',action:'add'})).status,id?403:401);}});
  await check('permitted AE sub-admin receives schema and revisions; cross-country override is refused',async()=>{const c=await context(2);assert(c.canEdit);assert.equal(c.schema.sections[0].fields[0].label,'Original contact');assert.equal((await hit('PATCH','/editor',2,{country:'vn'})).status,403);});
+ await check('explicitly granted field staff can edit schema without gaining administrator privileges',async()=>{
+  const c=await context(4);assert.equal(c.canEdit,true);assert.equal((await mutation('rename',{label:'Granted field editor'},4,c)).status,200);
+  assert.equal((await hit('POST','/admins',4,{})).status,403);
+  assert.equal((await hit('PATCH','/staff/4/permissions',4,{permissions:{can_view_interviews:true}})).status,403);
+  const [roles]=await conn.execute('SELECT role FROM admin_users WHERE id=4');assert.equal(roles[0].role,'field_staff');
+ });
+ await check('ordinary staff permission updates preserve explicit schema grant and cannot forge it',async()=>{
+  assert.equal((await hit('PATCH','/staff/4/permissions',1,{permissions:{can_view_interviews:true,can_edit_survey_schema:false}})).status,200);
+  assert.equal((await context(4)).canEdit,true);
+  assert.equal((await hit('PATCH','/staff/6/permissions',1,{permissions:{can_view_interviews:true,can_edit_survey_schema:true}})).status,200);
+  assert.equal((await context(6)).canEdit,false);
+ });
  let lastMutation;
  await check('rename persists published template and active draft only, preserving keys/policies/answers',async()=>{const r=await mutation('rename',{label:'Renamed contact'},2);assert.equal(r.status,200);lastMutation=r.body;const [rows]=await conn.query('SELECT id,schema_snapshot,verification_data FROM company_interviews ORDER BY id');assert.equal(rows[0].schema_snapshot.sections[0].fields[0].label,'Renamed contact');assert.equal(rows[0].schema_snapshot.sections[0].fields[0].key,'contact');assert.equal(rows[0].schema_snapshot.sections[0].fields[0].inputPolicy.maxLength,80);assert.equal(rows[0].verification_data.contact,'Saved answer');assert.deepEqual(rows[1].schema_snapshot,schema);});
  let custom;

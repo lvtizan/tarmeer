@@ -35,8 +35,8 @@ router.use(adminAuth_1.authenticateAdmin, adminAuth_1.requireAdmin);
 // 注：sub_admin 本就能通过 /api/admin/interviews/:id 绑定公司，此处仅补齐"搜索"能力。
 router.get('/companies/search', fieldInterviewController_1.searchCompanies);
 // Keep this before requireFieldOrSuperAdmin: permitted sub_admins may edit the
-// V7 schema, while field_staff are rejected by the controller even if a forged
-// permission flag is supplied.
+// V7 schema. Field staff also require an explicit DB capability; ordinary
+// field staff remain unable to edit the schema.
 router.patch('/survey-schema/editor', surveySchemaEditorController_1.updateSurveySchemaEditor);
 // 以下为外勤/超管专用（加载完整访谈数据、重提）= admin 编辑专用，保持登录避免数据暴露
 router.use(adminAuth_1.requireFieldOrSuperAdmin);

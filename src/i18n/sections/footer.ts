@@ -8,6 +8,7 @@ export const footer = {
     contactFollow: 'Contact & Follow',
     allRights: '— Operated by Epaifa General Trading L.L.C, Dubai',
     privacyPolicy: 'Privacy Policy',
+    staffLogin: 'Staff Login',
     feedback: 'Feedback',
     navLinks: {
       Home: 'Home',
@@ -45,6 +46,7 @@ export const footer = {
     contactFollow: 'Liên Hệ & Theo Dõi',
     allRights: '— Bảo lưu mọi quyền.',
     privacyPolicy: 'Chính Sách Bảo Mật',
+    staffLogin: 'Đăng nhập nhân viên',
     feedback: 'Phản Hồi',
     navLinks: {
       Home: 'Trang Chủ',
