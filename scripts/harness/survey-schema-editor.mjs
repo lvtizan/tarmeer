@@ -29,9 +29,18 @@ const state = {
   row: { id: 19, country: 'ae', status: 'draft', schema_version: verification.VERSION },
   commits: 0,
   rollbacks: 0,
+  selects: [],
 };
 
 function rowsFor(sql) {
+  if (sql.includes('FROM survey_schema AS ss') && sql.includes('INNER JOIN company_interviews AS ci')) return [[{
+    published_schema_json: JSON.stringify(state.published),
+    draft_id: state.row.id,
+    draft_country: state.row.country,
+    draft_status: state.row.status,
+    draft_schema_version: state.row.schema_version,
+    draft_schema_snapshot: JSON.stringify(state.draft),
+  }]];
   if (sql.includes('survey_schema')) return [[{ schema_json: JSON.stringify(state.published) }]];
   if (sql.includes('company_interviews')) return [[{ ...state.row, schema_snapshot: JSON.stringify(state.draft) }]];
   throw new Error(`Unexpected select: ${sql}`);
@@ -42,7 +51,7 @@ const connection = {
   async rollback() { state.rollbacks += 1; },
   release() {},
   async execute(sql, values = []) {
-    if (sql.startsWith('SELECT')) return rowsFor(sql);
+    if (sql.trimStart().startsWith('SELECT')) { state.selects.push(sql); return rowsFor(sql); }
     if (sql.startsWith('UPDATE survey_schema')) { state.published = JSON.parse(values[0]); return [{ affectedRows: 1 }]; }
     if (sql.startsWith('UPDATE company_interviews')) { state.draft = JSON.parse(values[0]); return [{ affectedRows: 1 }]; }
     throw new Error(`Unexpected write: ${sql}`);
@@ -68,10 +77,17 @@ const helperSource=permissionSource.slice(permissionSource.indexOf('const SUB_AD
 const adminController={safeSubAdminPermissions:vm.runInNewContext(helperSource+'\nsafeSubAdminPermissions',{exports:{}})};
 
 function response() {
-  return { code: 200, body: undefined, status(code) { this.code = code; return this; }, json(body) { this.body = body; return this; } };
+  return {
+    code: 200,
+    body: undefined,
+    headers: {},
+    set(name, value) { this.headers[name.toLowerCase()] = value; return this; },
+    status(code) { this.code = code; return this; },
+    json(body) { this.body = body; return this; },
+  };
 }
 function admin(role, country = 'ae', permissions = {}) { return { id: 1, role, country, permissions }; }
-function reset() { state.published = schema(); state.draft = schema(); state.row = { id: 19, country: 'ae', status: 'draft', schema_version: verification.VERSION }; state.commits = 0; state.rollbacks = 0; }
+function reset() { state.published = schema(); state.draft = schema(); state.row = { id: 19, country: 'ae', status: 'draft', schema_version: verification.VERSION }; state.commits = 0; state.rollbacks = 0; state.selects = []; }
 function revisions() { return { revision: editor.revision(state.published), draftRevision: editor.revision(state.draft) }; }
 function baseBody(action, extras = {}) {
   return { country: 'ae', draftId: 19, action, sectionKey: 'company', fieldPath: ['phone'], ...revisions(), ...extras };
@@ -83,8 +99,23 @@ let passed = 0;
 async function test(name, fn) { await fn(); passed += 1; console.log(`  \u001b[32m✓\u001b[0m ${name}`); }
 
 await test('anonymous GET exposes no edit capability or schema', async () => {
+  reset();
   const res = await context({ query: { country: 'ae', draftId: 19 } });
   assert.deepEqual(res.body, { canEdit: false });
+  assert.equal(res.headers['cache-control'], 'no-store');
+  assert.equal(state.selects.length, 0);
+});
+await test('authorized GET reads both revisions in one coherent statement and disables caching', async () => {
+  reset();
+  const res = await context({ query: { country: 'ae', draftId: 19 }, admin: admin('super_admin') });
+  assert.equal(res.code, 200);
+  assert.equal(res.headers['cache-control'], 'no-store');
+  assert.equal(state.selects.length, 1);
+  assert.match(state.selects[0], /ss\.schema_json AS published_schema_json/);
+  assert.match(state.selects[0], /ci\.schema_snapshot AS draft_schema_snapshot/);
+  assert.match(state.selects[0], /INNER JOIN company_interviews AS ci/);
+  assert.equal(res.body.revision, editor.revision(state.published));
+  assert.equal(res.body.draftRevision, editor.revision(state.draft));
 });
 await test('revisions ignore database JSON object-key normalisation but retain array order', async () => {
   assert.equal(editor.revision({ z: { b: 2, a: 1 }, a: [{ y: 2, x: 1 }] }), editor.revision({ a: [{ x: 1, y: 2 }], z: { a: 1, b: 2 } }));
@@ -177,4 +208,4 @@ await test('draft status/version/country and label controls fail closed without 
 });
 
 console.log('─'.repeat(48));
-console.log(`\u001b[32m survey-schema-editor: ${passed}/10 checks passed\u001b[0m`);
+console.log(`\u001b[32m survey-schema-editor: ${passed}/11 checks passed\u001b[0m`);

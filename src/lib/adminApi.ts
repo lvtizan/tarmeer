@@ -1290,7 +1290,7 @@ export interface SurveySchemaMutation {
 
 export const fieldApi = {
   getSchemaEditorContext: (country: string, draftId: number): Promise<SurveySchemaEditorContext> =>
-    schemaEditorRequest(`/survey-schema/editor?${new URLSearchParams({country,draftId:String(draftId)})}`),
+    schemaEditorRequest(`/survey-schema/editor?${new URLSearchParams({country,draftId:String(draftId)})}`,{cache:'no-store'}),
   editSchemaField: (mutation: SurveySchemaMutation): Promise<{schema: import('./verification').VerificationSchema;revision:string;draftRevision:string}> =>
     schemaEditorRequest('/survey-schema/editor', {method:'PATCH',body:JSON.stringify(mutation)}),
   createDraft: async (data?: { country?: string; schema_version?: string }) => {

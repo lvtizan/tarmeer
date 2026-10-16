@@ -38,18 +38,29 @@ export default function SurveySchemaEditor({country,draftId,sectionKey,enabled,d
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const busy = useRef(false);
+  const contextGeneration = useRef(0);
+  const patchInFlight = useRef(false);
+  const renderedTarget = useRef({country,draftId});
+  renderedTarget.current={country,draftId};
   const changeSchema = useRef(onSchemaChange); changeSchema.current=onSchemaChange;
+
+  function isCurrentContext(generation:number,targetCountry:string,targetDraftId:number){
+    const target=renderedTarget.current;
+    return generation===contextGeneration.current && target.country===targetCountry && target.draftId===targetDraftId;
+  }
 
   useEffect(()=>{
     let active=true;
-    setAccess({canEdit:false});setContextError('');
+    const generation=++contextGeneration.current;
+    setAccess({canEdit:false});setContextError('');setMissingDraft(false);
     if (!enabled || !captureVerificationAuth(localStorage)) return;
     fieldApi.getSchemaEditorContext(country,draftId).then(context=>{
-      if(!active)return;
+      if(!active || patchInFlight.current || !isCurrentContext(generation,country,draftId))return;
       setAccess(context);
+      setMissingDraft(false);
       if(context.canEdit && context.schema)changeSchema.current(context.schema);
-    }).catch(error=>{if(!active)return;if(error?.status===404){setMissingDraft(true);setContextError('This draft is no longer available. Recover the draft to continue editing.');}else setContextError('Unable to check editing permissions. You can still fill out the survey. Refresh to try again.');});
-    return ()=>{active=false;};
+    }).catch(error=>{if(!active || patchInFlight.current || !isCurrentContext(generation,country,draftId))return;if(error?.status===404){setMissingDraft(true);setContextError('This draft is no longer available. Recover the draft to continue editing.');}else setContextError('Unable to check editing permissions. You can still fill out the survey. Refresh to try again.');});
+    return ()=>{active=false;if(generation===contextGeneration.current)contextGeneration.current++;};
   },[country,draftId,enabled]);
 
   useEffect(()=>{
@@ -65,35 +76,44 @@ export default function SurveySchemaEditor({country,draftId,sectionKey,enabled,d
   async function recoverSettings(){
     if(disabled || busy.current)return;
     busy.current=true;setSaving(true);onBusyChange(true);
+    let generation=++contextGeneration.current;
     try {
       const nextId=await onRecoverDraft();
+      renderedTarget.current={country,draftId:nextId};
+      generation=++contextGeneration.current;
       const context=await fieldApi.getSchemaEditorContext(country,nextId);
+      if(!isCurrentContext(generation,country,nextId))return;
       setAccess(context);
+      setMissingDraft(false);
       if(!context.canEdit || !context.schema)throw Error('Your account does not have editing permission. Close this dialog and sign in again.');
-      changeSchema.current(context.schema);setMissingDraft(false);setContextError('');setError('');setConflict(false);
-    }catch(err){const message=err instanceof Error?err.message:'Unable to recover the draft. Please try again.';if(selection)setError(message);else setContextError(message);}
+      changeSchema.current(context.schema);setContextError('');setError('');setConflict(false);
+    }catch(err){if(generation!==contextGeneration.current)return;const message=err instanceof Error?err.message:'Unable to recover the draft. Please try again.';if(selection)setError(message);else setContextError(message);}
     finally{busy.current=false;setSaving(false);onBusyChange(false);}
   }
   async function reloadSettings(){
     if(busy.current)return;
     busy.current=true;setSaving(true);onBusyChange(true);
+    const generation=++contextGeneration.current;
     try {
       await beforeMutation();
       const context=await fieldApi.getSchemaEditorContext(country,draftId);
+      if(!isCurrentContext(generation,country,draftId))return;
       setAccess(context);
+      setMissingDraft(false);
       if(!context.canEdit || !context.schema)throw Error('Your account does not have editing permission. Close this dialog and sign in again.');
-      changeSchema.current(context.schema);setSelection(null);setError('');setConflict(false);
-    } catch(err){if(err && typeof err==='object' && 'status' in err && err.status===404){setMissingDraft(true);setError('This draft was removed. Recover the draft to continue editing.');}else setError(err instanceof Error?err.message:'Unable to reload field settings. Please try again.');}
+      changeSchema.current(context.schema);setError('');setConflict(false);
+    } catch(err){if(generation!==contextGeneration.current)return;if(err && typeof err==='object' && 'status' in err && err.status===404){setMissingDraft(true);setError('This draft was removed. Recover the draft to continue editing.');}else setError(err instanceof Error?err.message:'Unable to reload field settings. Please try again.');}
     finally{busy.current=false;setSaving(false);onBusyChange(false);}
   }
   async function save(){
     if(!selection || busy.current || !access.canEdit || !access.revision || !access.draftRevision)return;
     const name=label.trim();
     if(selection.action!=='delete' && (!name || Array.from(name).length>120 || /[\u0000-\u001f\u007f]/.test(name))){setError('Enter a field name between 1 and 120 characters.');return;}
-    busy.current=true;setSaving(true);onBusyChange(true);setError('');
+    busy.current=true;patchInFlight.current=true;contextGeneration.current++;setSaving(true);onBusyChange(true);setError('');
     try {
       await beforeMutation();
       const result=await fieldApi.editSchemaField({country,draftId,revision:access.revision,draftRevision:access.draftRevision,action:selection.action,sectionKey:selection.sectionKey,fieldPath:selection.fieldPath,...(selection.action==='delete'?{}:{label:name})});
+      contextGeneration.current++;
       setAccess({canEdit:true,revision:result.revision,draftRevision:result.draftRevision});
       changeSchema.current(result.schema);setSelection(null);setConflict(false);
     } catch(err){
@@ -102,7 +122,7 @@ export default function SurveySchemaEditor({country,draftId,sectionKey,enabled,d
       setConflict(status===409);
       if(status===404){setMissingDraft(true);setError('This draft was removed. Recover the draft, then save your field change again. Your field name and answers will be kept.');}
       if(status===401 || status===403)setAccess({canEdit:false});
-    } finally{busy.current=false;setSaving(false);onBusyChange(false);}
+    } finally{patchInFlight.current=false;busy.current=false;setSaving(false);onBusyChange(false);}
   }
   const title=selection?.action==='rename'?'Rename field':selection?.action==='add'?'Add text field':'Delete field';
   return <EditorContext.Provider value={enabled && access.canEdit?{open,disabled:disabled||saving}:null}>

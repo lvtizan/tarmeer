@@ -5,12 +5,12 @@ import ts from 'typescript';
 const read=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');
 const nodes=n=>!n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(nodes)];
 let count=0;const check=(name,fn)=>{fn();console.log('PASS '+name);count++;};
-function mount({authenticated=true,canEdit=true,flush=async()=>{},mutation,recover=async()=>456,contextFailure}={}){
- const hooks=[],effects=[],calls=[],changes=[],busyChanges=[];let cursor=0,tree,context;
+function mount({authenticated=true,canEdit=true,flush=async()=>{},mutation,recover=async()=>456,contextFailure,contextRequest}={}){
+ const hooks=[],effects=[],calls=[],changes=[],busyChanges=[];let cursor=0,tree,context,contextCount=0;
  const schema={version:'tarmeer-verification-v7',country:'ae',sections:[]};
  const dialog={showModal(){calls.push('show');},close(){calls.push('close');}};
  const react={useState(initial){const i=cursor++;if(!(i in hooks))hooks[i]=typeof initial==='function'?initial():initial;return[hooks[i],v=>{hooks[i]=typeof v==='function'?v(hooks[i]):v;}];},useRef(initial){return hooks[cursor++]||={current:initial};},createContext(){return{Provider:'provider'};},useContext(){return context;},useEffect(fn,deps){const i=cursor++;const old=hooks[i];if(!old||deps.some((v,j)=>v!==old.deps[j])){old?.cleanup?.();hooks[i]={deps};effects.push(()=>{hooks[i].cleanup=fn();});}}};
- const api={getSchemaEditorContext:async()=>{calls.push('context');if(contextFailure)throw contextFailure;return{canEdit,revision:'published',draftRevision:'draft',schema};},editSchemaField:async body=>{calls.push(body);if(mutation)return mutation(body);return{schema,revision:'next',draftRevision:'nextDraft'};}};
+ const api={getSchemaEditorContext:async(country,draftId)=>{calls.push('context');contextCount++;if(contextRequest)return contextRequest({country,draftId,count:contextCount,schema});if(contextFailure)throw contextFailure;return{canEdit,revision:'published',draftRevision:'draft',schema};},editSchemaField:async body=>{calls.push(body);if(mutation)return mutation(body);return{schema,revision:'next',draftRevision:'nextDraft'};}};
  const exports={};vm.runInNewContext(ts.transpileModule(read('src/components/field/survey-schema-editor.tsx'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,{exports,Error,localStorage:{},require(name){if(name==='react')return react;if(name==='react/jsx-runtime')return{jsx,jsxs:jsx};if(name==='lucide-react')return{};if(name.endsWith('/adminApi'))return{fieldApi:api};if(name.endsWith('/verification'))return{captureVerificationAuth:()=>authenticated?{}:null};throw Error(name);}});
  function jsx(type,props){if(props?.ref && type==='dialog')props.ref.current=dialog;if(props?.ref && type==='input')props.ref.current={focus(){}};return{type,props:props||{}};}
  const props={country:'ae',draftId:123,sectionKey:'section',enabled:true,disabled:false,onRecoverDraft:recover,beforeMutation:async()=>{calls.push('flush');await flush();},onSchemaChange:s=>changes.push(s),onBusyChange:b=>busyChanges.push(b),children:'form'};
@@ -21,6 +21,7 @@ function mount({authenticated=true,canEdit=true,flush=async()=>{},mutation,recov
  render();return{render,open,click,calls,changes,busyChanges,field,props,setLabel(value){render().find(n=>n.type==='input').props.onChange({target:{value}});render();},label(f=field){context=tree.props.value;return nodes(exports.SurveyFieldLabel({field:f,fieldPath:[f.key],htmlFor:'input'}));}};
 }
 const tick=()=>new Promise(r=>setImmediate(r));
+const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return{promise,resolve,reject};};
 const anon=mount({authenticated:false});await tick();
 check('anonymous respondent has no editor request or controls',()=>{assert(!anon.calls.includes('context'));assert.equal(anon.label().filter(n=>n.type==='button').length,0);});
 const staff=mount({canEdit:false});await tick();staff.render();
@@ -43,10 +44,26 @@ const blank=mount();await tick();blank.open('add');blank.setLabel('  ');await bl
 check('blank field name fails inline before save or schema write',()=>{assert(!blank.calls.includes('flush'));assert(blank.render().some(n=>n.props.role==='alert'));});
 const failed=mount({flush:async()=>{throw Error('Answer save failed');}});await tick();failed.open('add');failed.setLabel('New field');await failed.click('Save');
 check('autosave failure blocks schema mutation and keeps explicit error',()=>{assert(!failed.calls.some(x=>typeof x==='object'));assert(failed.render().some(n=>n.props.children==='Answer save failed'));});
-const conflict=mount({mutation:async()=>{throw Object.assign(Error('Schema changed'),{status:409});}});await tick();conflict.open('rename');conflict.setLabel('New');await conflict.click('Save');
+let conflictMutation=0;
+const conflict=mount({contextRequest:async({count,schema})=>({canEdit:true,revision:count===1?'published':'published-fresh',draftRevision:count===1?'draft':'draft-fresh',schema}),mutation:async body=>{conflictMutation++;if(conflictMutation===1)throw Object.assign(Error('Schema changed'),{status:409});return{schema:{version:'tarmeer-verification-v7',country:'ae',sections:[]},revision:'published-next',draftRevision:'draft-next',body};}});await tick();conflict.open('rename');conflict.setLabel('8888888');await conflict.click('Save');
 check('conflict cannot silently overwrite schema and offers explicit reload',()=>assert(conflict.render().some(n=>n.props.children==='Reload field settings')));
 await conflict.click('Reload field settings');
-check('reload restores settings without a second mutation or discarding answers',()=>assert.equal(conflict.calls.filter(x=>typeof x==='object').length,1));
+check('reload refreshes revisions without replaying the mutation or discarding its label',()=>{assert.equal(conflict.calls.filter(x=>typeof x==='object').length,1);assert.equal(conflict.render().find(n=>n.type==='input').props.value,'8888888');assert(conflict.render().some(n=>n.props.children==='Save'));});
+await conflict.click('Save');
+check('manual retry uses the refreshed revisions and preserved label',()=>{const actions=conflict.calls.filter(x=>typeof x==='object');assert.equal(actions.length,2);assert.equal(actions[1].label,'8888888');assert.equal(actions[1].revision,'published-fresh');assert.equal(actions[1].draftRevision,'draft-fresh');});
+const oldContext=deferred(),latestContext=deferred();
+const contextRace=mount({contextRequest:({count})=>count===1?oldContext.promise:latestContext.promise});
+contextRace.props.draftId=124;contextRace.render();
+latestContext.resolve({canEdit:true,revision:'latest-published',draftRevision:'latest-draft',schema:{version:'tarmeer-verification-v7',country:'ae',sections:[]}});await tick();contextRace.render();
+oldContext.resolve({canEdit:true,revision:'stale-published',draftRevision:'stale-draft',schema:{version:'tarmeer-verification-v7',country:'ae',sections:[]}});await tick();contextRace.render();
+contextRace.open('rename');contextRace.setLabel('Generation safe');await contextRace.click('Save');
+check('a late context response for an older draft cannot overwrite the latest access revisions',()=>{const action=contextRace.calls.find(x=>typeof x==='object');assert.equal(action.draftId,124);assert.equal(action.revision,'latest-published');assert.equal(action.draftRevision,'latest-draft');});
+const staleContextError=deferred(),freshContext=deferred();
+const contextErrorRace=mount({contextRequest:({count})=>count===1?staleContextError.promise:freshContext.promise});
+contextErrorRace.props.draftId=125;contextErrorRace.render();
+freshContext.resolve({canEdit:true,revision:'fresh-published',draftRevision:'fresh-draft',schema:{version:'tarmeer-verification-v7',country:'ae',sections:[]}});await tick();contextErrorRace.render();
+staleContextError.reject(Object.assign(Error('Old draft missing'),{status:404}));await tick();contextErrorRace.render();
+check('a late 404 for an older draft cannot replace current editor access with recovery UI',()=>{assert(!contextErrorRace.render().some(n=>n.props.children==='Recover draft'));assert.equal(contextErrorRace.label().filter(n=>n.type==='button').length,2);});
 const forbidden=mount({mutation:async()=>{throw Object.assign(Error('Forbidden'),{status:403});}});await tick();forbidden.open('rename');await forbidden.click('Save');
 check('server permission rejection removes editing controls',()=>assert.equal(forbidden.label().filter(n=>n.type==='button').length,0));
 const fieldSource=read('src/components/field/verification-field.tsx');
@@ -60,7 +77,7 @@ check('retired fields are hidden from live form and required validation',()=>{co
 const apiExports={},requestLog=[];const sessions=new Map([['admin_token','admin-session'],['field_token','field-session']]);
 vm.runInNewContext(ts.transpileModule(read('src/lib/adminApi.ts'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText,{exports:apiExports,process:{env:{}},window:{},URLSearchParams,localStorage:{getItem:k=>sessions.get(k)||null},fetch:async(url,options)=>{requestLog.push({url,options});return{ok:true,json:async()=>({})};},require(name){if(name.endsWith('/storage'))return{safeGetItem:k=>sessions.get(k),safeSetItem(){},safeRemoveItem(){}};throw Error(name);}});
 await apiExports.fieldApi.getSchemaEditorContext('ae',123);await apiExports.fieldApi.editSchemaField({country:'ae',draftId:123,action:'rename'});await apiExports.fieldApi.saveDraft(123,{verification_data:{}});
-check('dual sessions use admin token for editor GET/PATCH and retain field token for ordinary draft saves',()=>{assert.equal(requestLog[0].options.headers.Authorization,'Bearer admin-session');assert.equal(requestLog[1].options.headers.Authorization,'Bearer admin-session');assert.equal(requestLog[2].options.headers.Authorization,'Bearer field-session');});
+check('dual sessions use admin token for editor GET/PATCH and retain field token for ordinary draft saves',()=>{assert.equal(requestLog[0].options.headers.Authorization,'Bearer admin-session');assert.equal(requestLog[0].options.cache,'no-store');assert.equal(requestLog[1].options.headers.Authorization,'Bearer admin-session');assert.equal(requestLog[2].options.headers.Authorization,'Bearer field-session');});
 sessions.delete('admin_token');await apiExports.fieldApi.getSchemaEditorContext('ae',123);
 check('admin logged in through field portal can still request editor access when no main admin session exists',()=>assert.equal(requestLog.at(-1).options.headers.Authorization,'Bearer field-session'));
 check('editor controls and dialogs contain no hardcoded Chinese UI copy',()=>assert(!/[\u3400-\u9fff]/.test(read('src/components/field/survey-schema-editor.tsx'))));
@@ -117,6 +134,14 @@ await missing.click('Recover draft');
 check('recovering the draft reloads editor access without replaying the mutation',()=>{assert.equal(missing.calls.filter(x=>typeof x==='object').length,1);assert.equal(missing.render().find(n=>n.type==='input').props.value,'Additional contact');assert(missing.render().some(n=>n.props.children==='Save'));});
 const initialMissing=mount({contextFailure:Object.assign(Error('Not found'),{status:404})});await tick();
 check('a draft missing during editor initialization has a recovery entry',()=>assert(initialMissing.render().some(n=>n.props.children==='Recover draft')));
+const explicitRecoveryContext=deferred(),effectRecoveryContext=deferred();let recoveryRace;
+recoveryRace=mount({contextRequest:({count,schema})=>{if(count===1)throw Object.assign(Error('Not found'),{status:404});return count===2?explicitRecoveryContext.promise:effectRecoveryContext.promise;},recover:async()=>{recoveryRace.props.draftId=456;return 456;}});await tick();
+recoveryRace.render().find(n=>n.type==='button'&&n.props.children==='Recover draft').props.onClick();await tick();
+recoveryRace.render();
+effectRecoveryContext.resolve({canEdit:true,revision:'recovered-latest',draftRevision:'recovered-draft-latest',schema:{version:'tarmeer-verification-v7',country:'ae',sections:[]}});await tick();recoveryRace.render();
+explicitRecoveryContext.resolve({canEdit:true,revision:'recovered-stale',draftRevision:'recovered-draft-stale',schema:{version:'tarmeer-verification-v7',country:'ae',sections:[]}});await tick();recoveryRace.render();
+recoveryRace.open('rename');recoveryRace.setLabel('Recovered race');await recoveryRace.click('Save');
+check('the recovery effect GET wins over its older explicit GET when the new draft renders',()=>{const action=recoveryRace.calls.find(x=>typeof x==='object');assert.equal(recoveryRace.calls.filter(x=>x==='context').length,3);assert.equal(action.draftId,456);assert.equal(action.revision,'recovered-latest');assert.equal(action.draftRevision,'recovered-draft-latest');});
 const deniedRecovery=mount({mutation:async()=>{throw Object.assign(Error('Forbidden'),{status:403});}});await tick();deniedRecovery.open('add');deniedRecovery.setLabel('New');await deniedRecovery.click('Save');
 check('permission failures never offer draft replacement',()=>assert(!deniedRecovery.render().some(n=>n.props.children==='Recover draft')));
 function surveyMount({loadError=Object.assign(Error('Missing'),{status:404}),evidence=[],createError,storageError=false}={}){

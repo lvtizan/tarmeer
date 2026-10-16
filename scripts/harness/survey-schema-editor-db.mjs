@@ -11,10 +11,11 @@ const dbName=`tarmeer_schema_editor_test_${process.pid}`;
 process.env.DB_NAME=dbName;process.env.DEV_SKIP_EMAIL='true';process.env.CRM_INBOUND_URL='';
 const mysql=require('mysql2/promise');
 const conn=await mysql.createConnection({host:process.env.DB_HOST,user:process.env.DB_USER||'root',password:process.env.DB_PASSWORD||''});
-let server,pool,passed=0;
+let server,pool,writer,passed=0;
 const check=async(name,fn)=>{await fn();passed++;console.log('PASS '+name);};
 try{
  await conn.query(`CREATE DATABASE \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);await conn.query(`USE \`${dbName}\``);
+ writer=await mysql.createConnection({host:process.env.DB_HOST,user:process.env.DB_USER||'root',password:process.env.DB_PASSWORD||'',database:dbName});
  await conn.query('CREATE TABLE survey_schema(id INT PRIMARY KEY,schema_json MEDIUMTEXT NOT NULL)');
  await conn.query("CREATE TABLE company_interviews(id INT AUTO_INCREMENT PRIMARY KEY,country VARCHAR(5),status VARCHAR(20),schema_version VARCHAR(60),schema_snapshot JSON,verification_data JSON)");
  await conn.query("CREATE TABLE admin_users(id INT AUTO_INCREMENT PRIMARY KEY,email VARCHAR(150),password VARCHAR(255),full_name VARCHAR(100),role VARCHAR(30),permissions JSON,is_active TINYINT DEFAULT 1,country VARCHAR(5) DEFAULT 'ae')");
@@ -34,7 +35,7 @@ try{
  app.patch('/staff/:id/permissions',auth.authenticateAdmin,auth.requireAdmin,auth.requirePermission('can_manage_field_staff'),staff.updateStaffPermissions);
  app.post('/admins',auth.authenticateAdmin,auth.requireAdmin,auth.requireSuperAdmin,admins.createSubAdmin);app.patch('/admins/:id',auth.authenticateAdmin,auth.requireAdmin,auth.requireSuperAdmin,admins.updateAdmin);
  server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});const base=`http://127.0.0.1:${server.address().port}`;
- const hit=async(method,url,id,body)=>{const r=await fetch(base+url,{method,headers:{'content-type':'application/json',...(id?{authorization:'Bearer '+tokens.get(id)}:{})},...(body?{body:JSON.stringify(body)}:{})});return{status:r.status,body:await r.json()};};
+ const hit=async(method,url,id,body)=>{const r=await fetch(base+url,{method,headers:{'content-type':'application/json',...(id?{authorization:'Bearer '+tokens.get(id)}:{})},...(body?{body:JSON.stringify(body)}:{})});return{status:r.status,body:await r.json(),headers:r.headers};};
  const context=async(id=1)=>(await hit('GET','/editor?country=ae&draftId=1',id)).body;
  const mutation=async(action,extra={},id=1,ctx)=>{ctx||=await context(id);return hit('PATCH','/editor',id,{country:'ae',draftId:1,revision:ctx.revision,draftRevision:ctx.draftRevision,action,sectionKey:'s',fieldPath:['contact'],...extra});};
  await check('public and unpermitted roles cannot discover editor capabilities or write',async()=>{for(const id of [undefined,3,5,6,7,8]){assert.equal((await hit('GET','/editor?country=ae&draftId=1',id)).body.canEdit,false);assert.equal((await hit('PATCH','/editor',id,{country:'ae',action:'add'})).status,id?403:401);}});
@@ -59,6 +60,32 @@ try{
  await check('nested add uses repeat child list instead of creating an unrelated top-level input',async()=>{const r=await mutation('add',{fieldPath:['team','member'],label:'Member note'});assert.equal(r.status,200);assert.equal(r.body.schema.sections[0].fields.find(f=>f.key==='team').fields[1].label,'Member note');});
  await check('stale published/draft revisions roll back instead of overwriting another edit',async()=>{const c=await context();assert.equal((await mutation('rename',{label:'First writer'},1,c)).status,200);assert.equal((await mutation('rename',{label:'Stale writer'},1,c)).status,409);assert.equal((await context()).schema.sections[0].fields[0].label,'First writer');});
  await check('two concurrent writers using one revision yield one commit and one conflict',async()=>{const c=await context();const r=await Promise.all([mutation('rename',{label:'Concurrent A'},1,c),mutation('rename',{label:'Concurrent B'},1,c)]);assert.deepEqual(r.map(x=>x.status).sort(),[200,409]);});
+ await check('split-read interleaving reproduces false conflict while one-query context stays coherent',async()=>{
+  const [oldPublishedRows]=await conn.execute('SELECT schema_json FROM survey_schema WHERE id=7');
+  const oldPublished=typeof oldPublishedRows[0].schema_json==='string'?JSON.parse(oldPublishedRows[0].schema_json):oldPublishedRows[0].schema_json;
+  const [currentDraftRows]=await conn.execute('SELECT schema_snapshot FROM company_interviews WHERE id=1');
+  const nextPublished=structuredClone(oldPublished);
+  const nextDraft=structuredClone(currentDraftRows[0].schema_snapshot);
+  nextPublished.sections[0].fields[0].label='Interleaved writer';
+  nextPublished.sections[0].fields[0].labelEn='Interleaved writer';
+  nextDraft.sections[0].fields[0].label='Interleaved writer';
+  nextDraft.sections[0].fields[0].labelEn='Interleaved writer';
+  await writer.beginTransaction();
+  await writer.execute('UPDATE survey_schema SET schema_json=? WHERE id=7',[JSON.stringify(nextPublished)]);
+  await writer.execute('UPDATE company_interviews SET schema_snapshot=? WHERE id=1',[JSON.stringify(nextDraft)]);
+  await writer.commit();
+  const [newDraftRows]=await conn.execute('SELECT schema_snapshot FROM company_interviews WHERE id=1');
+  const tornContext={revision:controller.revision(oldPublished),draftRevision:controller.revision(newDraftRows[0].schema_snapshot)};
+  const falseConflict=await mutation('add',{label:'8888888'},1,tornContext);
+  assert.equal(falseConflict.status,409);
+  assert.equal(falseConflict.body.error,'Survey fields changed. Reload field settings before trying again.');
+  const coherent=await hit('GET','/editor?country=ae&draftId=1',1);
+  assert.equal(coherent.status,200);
+  assert.equal(coherent.headers.get('cache-control'),'no-store');
+  assert.equal(coherent.body.revision,controller.revision(nextPublished));
+  assert.equal(coherent.body.draftRevision,controller.revision(nextDraft));
+  assert.equal((await mutation('add',{label:'8888888'},1,coherent.body)).status,200);
+ });
  await check('original deletion and submitted-draft editing are rejected with no historical rewrite',async()=>{assert.notEqual((await mutation('delete')).status,200);const c=await context();assert.equal((await mutation('rename',{draftId:2,label:'Forbidden'},1,c)).status,404);const [rows]=await conn.execute('SELECT schema_snapshot FROM company_interviews WHERE id=2');assert.deepEqual(rows[0].schema_snapshot,schema);});
  await check('admin permission assignment persists only recognized flags and older clients preserve new grant',async()=>{const created=await hit('POST','/admins',1,{email:'new-editor@test.local',password:'FixtureOnly#2026',fullName:'New editor',permissions:{can_edit_survey_schema:true,can_view_stats:true,forged:true}});assert.equal(created.status,201);const id=created.body.admin.id;assert.equal((await hit('PATCH','/admins/'+id,1,{permissions:{can_view_stats:false}})).status,200);const [rows]=await conn.execute('SELECT permissions FROM admin_users WHERE id=?',[id]);assert.equal(rows[0].permissions.can_edit_survey_schema,true);assert.equal(rows[0].permissions.can_view_stats,false);assert(!Object.hasOwn(rows[0].permissions,'forged'));});
  console.log(`${passed}/${passed} PASS — real HTTP + MySQL schema editing/auth/concurrency/history`);
@@ -66,5 +93,6 @@ try{
  if(server)await new Promise(r=>server.close(r));
  // Allow the existing nonblocking activity logger to drain before closing its pool.
  if(pool)await pool.end();
+ if(writer){try{await writer.rollback();}catch{}await writer.end();}
  await conn.query(`DROP DATABASE IF EXISTS \`${dbName}\``);await conn.end();
 }

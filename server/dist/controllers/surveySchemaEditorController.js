@@ -213,20 +213,33 @@ async function getSurveySchemaEditor(req, res) {
     // This route is intentionally public-shaped: it lets an unlogged-in survey
     // renderer ask whether controls should be shown without revealing schema or
     // draft data.
+    res.set('Cache-Control', 'no-store');
     if (!explicitCountry(req, 'query')) return res.json({ canEdit: false });
     const draftId = validDraftId(req.query?.draftId);
     if (!draftId) return res.status(400).json({ error: 'A valid draftId is required.' });
     try {
-        const [publishedRows] = await database.execute('SELECT schema_json FROM survey_schema WHERE id = ?', [7]);
-        const [draftRows] = await database.execute(
-            'SELECT id, country, status, schema_version, schema_snapshot FROM company_interviews WHERE id = ? LIMIT 1',
-            [draftId],
+        // One statement gives the published template and draft snapshot one
+        // MVCC read view. Two autocommit SELECTs can straddle another editor's
+        // transaction and return a revision pair that never existed together.
+        const [rows] = await database.execute(
+            `SELECT
+                ss.schema_json AS published_schema_json,
+                ci.id AS draft_id,
+                ci.country AS draft_country,
+                ci.status AS draft_status,
+                ci.schema_version AS draft_schema_version,
+                ci.schema_snapshot AS draft_schema_snapshot
+             FROM survey_schema AS ss
+             INNER JOIN company_interviews AS ci ON ci.id = ?
+             WHERE ss.id = ?
+             LIMIT 1`,
+            [draftId, 7],
         );
-        const published = json(publishedRows[0]?.schema_json);
-        const draft = json(draftRows[0]?.schema_snapshot);
-        const record = draftRows[0];
-        if (!published || !record || record.country !== AE || record.status !== 'draft'
-            || record.schema_version !== verification.VERSION || !validSnapshot(published) || !validSnapshot(draft)) {
+        const record = rows[0];
+        const published = json(record?.published_schema_json);
+        const draft = json(record?.draft_schema_snapshot);
+        if (!published || !record || record.draft_country !== AE || record.draft_status !== 'draft'
+            || record.draft_schema_version !== verification.VERSION || !validSnapshot(published) || !validSnapshot(draft)) {
             return res.status(404).json({ error: 'Editable survey draft not found.' });
         }
         return res.json({
