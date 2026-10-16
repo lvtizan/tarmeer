@@ -13,7 +13,8 @@ function ReviewValue({value,field}:{value:VerificationValue|undefined;field?:Ver
 export function VerificationErrorSummary({issues,onLocate}:{issues:VerificationIssue[];onLocate:(issue:VerificationIssue)=>void}) {
   return <ul className="mt-3 space-y-2">{issues.map(issue=><li key={issue.key}><button type="button" className="rounded text-left font-medium underline underline-offset-2 focus:outline-none focus:ring-2 focus:ring-[#b8864a]" onClick={()=>onLocate(issue)}>{issue.message.startsWith(`${issue.label}:`)||issue.message.startsWith(`${issue.label} is required`)?issue.message:`${issue.label}: ${issue.message}`}</button></li>)}</ul>;
 }
-export default function VerificationSurvey({schema:initialSchema,record,editingId}:{schema:VerificationSchema;record:VerificationRecord;editingId:number|null}) {
+export default function VerificationSurvey({schema:initialSchema,record:initialRecord,editingId}:{schema:VerificationSchema;record:VerificationRecord;editingId:number|null}) {
+  const [record,setRecord]=useState(initialRecord);
   const [schema,setSchema]=useState(initialSchema);
   const [schemaBusy,setSchemaBusy]=useState(false);
   const identity={id:record.id,country:schema.country,version:schema.version};
@@ -73,6 +74,35 @@ export default function VerificationSurvey({schema:initialSchema,record,editingI
     catch(error){setBackendIssue(resolveVerificationIssue(schema,current.current.data,error,field.key));setNeedsSignIn(verificationUnauthorized(error));setMessage(error instanceof Error?error.message:'Upload failed. Please retry.');}
     finally{busyRef.current=false;setBusy(false);flushSave();}
   }
+  async function recoverDraft():Promise<number>{
+    if(editingId)throw Error('Submitted records cannot be replaced with a new draft.');
+    await saveQueue.wait().catch(()=>{});
+    try {
+      const result=await fieldApi.getDraft(record.id,schema.country) as {draft:VerificationRecord|null};
+      if(result.draft?.country===schema.country && result.draft.status==='draft')return record.id;
+      throw Error('This record is no longer an editable draft. Start a new survey separately.');
+    } catch(error) {
+      if(!error || typeof error!=='object' || !('status' in error) || error.status!==404)throw error;
+    }
+    if(current.current.evidence.length)throw Error('This draft was removed and contains files. Export your answers before starting a new survey.');
+    const previousIdentity=identity,previousWriteId=cacheWriteId.current;
+    const created=await fieldApi.createDraft({country:schema.country,schema_version:schema.version}) as VerificationRecord & {draft?:VerificationRecord};
+    const next=created.draft||created;
+    if(!Number.isSafeInteger(next.id)||next.id<=0||next.country!==schema.country||next.schema_version!==schema.version)throw Error('Unable to recover a draft for this survey. Please retry.');
+    changedKeys.current=new Set(Object.keys(current.current.data));dirty.current=true;revision.current++;
+    const writeId=crypto.randomUUID();
+    try {
+      writeVerificationPending(localStorage,{identity:{id:next.id,country:schema.country,version:schema.version},data:current.current.data,evidence:current.current.evidence,changedKeys:[...changedKeys.current],evidenceChanged:false,removedEvidenceUrls:[],revision:revision.current,writeId});
+      cacheWriteId.current=writeId;
+      localStorage.setItem(`field_draft_id_${schema.country}`,String(next.id));localStorage.setItem('field_draft_id',String(next.id));
+      if(previousWriteId!==undefined)clearVerificationPending(localStorage,previousIdentity,previousWriteId);
+      fieldApi.clearDraftAccess(record.id);
+      setStorageWarning('');
+    }catch{setStorageWarning('The draft was recovered, but local recovery storage is unavailable. Keep this page open until the server save succeeds.');}
+    removedEvidenceUrls.current.clear();evidenceChanged.current=false;
+    setRecord(next);setMessage('');setBackendIssue(null);setSaveState('Draft recovered; changes pending server save');
+    return next.id;
+  }
   function removeEvidence(index:number){const removed=current.current.evidence[index];if(removed)removedEvidenceUrls.current.add(removed.url);dirty.current=true;revision.current++;setSaveState('Unsaved changes');const next=current.current.evidence.filter((_,i)=>i!==index);current.current={...current.current,evidence:next};setEvidence(next);evidenceChanged.current=true;persistLocal();flushSave();}
   function locate(issue:VerificationIssue){const key=verificationIssueFocusKey(schema,current.current.data,issue);const target=verificationFieldIssue(schema,key,issue.message);setStep(target?.step??issue.step);setFocusRequest(previous=>({key,id:(previous?.id||0)+1}));}
   function navigate(next:number){setStep(next);window.scrollTo({top:0,behavior:'smooth'});}
@@ -101,7 +131,7 @@ export default function VerificationSurvey({schema:initialSchema,record,editingI
         {storageWarning&&<div role="alert" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{storageWarning}</div>}
         {(message||issues.length>0)&&<div role="alert" className="verification-controls mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{!backendIssue&&message}{issues.length>0&&<VerificationErrorSummary issues={issues} onLocate={locate}/>}{needsSignIn&&<p className="mt-2">Your answers remain in this form. <a href={verificationSignInUrl(editingId)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Sign in in a new tab</a>, then return here and retry the save, upload or submission.</p>}<button type="button" className={`${secondary} ml-2`} disabled={busy} onClick={()=>editingId?void submit():void save().catch(()=>{})}>{editingId?'Retry submission':'Retry save'}</button></div>}
         <div className="verification-controls mb-6"><div className="mb-3 flex items-start justify-between gap-3"><h1 className="text-2xl font-semibold sm:text-3xl">{section.titleEn||section.title}</h1><span className="shrink-0 text-sm text-stone-500">{step+1} / {schema.sections.length}</span></div><div className="h-1 overflow-hidden rounded-full bg-stone-200"><div className="h-full bg-[#b8864a]" style={{width:`${(step+1)/schema.sections.length*100}%`}}/></div>{section.description&&<p className="mt-3 text-sm text-stone-500">{section.description}</p>}</div>
-        {(!last||section.fields.length>0)&&<form className="verification-current" onSubmit={e=>e.preventDefault()} noValidate><SurveySchemaEditor country={schema.country} draftId={record.id} sectionKey={section.key} enabled={!editingId && schema.country==='ae'} disabled={busy} beforeMutation={async()=>{await save();await saveQueue.wait();}} onSchemaChange={next=>{setSchema(next);setErrors({});setBackendIssue(null);}} onBusyChange={setSchemaBusy}><VerificationFields fields={section.fields} data={data} errors={fieldErrors} onChange={change} onValidate={validateOnBlur} onInvalid={inputInvalid} evidence={evidence} onUpload={upload} onRemoveEvidence={removeEvidence} disabled={busy} focusKey={focusRequest?.key}/></SurveySchemaEditor></form>}
+        {(!last||section.fields.length>0)&&<form className="verification-current" onSubmit={e=>e.preventDefault()} noValidate><SurveySchemaEditor country={schema.country} draftId={record.id} sectionKey={section.key} enabled={!editingId && schema.country==='ae'} disabled={busy} beforeMutation={async()=>{await save();await saveQueue.wait();}} onRecoverDraft={recoverDraft} onSchemaChange={next=>{setSchema(next);setErrors({});setBackendIssue(null);}} onBusyChange={setSchemaBusy}><VerificationFields fields={section.fields} data={data} errors={fieldErrors} onChange={change} onValidate={validateOnBlur} onInvalid={inputInvalid} evidence={evidence} onUpload={upload} onRemoveEvidence={removeEvidence} disabled={busy} focusKey={focusRequest?.key}/></SurveySchemaEditor></form>}
         <div className={`verification-review space-y-5 ${last?'':'hidden'}`}><div className="verification-controls flex flex-wrap gap-2"><button type="button" className={secondary} onClick={exportRecord}>Export JSON</button><button type="button" className={secondary} onClick={()=>window.print()}>Print / PDF</button></div>{schema.sections.filter(s=>s.fields.length).map(item=><section key={item.key} className="rounded-2xl border border-stone-200 bg-white p-4 sm:p-6"><div className="mb-4 flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">{item.titleEn||item.title}</h2><button type="button" className={`${secondary} verification-controls`} onClick={()=>navigate(schema.sections.indexOf(item))}>Edit</button></div><dl className="grid min-w-0 gap-4 sm:grid-cols-2">{item.fields.filter(f=>visibleField(f,data)).map(f=><div key={f.key} className="min-w-0"><dt className="mb-1 text-xs text-stone-500">{f.labelEn||f.label}</dt><dd className="whitespace-pre-wrap break-words text-sm">{f.type==='attachment'?evidence.filter(e=>e.field_key===f.key).map((e,i)=><div key={i}>{safeEvidenceUrl(e.url)?<a href={safeEvidenceUrl(e.url)} target="_blank" rel="noopener noreferrer" className="text-[#8b6537] underline">{e.name}</a>:e.name}</div>):<ReviewValue value={data[f.key]} field={f}/>}</dd></div>)}</dl></section>)}</div>
       </main>
     </div>
