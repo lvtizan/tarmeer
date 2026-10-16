@@ -68,3 +68,10 @@ ssh -i ~/.ssh/tarmeer_ecs root@47.91.108.104 \
 ## 姊妹文档
 
 前后端都改了 → **先** `tarmeer-deploy-backend` **后**本流程。上线后异常 → `tarmeer-debugging`。
+
+
+## [2026-10-16] PM2 重启环境缺少 Node 路径导致 502
+- **现象**：前端 build 成功后，PM2 重启反复失败，官网返回 502；日志显示 `/usr/bin/env: node: No such file or directory`。
+- **根因**：PM2 缓存的 PATH 为 `/usr/bin:/bin`，没有服务器实际使用的 NVM Node 目录。
+- **修复**：SSH 验证 `command -v node` 和运行路径后，以正确环境执行 `pm2 restart tarmeer-next --update-env`，再确认 PM2 online、进程持续运行及公开登录页 HTTP 200。
+- **预防规则**：部署前检查目标进程的 PM2 PATH 是否包含已验证 Node 目录；缺失时在已验证 SSH 环境中更新该进程环境。重启命令返回成功不等于应用启动成功，必须再验收 HTTP 和真实浏览器。

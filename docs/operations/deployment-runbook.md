@@ -86,3 +86,10 @@ ssh tarmeer-production 'pm2 restart tarmeer-api'
 ## 文档自检
 
 核对 `AGENTS.md`、本手册和两个部署技能是否同时约束：连接预检 → 备份 → 最新 main push → 后端精确路径 rsync/重启 → 前端 `pull --ff-only` / build exit 0 / 重启 → BUILD_ID / 真实链路验证。检查均无旧脚本可执行建议、无凭据、认证状态有对应只读验证证据。纯文档改动至少经过一轮独立审查。
+
+
+## [2026-10-16] PM2 重启环境缺少 Node 路径导致 502
+- **现象**：前端 build 成功后，PM2 重启反复失败，官网返回 502；日志显示 `/usr/bin/env: node: No such file or directory`。
+- **根因**：PM2 缓存的 PATH 为 `/usr/bin:/bin`，没有服务器实际使用的 NVM Node 目录。
+- **修复**：SSH 验证 `command -v node` 和运行路径后，以正确环境执行 `pm2 restart tarmeer-next --update-env`，再确认 PM2 online、进程持续运行及公开登录页 HTTP 200。
+- **预防规则**：部署前检查目标进程的 PM2 PATH 是否包含已验证 Node 目录；缺失时在已验证 SSH 环境中更新该进程环境。重启命令返回成功不等于应用启动成功，必须再验收 HTTP 和真实浏览器。
