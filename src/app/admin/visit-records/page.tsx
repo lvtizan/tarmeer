@@ -8,7 +8,7 @@ import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import AdminSelect from '@/components/ui/AdminSelect';
 import { MapPin, ExternalLink, X, ClipboardList, Trash2, FileText, Download, Pencil, History } from 'lucide-react';
 import VerificationRecordSections from '@/components/admin/VerificationRecordSections';
-import { parseRecordSchema, parseRecordFiles, exportRecordPayload, parseRecordServiceAreas as parseServiceAreas, type RecordServiceArea as SvcArea } from '@/components/admin/VerificationRecordModel';
+import { parseRecordSchema, parseRecordFiles, parseRecordServiceAreas as parseServiceAreas, type RecordServiceArea as SvcArea } from '@/components/admin/VerificationRecordModel';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
 
 interface VisitRecord {
@@ -609,16 +609,6 @@ function AdminVisitRecordsContent() {
 
   const formatDate = (s: string | null) => formatAdminDateTime(s);
 
-  const handleExport = () => {
-    if (!detail || detailCountry !== country) return;
-    const payload = exportRecordPayload(detail as unknown as Record<string, unknown>, activeSchema);
-    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = url; link.download = `tarmeer-verification-${detail.id}.json`;
-    document.body.appendChild(link); link.click(); link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
   const lightbox = lightboxUrl ? (
     <div
       className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
@@ -665,7 +655,7 @@ function AdminVisitRecordsContent() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 {/* Left: Company name + bind status + inline metadata */}
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap pr-36 sm:pr-0">
+                  <div className="flex items-center gap-2.5 flex-wrap">
                     <h1 className="text-lg sm:text-xl font-bold text-[#2c2c2c] leading-snug break-words [overflow-wrap:anywhere]">{detail.company_name || '—'}</h1>
                     {/* Bind status + actions */}
                     <div className="flex items-center gap-2 flex-wrap">
@@ -766,34 +756,42 @@ function AdminVisitRecordsContent() {
                   )}
                 </div>
 
-                {/* Right: Actions */}
-                <div className="w-full sm:w-auto min-w-0 flex items-center gap-2 print:hidden flex-wrap sm:flex-nowrap sm:mr-44 lg:mr-48">
-                  <button type="button" onClick={handleExport} className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-stone-200 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 transition"><Download size={15}/>{t('Export JSON', 'Export JSON')}</button>
-                  <button type="button" onClick={() => window.print()} className="inline-flex items-center h-9 px-3.5 rounded-lg border border-stone-200 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 transition">{t('Print', 'Print')}</button>
-                  {detail.status === 'submitted' && (
-                    <a
-                      href={`/field/survey?edit=${detail.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={t('Edit (field staff login required)', 'Edit (field staff login required)')}
-                      className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[#b8864a] text-white text-base font-medium hover:bg-[#a07640] transition"
-                    >
-                      <Pencil className="w-4 h-4" />
-                      {t('Edit', 'Edit')}
-                    </a>
-                  )}
-                </div>
+                {/* Right: Stamp on the left + Action Buttons on the far right */}
+                <div className="w-full sm:w-auto min-w-0 flex items-center justify-between sm:justify-end gap-3 flex-wrap sm:flex-nowrap">
+                  {/* Official Postmark Stamp — placed to the left of Print, tilted, breaking out of the rounded card boundary */}
+                  <div
+                    className="select-none pointer-events-none shrink-0 -mt-5 sm:-mt-7 mb-[-12px] sm:mb-[-16px] transform -rotate-6 sm:-rotate-8 transition-transform"
+                    aria-label={`Status: ${detail.status === 'submitted' ? 'Submitted' : 'Draft'}`}
+                  >
+                    <OfficialPostmarkStamp
+                      status={detail.status}
+                      submittedAt={detail.submitted_at}
+                      createdAt={detail.created_at}
+                    />
+                  </div>
 
-                {/* Official Postmark Stamp — tilted, wavy ripple lines, breaking out of the rounded card boundary */}
-                <div
-                  className="absolute -top-4 sm:-top-5.5 right-2 sm:right-5 pointer-events-none select-none z-10 transform -rotate-6 sm:-rotate-8 transition-transform"
-                  aria-label={`Status: ${detail.status === 'submitted' ? 'Submitted' : 'Draft'}`}
-                >
-                  <OfficialPostmarkStamp
-                    status={detail.status}
-                    submittedAt={detail.submitted_at}
-                    createdAt={detail.created_at}
-                  />
+                  {/* Actions on the far right */}
+                  <div className="flex items-center gap-2 print:hidden shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="inline-flex items-center h-9 px-3.5 rounded-lg border border-stone-200 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 transition"
+                    >
+                      {t('Print', 'Print')}
+                    </button>
+                    {detail.status === 'submitted' && (
+                      <a
+                        href={`/field/survey?edit=${detail.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={t('Edit (field staff login required)', 'Edit (field staff login required)')}
+                        className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[#b8864a] text-white text-base font-medium hover:bg-[#a07640] transition"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        {t('Edit', 'Edit')}
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
