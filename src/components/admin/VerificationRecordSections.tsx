@@ -4,21 +4,111 @@ import { useEffect, useMemo, useRef, useState, Fragment, type CSSProperties } fr
 import { buildRecordSections, hasRecordValue, parseRecordSchema, safeRecordUrl, type RecordField } from './VerificationRecordModel';
 
 function RecordValue({ value, field, depth = 0 }: { value: unknown; field?: RecordField; depth?: number }) {
-  if (!hasRecordValue(value)) return <span className="text-stone-400 text-sm">—</span>;
-  if (depth > 8) return <span className="break-all text-sm">{JSON.stringify(value)}</span>;
-  if (Array.isArray(value)) return <div className="space-y-2">{value.map((item, index) => <div key={index} className={typeof item === 'object' && item !== null ? 'rounded-lg border border-stone-200 p-3' : ''}><RecordValue value={item} field={field} depth={depth + 1} /></div>)}</div>;
-  if (typeof value === 'object' && value !== null) {
-    const children = field?.fields || [];
-    return <dl className="space-y-2">{Object.entries(value).map(([key, item]) => {
-      const child = children.find(candidate => candidate.key === key);
-      return <div key={key} className="min-w-0"><dt className="mb-0.5 break-words text-sm text-stone-500 font-normal">{child?.labelEn || child?.label || key}</dt><dd><RecordValue value={item} field={child} depth={depth + 1} /></dd></div>;
-    })}</dl>;
+  if (!hasRecordValue(value)) return <span className="text-stone-400 text-base font-normal">—</span>;
+  if (depth > 8) return <span className="break-all text-base">{JSON.stringify(value)}</span>;
+
+  let parsed = value;
+  if (typeof value === 'string' && value.trim().startsWith('[') && value.trim().endsWith(']')) {
+    try {
+      const maybeArr = JSON.parse(value);
+      if (Array.isArray(maybeArr)) parsed = maybeArr;
+    } catch {
+      // Keep as string
+    }
   }
-  const text = typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value);
+
+  // Render arrays of primitive values (e.g. multi-select options) as horizontal tags/chips
+  if (Array.isArray(parsed)) {
+    const isPrimitiveArray = parsed.every(item => item === null || typeof item !== 'object');
+    if (isPrimitiveArray) {
+      const activeItems = parsed.filter(hasRecordValue);
+      if (!activeItems.length) return <span className="text-stone-400 text-base font-normal">—</span>;
+      return (
+        <div className="flex flex-wrap gap-1.5 pt-0.5">
+          {activeItems.map((item, index) => {
+            const text = typeof item === 'boolean' ? (item ? 'Yes' : 'No') : String(item);
+            const option = field?.options?.find(c => typeof c === 'string' ? c === text : c.value === text);
+            const label = option && typeof option === 'object' ? option.labelEn || option.label || text : text;
+            return (
+              <span
+                key={index}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-stone-100 text-stone-800 border border-stone-200/80 text-sm sm:text-base font-medium leading-normal break-words"
+              >
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-2">
+        {parsed.map((item, index) => (
+          <div key={index} className={typeof item === 'object' && item !== null ? 'rounded-lg border border-stone-200 p-3 bg-stone-50/40' : ''}>
+            <RecordValue value={item} field={field} depth={depth + 1} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // If a multi-type field value was saved as newline or comma-separated string, render as tags
+  if ((field?.type === 'multi' || field?.type === 'choices') && typeof parsed === 'string') {
+    const items = parsed.split(/\r?\n|;\s*|,\s*/).map(s => s.trim()).filter(Boolean);
+    if (items.length > 1) {
+      return (
+        <div className="flex flex-wrap gap-1.5 pt-0.5">
+          {items.map((item, index) => {
+            const option = field?.options?.find(c => typeof c === 'string' ? c === item : c.value === item);
+            const label = option && typeof option === 'object' ? option.labelEn || option.label || item : item;
+            return (
+              <span
+                key={index}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-stone-100 text-stone-800 border border-stone-200/80 text-sm sm:text-base font-medium leading-normal break-words"
+              >
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      );
+    }
+  }
+
+  if (typeof parsed === 'object' && parsed !== null) {
+    const children = field?.fields || [];
+    return (
+      <dl className="space-y-2">
+        {Object.entries(parsed).map(([key, item]) => {
+          const child = children.find(candidate => candidate.key === key);
+          return (
+            <div key={key} className="min-w-0">
+              <dt className="mb-0.5 break-words text-base text-stone-500 font-normal">
+                {child?.labelEn || child?.label || key}
+              </dt>
+              <dd>
+                <RecordValue value={item} field={child} depth={depth + 1} />
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+    );
+  }
+
+  const text = typeof parsed === 'boolean' ? (parsed ? 'Yes' : 'No') : String(parsed);
   const option = field?.options?.find(candidate => typeof candidate === 'string' ? candidate === text : candidate.value === text);
   const label = option && typeof option === 'object' ? option.labelEn || option.label || text : text;
   const href = field?.type === 'url' ? safeRecordUrl(text) : null;
-  return href ? <a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-[#b8864a] underline">{label}</a> : <span className="whitespace-pre-wrap break-words text-sm text-stone-800 [overflow-wrap:anywhere]">{label}</span>;
+  return href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-[#b8864a] underline text-base font-medium">
+      {label}
+    </a>
+  ) : (
+    <span className="whitespace-pre-wrap break-words text-base text-stone-800 [overflow-wrap:anywhere] leading-normal font-medium">
+      {label}
+    </span>
+  );
 }
 
 const recordSectionId = (key: string) => `record-section-${key}`;
@@ -149,7 +239,7 @@ export default function VerificationRecordSections({ record, schema, stickyOffse
     }
   }, [activeIndex, isDesktop, sections]);
 
-  if (!sections.length) return <p className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-500">No questionnaire answers saved.</p>;
+  if (!sections.length) return <p className="rounded-xl border border-stone-200 bg-white p-5 text-base text-stone-500">No questionnaire answers saved.</p>;
 
   return <div style={{ '--record-overview-offset': `${stickyOffset}px` } as CSSProperties} className="mx-auto min-w-0 max-w-[1500px] xl:grid xl:grid-cols-[232px_minmax(0,1fr)] xl:gap-7">
     <aside style={isDesktop && scrollportHeight > stickyOffset ? { maxHeight: `${scrollportHeight - stickyOffset}px` } : undefined} className="print:hidden xl:sticky xl:top-[var(--record-overview-offset)] xl:flex xl:max-h-[calc(100dvh-4rem-var(--record-overview-offset))] xl:self-start xl:flex-col">
@@ -157,12 +247,12 @@ export default function VerificationRecordSections({ record, schema, stickyOffse
         {sections.map((section, index) => {
           const selected = activeIndex === index;
           const filled = section.fields.filter(field => hasRecordValue(section.data[field.key]) || hasRecordValue(section.data[`${field.key}__other`])).length;
-          return <a key={section.key} href={`#${recordSectionId(section.key)}`} data-section-key={section.key} aria-current={selected ? 'location' : undefined} onClick={() => setActiveIndex(index)} className={`flex max-w-60 shrink-0 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors xl:w-full xl:max-w-none ${selected ? 'border-[#b8864a]/35 bg-[#b8864a]/10 text-[#8b6537]' : 'border-stone-200 bg-white text-stone-600 hover:border-[#b8864a]/40 hover:text-[#8b6537] xl:border-transparent xl:bg-transparent'}`}>
-            <div className="flex items-center gap-2 min-w-0">
-              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${selected ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-500'}`}>{index + 1}</span>
-              <span className="min-w-0 whitespace-normal break-words text-sm font-medium leading-snug [overflow-wrap:anywhere]">{section.titleEn || section.title}</span>
+          return <a key={section.key} href={`#${recordSectionId(section.key)}`} data-section-key={section.key} aria-current={selected ? 'location' : undefined} onClick={() => setActiveIndex(index)} className={`flex max-w-60 shrink-0 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left transition-colors xl:w-full xl:max-w-none ${selected ? 'border-[#b8864a]/35 bg-[#b8864a]/10 text-[#8b6537]' : 'border-stone-200 bg-white text-stone-600 hover:border-[#b8864a]/40 hover:text-[#8b6537] xl:border-transparent xl:bg-transparent'}`}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${selected ? 'bg-[#b8864a] text-white' : 'bg-stone-100 text-stone-500'}`}>{index + 1}</span>
+              <span className="min-w-0 whitespace-normal break-words text-base font-medium leading-snug [overflow-wrap:anywhere]">{section.titleEn || section.title}</span>
             </div>
-            <span className={`text-[11px] px-1.5 py-0.5 rounded shrink-0 font-mono ${filled > 0 ? 'bg-stone-100 text-stone-600' : 'text-stone-300'}`}>
+            <span className={`text-xs px-1.5 py-0.5 rounded shrink-0 font-mono ${filled > 0 ? 'bg-stone-100 text-stone-600' : 'text-stone-300'}`}>
               {filled}/{section.fields.length}
             </span>
           </a>;
@@ -173,13 +263,13 @@ export default function VerificationRecordSections({ record, schema, stickyOffse
         <button
           type="button"
           onClick={() => setHideEmpty(v => !v)}
-          className={`w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+          className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
             hideEmpty
               ? 'bg-[#b8864a]/10 border-[#b8864a]/30 text-[#8b6537]'
               : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'
           }`}
         >
-          <span>{hideEmpty ? '✓ 仅看已填项 (Hide empty)' : '隐藏未填字段 (Hide empty)'}</span>
+          <span>{hideEmpty ? '✓ Showing filled only' : 'Hide empty fields'}</span>
         </button>
       </div>
     </aside>
@@ -192,13 +282,13 @@ export default function VerificationRecordSections({ record, schema, stickyOffse
         <button
           type="button"
           onClick={() => setHideEmpty(v => !v)}
-          className={`xl:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+          className={`xl:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
             hideEmpty
               ? 'bg-[#b8864a]/10 border-[#b8864a]/30 text-[#8b6537]'
               : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'
           }`}
         >
-          <span>{hideEmpty ? '✓ 仅看已填项' : '隐藏未填字段'}</span>
+          <span>{hideEmpty ? '✓ Showing filled only' : 'Hide empty fields'}</span>
         </button>
       </div>
       {sections.map((section, index) => {
@@ -210,15 +300,15 @@ export default function VerificationRecordSections({ record, schema, stickyOffse
           : fields;
         return <section key={section.key} id={recordSectionId(section.key)} data-section-index={index} className="scroll-mt-24 overflow-hidden rounded-xl border border-stone-200 bg-white xl:scroll-mt-[var(--record-overview-offset)]">
           <div className="flex items-center justify-between gap-3 border-b border-stone-100 bg-stone-50 px-4 py-3 sm:px-5">
-            <h2 className="break-words text-sm sm:text-base font-semibold text-stone-800">{section.titleEn || section.title}</h2>
-            <span className="shrink-0 text-xs text-stone-400 font-mono">{filled}/{section.fields.length}</span>
+            <h2 className="break-words text-base sm:text-lg font-semibold text-stone-800">{section.titleEn || section.title}</h2>
+            <span className="shrink-0 text-sm text-stone-400 font-mono">{filled}/{section.fields.length}</span>
           </div>
-          <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 p-3 sm:p-5">
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 p-3 sm:p-5">
             {visibleFields.map((field, fieldIndex) => {
               const isGroupStart = field.group && field.group !== visibleFields[fieldIndex - 1]?.group;
               const hasSubFields = Boolean(field.fields && field.fields.length > 0);
               const val = section.data[field.key];
-              const isComplex = hasSubFields || Array.isArray(val) || (typeof val === 'object' && val !== null) || field.type === 'textarea';
+              const isComplex = hasSubFields || (typeof val === 'object' && val !== null && !Array.isArray(val)) || field.type === 'textarea';
               return (
                 <Fragment key={field.key}>
                   {isGroupStart && (
@@ -227,9 +317,9 @@ export default function VerificationRecordSections({ record, schema, stickyOffse
                     </h3>
                   )}
                   <div className={`min-w-0 py-1.5 px-2 rounded-md hover:bg-stone-50/70 transition-colors ${isComplex ? 'col-span-full' : 'col-span-1'}`}>
-                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(140px,220px)_minmax(0,1fr)] gap-1 sm:gap-3 items-baseline">
-                      <dt className="break-words text-sm text-stone-500 font-normal leading-normal">{field.labelEn || field.label}</dt>
-                      <dd className="min-w-0 text-sm text-stone-800 font-medium leading-normal">
+                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(180px,280px)_minmax(0,1fr)] gap-1.5 sm:gap-4 items-baseline">
+                      <dt className="break-words text-base text-stone-500 font-normal leading-normal">{field.labelEn || field.label}</dt>
+                      <dd className="min-w-0 text-base text-stone-800 font-medium leading-normal">
                         <RecordValue value={section.data[field.key]} field={field} />
                         {hasRecordValue(section.data[`${field.key}__other`]) && (
                           <div className="mt-1"><RecordValue value={section.data[`${field.key}__other`]} /></div>
@@ -241,9 +331,9 @@ export default function VerificationRecordSections({ record, schema, stickyOffse
               );
             })}
           </dl>
-          {!fields.length && <p className="p-4 text-sm text-stone-400">No answers saved.</p>}
+          {!fields.length && <p className="p-4 text-base text-stone-400">No answers saved.</p>}
           {hideEmpty && fields.length > 0 && !visibleFields.length && (
-            <p className="p-4 text-xs text-stone-400 italic">该部分未填写任何内容 (No filled answers in this section)</p>
+            <p className="p-4 text-sm text-stone-400 italic">No filled answers in this section.</p>
           )}
         </section>;
       })}

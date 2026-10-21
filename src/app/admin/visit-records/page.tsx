@@ -23,7 +23,7 @@ interface VisitRecord {
   created_at: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   service_areas?: unknown;
-  section_9?: any;  // 服务区域（列表列展示）
+  section_9?: any;  // Service areas (displayed in list column)
 }
 
 interface PhotoEntry {
@@ -63,15 +63,15 @@ interface VisitRecordDetail extends VisitRecord {
   section_7: Record<string, string | string[]> | null;
   section_8: Record<string, string | string[]> | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  section_9: any;  // { areas: [{ emirate, sectors:[{group,districts}] }] }（兼容旧结构）
-  filled_by?: string | null;  // 公开问卷填写人（非必填）
+  section_9: any;  // { areas: [{ emirate, sectors:[{group,districts}] }] } (legacy structure compatibility)
+  filled_by?: string | null;  // Public survey filler (optional)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   location_pin?: any;  // { lat, lng, address }
   attachments?: string | AttachmentEntry[] | null;
   photos?: string | PhotoEntry[] | null;
 }
 
-// 一套区域压成一行文本（列表用）
+// Format service areas into a single text line (for table)
 function svcAreaToLine(a: SvcArea): string {
   const parts = a.sectors.map(s => {
     const ds = s.districts.join(', ');
@@ -81,7 +81,7 @@ function svcAreaToLine(a: SvcArea): string {
   return tail ? `${a.emirate} — ${tail}` : a.emirate;
 }
 
-// 解析附件 JSON（兼容字符串 / 已解析数组），过滤无 url 的脏数据
+// Parse attachment JSON (compatible with string or parsed array), filter dirty entries without url
 function parseAttachments(raw: unknown): AttachmentEntry[] {
   if (!raw) return [];
   let obj: unknown = raw;
@@ -224,14 +224,14 @@ function parseEditSummary(raw: string): ParsedDiff[] {
 function renderEditSummary(raw: string) {
   const diffs = parseEditSummary(raw);
   if (diffs.length === 1 && !diffs[0].label && !diffs[0].from) {
-    return <span className="text-xs sm:text-sm text-stone-400 italic">{diffs[0].to}</span>;
+    return <span className="text-sm text-stone-500 italic">{diffs[0].to}</span>;
   }
   return (
-    <div className="flex flex-wrap gap-1.5 mt-1.5 text-xs sm:text-sm">
+    <div className="flex flex-wrap gap-1.5 mt-1.5 text-sm">
       {diffs.map((d, idx) => (
         <div
           key={idx}
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm bg-stone-50 px-2.5 py-0.5 rounded border border-stone-200/70"
+          className="inline-flex items-center gap-1.5 text-sm bg-stone-50 px-2.5 py-0.5 rounded border border-stone-200/70"
         >
           {d.label && <span className="font-semibold text-stone-700">{d.label}:</span>}
           {d.from && d.from !== '—' && (
@@ -252,7 +252,8 @@ function renderEditSummary(raw: string) {
 }
 
 function AdminVisitRecordsContent() {
-  const { t } = useAdminT();
+  const { t: _rawT } = useAdminT();
+  const t = (en: string, _zh?: string) => en;
   const { country } = useAdminCountry();
   const [records, setRecords] = useState<VisitRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -356,8 +357,8 @@ function AdminVisitRecordsContent() {
     const count = selected.size;
     const ids = Array.from(selected);
     showConfirm({
-      title: `删除 ${count} 条访谈记录`,
-      message: '此操作不可恢复，记录将被永久删除。',
+      title: `Delete ${count} visit record(s)`,
+      message: 'This action cannot be undone. Records will be permanently deleted.',
       requireText: 'DELETE',
       onConfirm: async () => {
         setDeleting(true);
@@ -366,7 +367,7 @@ function AdminVisitRecordsContent() {
           setSelected(new Set());
           await fetchRecords();
         } catch {
-          alert('删除失败，请重试');
+          alert('Failed to delete visit records. Please retry.');
         }
         setDeleting(false);
       },
@@ -431,7 +432,7 @@ function AdminVisitRecordsContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openDetail]);
 
-  // 绑定公司：按访谈所属国家搜索（国家数据隔离），选中后 PATCH company_ref
+  // Bind company: Search companies within the record's country (country data isolation), PATCH company_ref on select
   const handleBindSearch = async (q: string) => {
     const request = ++bindRequest.current;
     const requestedCountry = country;
@@ -462,7 +463,7 @@ function AdminVisitRecordsContent() {
       await openDetail(detail.id);
       await fetchRecords();
     } catch {
-      alert(t('Failed to bind company', '绑定失败，请重试'));
+      alert('Failed to bind company. Please retry.');
     } finally {
       setBinding(false);
     }
@@ -477,7 +478,7 @@ function AdminVisitRecordsContent() {
       await openDetail(detail.id);
       await fetchRecords();
     } catch {
-      alert(t('Failed to unbind', '解绑失败，请重试'));
+      alert('Failed to unbind company. Please retry.');
     } finally {
       setBinding(false);
     }
@@ -534,17 +535,17 @@ function AdminVisitRecordsContent() {
           <div className="mx-auto max-w-[1500px] w-full flex items-center justify-between">
             <button
               onClick={closeDetail}
-              className="flex items-center gap-1.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors py-1"
+              className="flex items-center gap-1.5 text-base font-medium text-stone-600 hover:text-stone-900 transition-colors py-1"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-              {t('Back to Records', '返回访谈列表')}
+              {t('Back to Records', 'Back to Records')}
             </button>
           </div>
         </div>
 
         <div className="mx-auto max-w-[1500px] w-full space-y-2.5">
           {detailError ? (
-            <div role="alert" className="rounded-xl border border-red-200 bg-white p-5 text-sm text-red-600">{t('Record could not be loaded.', '记录加载失败。')} <button className="underline" onClick={() => openDetail(selectedId)}>{t('Retry', '重试')}</button></div>
+            <div role="alert" className="rounded-xl border border-red-200 bg-white p-5 text-base text-red-600">{t('Record could not be loaded.', 'Record could not be loaded.')} <button className="underline" onClick={() => openDetail(selectedId)}>{t('Retry', 'Retry')}</button></div>
           ) : detailLoading || !detail ? (
             <div className="flex justify-center py-16"><Spinner /></div>
           ) : (
@@ -554,12 +555,12 @@ function AdminVisitRecordsContent() {
                 {/* Left: Company name + bind status + inline metadata */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h1 className="text-base sm:text-lg font-bold text-[#2c2c2c] leading-snug break-words [overflow-wrap:anywhere]">{detail.company_name || '—'}</h1>
-                    {/* 绑定状态 + 操作 */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <h1 className="text-lg sm:text-xl font-bold text-[#2c2c2c] leading-snug break-words [overflow-wrap:anywhere]">{detail.company_name || '—'}</h1>
+                    {/* Bind status + actions */}
+                    <div className="flex items-center gap-2 flex-wrap">
                       {detail.company_ref_id ? (
                         <>
-                          <span className="text-sm text-stone-500 flex items-center gap-1">
+                          <span className="text-base text-stone-500 flex items-center gap-1">
                             → {detail.linked_company_name || `#${detail.company_ref_id}`}
                             <a
                               href={detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}
@@ -567,46 +568,46 @@ function AdminVisitRecordsContent() {
                               rel="noopener noreferrer"
                               className="text-[#b8864a] hover:opacity-70"
                             >
-                              <ExternalLink size={13} />
+                              <ExternalLink size={14} />
                             </a>
                           </span>
                           <button
                             type="button"
                             onClick={() => { setBindOpen(v => !v); setBindQuery(detail.company_name || ''); if (!bindOpen) handleBindSearch(detail.company_name || ''); }}
-                            className="text-sm text-stone-500 hover:text-[#b8864a] underline decoration-dotted"
-                          >{t('Rebind', '改绑')}</button>
+                            className="text-base text-stone-500 hover:text-[#b8864a] underline decoration-dotted font-medium"
+                          >{t('Rebind', 'Rebind')}</button>
                           <button
                             type="button"
                             onClick={handleUnbind}
                             disabled={binding}
-                            className="text-sm text-stone-500 hover:text-red-500 underline decoration-dotted disabled:opacity-50"
-                          >{t('Unbind', '解绑')}</button>
+                            className="text-base text-stone-500 hover:text-red-500 underline decoration-dotted disabled:opacity-50 font-medium"
+                          >{t('Unbind', 'Unbind')}</button>
                         </>
                       ) : (
                         <>
-                          <span className="text-xs sm:text-sm px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">{t('Not bound', '未绑定公司')}</span>
+                          <span className="text-sm px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">{t('Not bound', 'Not bound')}</span>
                           <button
                             type="button"
                             onClick={() => { setBindOpen(v => !v); setBindQuery(detail.company_name || ''); if (!bindOpen) handleBindSearch(detail.company_name || ''); }}
-                            className="text-sm text-[#b8864a] hover:underline font-medium"
-                          >{t('Bind company', '绑定公司')}</button>
+                            className="text-base text-[#b8864a] hover:underline font-medium"
+                          >{t('Bind company', 'Bind company')}</button>
                         </>
                       )}
                     </div>
                   </div>
 
                   {/* Clean inline meta text without borders or boxes */}
-                  <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap text-sm text-stone-500 mt-1">
+                  <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap text-base text-stone-500 mt-1">
                     {[
                       detail.interviewer_name ? (
-                        <span key="interviewer">{t('Interviewer', '访谈人')}: <strong className="font-medium text-stone-800">{detail.interviewer_name}</strong></span>
+                        <span key="interviewer">{t('Interviewer', 'Interviewer')}: <strong className="font-medium text-stone-800">{detail.interviewer_name}</strong></span>
                       ) : null,
                       detail.filled_by ? (
-                        <span key="filled_by">{t('Filled by', '填写人')}: <strong className="font-medium text-stone-800">{detail.filled_by}</strong></span>
+                        <span key="filled_by">{t('Filled by', 'Filled by')}: <strong className="font-medium text-stone-800">{detail.filled_by}</strong></span>
                       ) : null,
                       <span key="created_at" className={ADMIN_TIME_CLS}>{formatDate(detail.created_at)}</span>,
                       detail.submitted_at ? (
-                        <span key="submitted_at">{t('Submitted', '提交')}: <span className={ADMIN_TIME_CLS}>{formatDate(detail.submitted_at)}</span></span>
+                        <span key="submitted_at">{t('Submitted', 'Submitted')}: <span className={ADMIN_TIME_CLS}>{formatDate(detail.submitted_at)}</span></span>
                       ) : null,
                       <span key="id" className="font-mono text-stone-400">#{detail.id}</span>,
                     ].filter(Boolean).map((item, idx) => (
@@ -617,23 +618,23 @@ function AdminVisitRecordsContent() {
                     ))}
                   </div>
 
-                  {/* 绑定搜索面板 */}
+                  {/* Bind search panel */}
                   {bindOpen && (
                     <div className="mt-2 w-full sm:w-96 border border-stone-200 rounded-xl bg-stone-50/60 p-3">
                       <input
                         value={bindQuery}
                         onChange={(e) => handleBindSearch(e.target.value)}
-                        placeholder={t('Search companies in this country…', '搜索本国公司…')}
+                        placeholder={t('Search companies in this country…', 'Search companies in this country…')}
                         autoFocus
-                        className="w-full h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a]"
+                        className="w-full h-10 px-3 rounded-lg border border-stone-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-[#b8864a]/15 focus:border-[#b8864a]"
                       />
                       <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
                         {bindSearching ? (
-                          <p className="text-xs text-stone-400 py-2 text-center">{t('Searching…', '搜索中…')}</p>
+                          <p className="text-sm text-stone-400 py-2 text-center">{t('Searching…', 'Searching…')}</p>
                         ) : bindError ? (
-                          <p className="text-xs text-red-500 py-2 text-center">{t('Search failed, please retry', '搜索失败，请重试')}</p>
+                          <p className="text-sm text-red-500 py-2 text-center">{t('Search failed, please retry', 'Search failed, please retry')}</p>
                         ) : bindResults.length === 0 ? (
-                          <p className="text-xs text-stone-400 py-2 text-center">{bindQuery.trim() ? t('No match', '无匹配公司') : t('Type to search', '输入公司名搜索')}</p>
+                          <p className="text-sm text-stone-400 py-2 text-center">{bindQuery.trim() ? t('No match', 'No match') : t('Type to search', 'Type to search')}</p>
                         ) : bindResults.map(c => (
                           <button
                             key={`${c.source}-${c.id}`}
@@ -642,10 +643,10 @@ function AdminVisitRecordsContent() {
                             onClick={() => handleBind(c)}
                             className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border border-stone-100 hover:border-[#b8864a]/50 text-left transition-colors disabled:opacity-50"
                           >
-                            <span className="flex-1 min-w-0 text-sm text-[#2c2c2c] truncate">{c.name}</span>
-                            {c.city && <span className="text-xs text-stone-400 shrink-0">{c.city}</span>}
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${c.source === 'profile' ? 'bg-blue-50 text-blue-600' : 'bg-stone-100 text-stone-500'}`}>
-                              {c.source === 'profile' ? t('Registered', '注册') : t('Directory', '目录')}
+                            <span className="flex-1 min-w-0 text-base text-[#2c2c2c] truncate">{c.name}</span>
+                            {c.city && <span className="text-sm text-stone-400 shrink-0">{c.city}</span>}
+                            <span className={`text-xs px-2 py-0.5 rounded shrink-0 ${c.source === 'profile' ? 'bg-blue-50 text-blue-600' : 'bg-stone-100 text-stone-500'}`}>
+                              {c.source === 'profile' ? t('Registered', 'Registered') : t('Directory', 'Directory')}
                             </span>
                           </button>
                         ))}
@@ -654,27 +655,42 @@ function AdminVisitRecordsContent() {
                   )}
                 </div>
 
-                {/* Right: Actions */}
-                <div className="w-full sm:w-auto min-w-0 flex items-center gap-2 print:hidden">
-                  <button type="button" onClick={handleExport} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-sm text-stone-700 hover:bg-stone-50 transition"><Download size={14}/>{t('Export JSON', '导出 JSON')}</button>
-                  <button type="button" onClick={() => window.print()} className="inline-flex items-center h-8 px-3 rounded-lg border border-stone-200 bg-white text-sm text-stone-700 hover:bg-stone-50 transition">{t('Print', '打印')}</button>
+                {/* Right: Actions + Status Stamp */}
+                <div className="w-full sm:w-auto min-w-0 flex items-center gap-2 print:hidden flex-wrap sm:flex-nowrap">
+                  <button type="button" onClick={handleExport} className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-stone-200 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 transition"><Download size={15}/>{t('Export JSON', 'Export JSON')}</button>
+                  <button type="button" onClick={() => window.print()} className="inline-flex items-center h-9 px-3.5 rounded-lg border border-stone-200 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 transition">{t('Print', 'Print')}</button>
                   {detail.status === 'submitted' && (
                     <a
                       href={`/field/survey?edit=${detail.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={t('Edit (field staff login required)', '编辑（需外勤人员登录）')}
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07640] transition"
+                      title={t('Edit (field staff login required)', 'Edit (field staff login required)')}
+                      className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[#b8864a] text-white text-base font-medium hover:bg-[#a07640] transition"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
-                      {t('Edit', '编辑')}
+                      <Pencil className="w-4 h-4" />
+                      {t('Edit', 'Edit')}
                     </a>
                   )}
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                    detail.status === 'submitted' ? 'bg-green-50 text-green-700 border border-green-200/60' : 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                  }`}>
-                    {detail.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
-                  </span>
+
+                  {/* Divider separating interactive action buttons from official status stamp */}
+                  <div className="hidden sm:block w-px h-6 bg-stone-200 mx-1" aria-hidden="true" />
+
+                  {/* Status Stamp */}
+                  <div className="select-none pointer-events-none shrink-0" aria-label={`Status: ${detail.status === 'submitted' ? 'Submitted' : 'Draft'}`}>
+                    {detail.status === 'submitted' ? (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md border-2 border-emerald-600/90 bg-emerald-50/70 text-emerald-800 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-2xs -rotate-2 ring-1 ring-emerald-600/20">
+                        <svg className="w-3.5 h-3.5 stroke-[2.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span>{t('Submitted', 'Submitted')}</span>
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md border-2 border-dashed border-amber-600/80 bg-amber-50/70 text-amber-800 text-xs sm:text-sm font-bold uppercase tracking-wider -rotate-2 ring-1 ring-amber-600/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <span>{t('Draft', 'Draft')}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -685,7 +701,7 @@ function AdminVisitRecordsContent() {
               if (photos.length === 0) return null;
               return (
                 <div className="bg-white rounded-xl border border-stone-200 p-5">
-                  <h2 className="text-xs font-semibold text-stone-700 uppercase tracking-wide border-l-2 border-[#b8864a] pl-2 mb-3">
+                  <h2 className="text-sm sm:text-base font-semibold text-stone-700 uppercase tracking-wide border-l-2 border-[#b8864a] pl-2 mb-3">
                     Photos ({photos.length})
                   </h2>
                   <div className="flex flex-wrap gap-2">
@@ -704,14 +720,14 @@ function AdminVisitRecordsContent() {
               );
             })()}
 
-            {/* Attachments — 问卷上传的文件（图片/PDF/文档）。后端存于 company_interviews.attachments */}
+            {/* Attachments - Files uploaded via survey (images/PDF/docs). Stored in company_interviews.attachments */}
             {(() => {
               const attachments = parseAttachments(detail.attachments);
               if (attachments.length === 0) return null;
               return (
                 <div className="bg-white rounded-xl border border-stone-200 p-5">
-                  <h2 className="text-xs font-semibold text-stone-700 uppercase tracking-wide border-l-2 border-[#b8864a] pl-2 mb-3">
-                    {t('Attachments', '附件')} ({attachments.length})
+                  <h2 className="text-sm sm:text-base font-semibold text-stone-700 uppercase tracking-wide border-l-2 border-[#b8864a] pl-2 mb-3">
+                    {t('Attachments', 'Attachments')} ({attachments.length})
                   </h2>
                   <div className="space-y-2">
                     {attachments.map((att, i) => {
@@ -733,8 +749,8 @@ function AdminVisitRecordsContent() {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#2c2c2c] truncate">{name}</p>
-                            <p className="text-xs text-stone-400">
+                            <p className="text-base font-medium text-[#2c2c2c] truncate">{name}</p>
+                            <p className="text-sm text-stone-400">
                               {formatBytes(att.size)}
                               {att.field_key ? `${att.size ? ' · ' : ''}${att.field_key}` : ''}
                             </p>
@@ -743,11 +759,11 @@ function AdminVisitRecordsContent() {
                             href={att.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-[#b8864a] hover:underline"
-                            title={t('Open / Download', '打开 / 下载')}
+                            className="shrink-0 inline-flex items-center gap-1 text-sm font-medium text-[#b8864a] hover:underline"
+                            title={t('Open / Download', 'Open / Download')}
                           >
                             <Download className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">{t('Open', '打开')}</span>
+                            <span className="hidden sm:inline">{t('Open', 'Open')}</span>
                           </a>
                         </div>
                       );
@@ -761,7 +777,7 @@ function AdminVisitRecordsContent() {
               <VerificationRecordSections record={detail as unknown as Record<string, unknown>} schema={detail.schema_snapshot} stickyOffset={recordStickyOffset}/>
             ) : !schemaLoaded ? <div className="flex justify-center py-4"><Spinner /></div> : (
               <>
-                {schemaError && <p role="alert" className="text-sm text-red-600">{t('Survey labels could not be loaded. Saved answers are shown below.', '问卷标签加载失败，下方仍显示已保存的答案。')} <button onClick={loadSchema} className="underline">{t('Retry', '重试')}</button></p>}
+                {schemaError && <p role="alert" className="text-base text-red-600">{t('Survey labels could not be loaded. Saved answers are shown below.', 'Survey labels could not be loaded. Saved answers are shown below.')} <button onClick={loadSchema} className="underline">{t('Retry', 'Retry')}</button></p>}
                 <VerificationRecordSections record={detail as unknown as Record<string, unknown>} schema={activeSchema} stickyOffset={recordStickyOffset}/>
               </>
             )}
@@ -789,24 +805,24 @@ function AdminVisitRecordsContent() {
                     {areas.length > 0 && (
                       <div className="bg-white rounded-xl border border-stone-200/80 overflow-hidden shadow-xs">
                         <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
-                          <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{t('Service Area', '服务区域')}</h2>
+                          <h2 className="text-xs sm:text-sm font-semibold text-stone-500 uppercase tracking-wider">{t('Service Area', 'Service Area')}</h2>
                         </div>
                         <div className="divide-y divide-stone-50">
                           {areas.map((a, i) => (
                             <div key={i} className="px-5 py-3.5">
-                              <div className="text-sm font-medium text-[#2c2c2c] mb-1.5">
-                                {areas.length > 1 ? `${t('Area', '区域')} ${i + 1} — ` : ''}{a.emirate || '—'}
+                              <div className="text-base font-medium text-[#2c2c2c] mb-1.5">
+                                {areas.length > 1 ? `${t('Area', 'Area')} ${i + 1} — ` : ''}{a.emirate || '—'}
                               </div>
                               <div className="space-y-1.5">
                                 {a.sectors.map((s, j) => (
                                   <div key={j} className="flex items-start gap-2 flex-wrap">
-                                    {s.group && <span className="text-xs text-stone-500 pt-1">{s.group}:</span>}
+                                    {s.group && <span className="text-sm text-stone-500 pt-0.5">{s.group}:</span>}
                                     <div className="flex flex-wrap gap-1.5">
                                       {s.districts.length > 0
                                         ? s.districts.map(d => (
-                                            <span key={d} className="px-2 py-0.5 rounded-md bg-[#b8864a]/10 text-[#b8864a] text-xs">{d}</span>
+                                            <span key={d} className="px-2.5 py-0.5 rounded-md bg-[#b8864a]/10 text-[#b8864a] text-sm font-medium">{d}</span>
                                           ))
-                                        : <span className="text-xs text-stone-300">—</span>}
+                                        : <span className="text-sm text-stone-300">—</span>}
                                     </div>
                                   </div>
                                 ))}
@@ -821,15 +837,15 @@ function AdminVisitRecordsContent() {
                     {pin && (
                       <div className="bg-white rounded-xl border border-stone-200/80 overflow-hidden shadow-xs">
                         <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
-                          <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{t('Company Address Pin', '公司地址定位')}</h2>
+                          <h2 className="text-xs sm:text-sm font-semibold text-stone-500 uppercase tracking-wider">{t('Company Address Pin', 'Company Address Pin')}</h2>
                         </div>
                         <div className="px-5 py-3.5">
-                          {typeof pin.address === 'string' && pin.address && <p className="text-sm text-[#2c2c2c] mb-1">{pin.address}</p>}
+                          {typeof pin.address === 'string' && pin.address && <p className="text-base text-[#2c2c2c] mb-1">{pin.address}</p>}
                           <a
                             href={`https://www.google.com/maps?q=${pin.lat},${pin.lng}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-[#b8864a] hover:underline"
+                            className="text-sm text-[#b8864a] hover:underline"
                           >
                             {Number(pin.lat).toFixed(5)}, {Number(pin.lng).toFixed(5)} ↗
                           </a>
@@ -843,20 +859,20 @@ function AdminVisitRecordsContent() {
                         <summary className="px-4 py-2.5 sm:px-5 sm:py-3 bg-stone-50/60 hover:bg-stone-100/70 cursor-pointer flex items-center justify-between transition-colors list-none select-none">
                           <div className="flex items-center gap-2">
                             <History className="w-4 h-4 text-stone-400" />
-                            <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wider">{t('Edit History', '修改历史')} ({editLogs.length})</h2>
+                            <h2 className="text-base font-semibold text-stone-700 uppercase tracking-wider">{t('Edit History', 'Edit History')} ({editLogs.length})</h2>
                           </div>
                           <span className="text-xs text-stone-400 group-open:rotate-180 transition-transform">▾</span>
                         </summary>
                         <div className="p-3.5 sm:p-4 space-y-3 max-h-80 overflow-y-auto divide-y divide-stone-100">
                           {editLogs.map((log, i) => (
                             <div key={log.id} className={`flex gap-3 ${i > 0 ? 'pt-3' : ''}`}>
-                              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-stone-100 flex items-center justify-center text-xs text-stone-500 font-semibold mt-0.5">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-stone-100 flex items-center justify-center text-xs text-stone-500 font-semibold mt-0.5">
                                 {i + 1}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap text-sm">
+                                <div className="flex items-center gap-2 flex-wrap text-base">
                                   <span className="font-medium text-stone-800">{log.editor_name}</span>
-                                  <span className="text-stone-400 text-xs sm:text-sm">{formatDate(log.edited_at)}</span>
+                                  <span className="text-stone-400 text-sm">{formatDate(log.edited_at)}</span>
                                 </div>
                                 {renderEditSummary(log.edit_summary)}
                               </div>
@@ -883,27 +899,27 @@ function AdminVisitRecordsContent() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <MapPin className="w-5 h-5 text-[#b8864a]" />
-          <h1 className="text-xl font-bold text-[#2c2c2c]">{t('Visit Records', '访谈记录')}</h1>
-          <span className="text-sm text-stone-400">{recordsCountry === country ? records.length : 0}</span>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#2c2c2c]">{t('Visit Records', 'Visit Records')}</h1>
+          <span className="text-base text-stone-400 font-normal">{recordsCountry === country ? records.length : 0}</span>
         </div>
         <div className="flex items-center gap-2">
           <a
             href="/admin/survey-questions"
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
-            title={t('Survey Questions', '问卷题目')}
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-stone-200 bg-white text-sm sm:text-base font-medium text-stone-700 hover:bg-stone-50 hover:text-[#b8864a] transition"
+            title={t('Survey Questions', 'Survey Questions')}
           >
-            <ClipboardList className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t('Survey Questions', '问卷题目')}</span>
+            <ClipboardList className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('Survey Questions', 'Survey Questions')}</span>
           </a>
           <a
             href="/field/survey"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 hover:text-[#b8864a] transition"
-            title={t('Interview Page', '访谈提交页')}
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-stone-200 bg-white text-sm sm:text-base font-medium text-stone-700 hover:bg-stone-50 hover:text-[#b8864a] transition"
+            title={t('Interview Page', 'Interview Page')}
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t('Interview Page', '访谈提交页')}</span>
+            <ExternalLink className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('Interview Page', 'Interview Page')}</span>
           </a>
         </div>
       </div>
@@ -913,28 +929,28 @@ function AdminVisitRecordsContent() {
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder={t('Search company / staff…', '搜索公司 / 人员…')}
-          className="basis-full sm:basis-auto sm:flex-1 h-9 px-3 rounded-lg border border-stone-200 bg-white text-[15px] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white min-w-0"
+          placeholder={t('Search company / staff…', 'Search company / staff…')}
+          className="basis-full sm:basis-auto sm:flex-1 h-10 px-3.5 rounded-lg border border-stone-200 bg-white text-base placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white min-w-0"
         />
         <AdminSelect
           value={statusFilter}
           onChange={setStatusFilter}
           options={STATUS_OPTIONS}
           size="sm"
-          className="w-36"
+          className="w-40"
         />
       </div>
 
       {recordsCountry === country && selected.size > 0 && (
         <div className="flex items-center justify-between px-4 py-2.5 mb-2 rounded-lg bg-red-50 border border-red-100">
-          <span className="text-sm text-red-700">已选 {selected.size} 条</span>
+          <span className="text-base font-medium text-red-700">{selected.size} selected</span>
           <button
             onClick={handleBatchDelete}
             disabled={deleting}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-red-600 text-white text-base font-medium hover:bg-red-700 disabled:opacity-50 transition"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            {deleting ? '删除中…' : '删除所选'}
+            <Trash2 className="w-4 h-4" />
+            {deleting ? 'Deleting…' : 'Delete selected'}
           </button>
         </div>
       )}
@@ -942,9 +958,9 @@ function AdminVisitRecordsContent() {
       {loading || recordsCountry !== country ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : listError ? (
-        <div role="alert" className="py-10 text-center text-sm text-red-600">{t('Records could not be loaded.', '访谈记录加载失败。')} <button onClick={fetchRecords} className="underline">{t('Retry', '重试')}</button></div>
+        <div role="alert" className="py-10 text-center text-base text-red-600">{t('Records could not be loaded.', 'Records could not be loaded.')} <button onClick={fetchRecords} className="underline">{t('Retry', 'Retry')}</button></div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-stone-400 text-sm">{t('No records found.', '暂无记录。')}</div>
+        <div className="text-center py-16 text-stone-400 text-base">{t('No records found.', 'No records found.')}</div>
       ) : (
         <>
           {/* Mobile cards */}
@@ -962,7 +978,7 @@ function AdminVisitRecordsContent() {
                   className="flex-shrink-0 flex items-center justify-center w-12"
                   onClick={e => { e.stopPropagation(); handleSelectOne(r.id, !selected.has(r.id)); }}
                 >
-                  <button type="button" aria-label={`${t("Select record", "选择记录")} #${r.id}`} aria-pressed={selected.has(r.id)} onKeyDown={event => event.stopPropagation()} className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
+                  <button type="button" aria-label={`${t("Select record", "Select record")} #${r.id}`} aria-pressed={selected.has(r.id)} onKeyDown={event => event.stopPropagation()} className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
                     style={{ borderColor: selected.has(r.id) ? '#b8864a' : '#d1cdc7', backgroundColor: selected.has(r.id) ? '#b8864a' : 'white' }}
                   >
                     {selected.has(r.id) && (
@@ -977,25 +993,25 @@ function AdminVisitRecordsContent() {
                 <div className="flex-1 min-w-0 p-4">
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium text-[#2c2c2c] text-[15px] leading-snug">{r.company_name || '—'}</div>
+                      <div className="font-medium text-[#2c2c2c] text-base leading-snug">{r.company_name || '—'}</div>
                       {r.linked_company_name && r.linked_company_name !== r.company_name && r.company_ref_id && (
                         <a
                           href={`${r.company_ref_source === 'profile' ? `/admin/profile-companies/${r.company_ref_id}` : `/admin/companies/${r.company_ref_id}`}`}
                           onClick={e => e.stopPropagation()}
-                          className="text-xs text-[#b8864a] hover:underline flex items-center gap-0.5 mt-0.5"
+                          className="text-sm text-[#b8864a] hover:underline flex items-center gap-0.5 mt-0.5"
                         >
                           → {r.linked_company_name}
                         </a>
                       )}
                     </div>
-                    <span className={`flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    <span className={`flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
                       r.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
                     }`}>
-                      {r.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
+                      {r.status === 'submitted' ? t('Submitted', 'Submitted') : t('Draft', 'Draft')}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-stone-500 flex-wrap">
-                    <span className="font-medium text-stone-600">{r.interviewer_name}</span>
+                  <div className="flex items-center gap-3 text-sm text-stone-500 flex-wrap">
+                    <span className="font-medium text-stone-700">{r.interviewer_name}</span>
                     <span className={ADMIN_TIME_CLS}>{formatDate(r.submitted_at || r.created_at)}</span>
                   </div>
                 </div>
@@ -1005,10 +1021,10 @@ function AdminVisitRecordsContent() {
 
           {/* Desktop table */}
           <div className="hidden sm:block bg-white rounded-xl border border-stone-200 overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="w-full min-w-[900px] text-base">
               <thead>
                 <tr className="border-b border-stone-100 text-left">
-                  <th className="px-4 py-3">
+                  <th className="px-4 py-3.5">
                     <input
                       type="checkbox"
                       checked={filtered.length > 0 && filtered.every(r => selected.has(r.id))}
@@ -1016,13 +1032,13 @@ function AdminVisitRecordsContent() {
                       className="rounded border-stone-300"
                     />
                   </th>
-                  <th className="px-4 py-3 font-medium text-stone-500">#</th>
-                  <th className="px-4 py-3 font-medium text-stone-500">{t('Company', '公司')}</th>
-                  <th className="px-4 py-3 font-medium text-stone-500">{t('Service Area', '服务区域')}</th>
-                  <th className="px-4 py-3 font-medium text-stone-500">{t('Interviewer', '采访人')}</th>
-                  <th className="px-4 py-3 font-medium text-stone-500">{t('Status', '状态')}</th>
-                  <th className="px-4 py-3 font-medium text-stone-500">{t('Submitted', '提交时间')}</th>
-                  <th className="px-4 py-3 font-medium text-stone-500">{t('Created', '创建时间')}</th>
+                  <th className="px-4 py-3.5 font-semibold text-stone-600 text-sm sm:text-base">#</th>
+                  <th className="px-4 py-3.5 font-semibold text-stone-600 text-sm sm:text-base">{t('Company', 'Company')}</th>
+                  <th className="px-4 py-3.5 font-semibold text-stone-600 text-sm sm:text-base">{t('Service Area', 'Service Area')}</th>
+                  <th className="px-4 py-3.5 font-semibold text-stone-600 text-sm sm:text-base">{t('Interviewer', 'Interviewer')}</th>
+                  <th className="px-4 py-3.5 font-semibold text-stone-600 text-sm sm:text-base">{t('Status', 'Status')}</th>
+                  <th className="px-4 py-3.5 font-semibold text-stone-600 text-sm sm:text-base">{t('Submitted', 'Submitted')}</th>
+                  <th className="px-4 py-3.5 font-semibold text-stone-600 text-sm sm:text-base">{t('Created', 'Created')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1032,7 +1048,7 @@ function AdminVisitRecordsContent() {
                     className={`border-b border-stone-50 hover:bg-stone-50 transition-colors cursor-pointer ${selected.has(r.id) ? 'bg-amber-50/40' : ''}`}
                     onClick={() => showDetail(r.id)}
                   >
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={selected.has(r.id)}
@@ -1040,42 +1056,42 @@ function AdminVisitRecordsContent() {
                         className="rounded border-stone-300"
                       />
                     </td>
-                    <td className="px-4 py-3 text-stone-400">{r.id}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-[#2c2c2c]">{r.company_name || '—'}</div>
+                    <td className="px-4 py-3.5 text-stone-400 text-sm sm:text-base">{r.id}</td>
+                    <td className="px-4 py-3.5">
+                      <div className="font-medium text-[#2c2c2c] text-base">{r.company_name || '—'}</div>
                       {r.linked_company_name && r.linked_company_name !== r.company_name && r.company_ref_id && (
                         <a
                           href={`${r.company_ref_source === 'profile' ? `/admin/profile-companies/${r.company_ref_id}` : `/admin/companies/${r.company_ref_id}`}`}
                           onClick={e => e.stopPropagation()}
-                          className="text-xs text-[#b8864a] hover:underline mt-0.5 flex items-center gap-1"
+                          className="text-sm text-[#b8864a] hover:underline mt-0.5 flex items-center gap-1"
                         >
                           → {r.linked_company_name}
                         </a>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-stone-600 max-w-[260px]">
+                    <td className="px-4 py-3.5 text-stone-600 max-w-[260px] text-sm sm:text-base">
                       {(() => {
                         const areas = parseServiceAreas(r.service_areas ?? r.section_9);
                         if (areas.length === 0) return <span className="text-stone-300">—</span>;
                         return (
                           <div className="space-y-0.5">
                             {areas.map((a, i) => (
-                              <div key={i} className="text-xs text-stone-600 truncate" title={svcAreaToLine(a)}>{svcAreaToLine(a)}</div>
+                              <div key={i} className="text-sm text-stone-600 truncate" title={svcAreaToLine(a)}>{svcAreaToLine(a)}</div>
                             ))}
                           </div>
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-3 text-stone-600">{r.interviewer_name}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    <td className="px-4 py-3.5 text-stone-700 text-base">{r.interviewer_name}</td>
+                    <td className="px-4 py-3.5">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${
                         r.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
                       }`}>
-                        {r.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
+                        {r.status === 'submitted' ? t('Submitted', 'Submitted') : t('Draft', 'Draft')}
                       </span>
                     </td>
-                    <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatDate(r.submitted_at)}</td>
-                    <td className={`px-4 py-3 ${ADMIN_TIME_CLS}`}>{formatDate(r.created_at)}</td>
+                    <td className={`px-4 py-3.5 text-sm sm:text-base ${ADMIN_TIME_CLS}`}>{formatDate(r.submitted_at)}</td>
+                    <td className={`px-4 py-3.5 text-sm sm:text-base ${ADMIN_TIME_CLS}`}>{formatDate(r.created_at)}</td>
                   </tr>
                 ))}
               </tbody>
