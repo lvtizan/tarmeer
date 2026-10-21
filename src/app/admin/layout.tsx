@@ -12,11 +12,11 @@ import { adminApi } from '@/lib/adminApi';
 import Avatar from '@/components/ui/Avatar';
 import SidebarNavLink from '@/components/ui/SidebarNavLink';
 import TarmeerLogo from '@/components/TarmeerLogo';
-import ToastContainer, { showToast } from '@/components/ui/Toast';
+import ToastContainer from '@/components/ui/Toast';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { AdminLangContext, type AdminLang } from '@/hooks/useAdminLang';
 import AdminGlobalSearch from '@/components/admin/AdminGlobalSearch';
-import { AdminCountryProvider, useAdminCountry, type AdminCountry } from '@/contexts/AdminCountryContext';
+import { AdminCountryProvider, useAdminCountry } from '@/contexts/AdminCountryContext';
 
 const ADMIN_LANG_KEY = 'admin_lang';
 
@@ -141,37 +141,6 @@ const NOTIFICATION_MAP: Record<string, string> = {
   '/admin/visit-records': 'newInterviews',
 };
 
-function CountrySwitcher() {
-  const { country, setCountry } = useAdminCountry();
-  const options: { value: AdminCountry; flag: string; label: string; toastMsg: string }[] = [
-    { value: 'ae', flag: '🇦🇪', label: 'UAE', toastMsg: '已切换到迪拜站点 🇦🇪' },
-    { value: 'vn', flag: '🇻🇳', label: 'VN', toastMsg: '已切换到越南站点 🇻🇳' },
-  ];
-  return (
-    <div className="flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 p-0.5">
-      {options.map(o => (
-        <button
-          key={o.value}
-          onClick={() => {
-            if (country !== o.value) {
-              setCountry(o.value);
-              showToast(o.toastMsg, 'info');
-            }
-          }}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-            country === o.value
-              ? 'bg-white shadow-sm text-[#2c2c2c]'
-              : 'text-stone-400 hover:text-stone-600'
-          }`}
-        >
-          <span>{o.flag}</span>
-          <span>{o.label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const { admin, logout, hasPermission, isSuperAdmin, isFieldStaff, isLoading } = useAdmin();
   const { country } = useAdminCountry();
@@ -184,7 +153,6 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<AdminLang>(() => {
     const saved = typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_LANG_KEY) : null;
     if (saved === 'zh') return 'zh';
-    if (saved === 'vi') return 'vi';
     return 'en';
   });
   const [tooltip, setTooltip] = useState<{ text: string; top: number; left: number } | null>(null);
@@ -330,14 +298,13 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     (!('permission' in item) || !item.permission || hasPermission(item.permission))
   );
 
-  const t = (en: string, zh: string, vi?: string) => {
+  const t = (en: string, zh: string, _vi?: string) => {
     if (lang === 'zh') return zh;
-    if (lang === 'vi') return vi ?? en;
     return en;
   };
   const toggleLang = () => {
     setLang((prev) => {
-      const next: AdminLang = prev === 'en' ? 'zh' : prev === 'zh' ? 'vi' : 'en';
+      const next: AdminLang = prev === 'en' ? 'zh' : 'en';
       if (typeof window !== 'undefined') window.localStorage.setItem(ADMIN_LANG_KEY, next);
       return next;
     });
@@ -370,9 +337,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             {/* 供应商专属管理员仅查编号，不请求其它装企/用户/线索。 */}
             <AdminGlobalSearch referenceOnly={supplierScoped} />
           </div>
-          <div className="hidden md:flex justify-end items-center gap-2">
-            <CountrySwitcher />
-          </div>
+          <div className="hidden md:flex justify-end items-center gap-2" />
         </header>
 
         {/* Mobile overlay */}
@@ -500,7 +465,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 className="mb-2 flex items-center justify-between w-full px-3 py-2 rounded-lg border border-stone-200 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
               >
                 <span>{t('Language', '语言')}</span>
-                <span>{lang === 'en' ? 'EN' : lang === 'zh' ? '中文' : 'VI'}</span>
+                <span>{lang === 'en' ? 'EN' : '中文'}</span>
               </button>
               <button
                 type="button"

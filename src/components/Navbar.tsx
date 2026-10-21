@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { Fragment, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, User, Briefcase, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react';
@@ -12,7 +12,6 @@ import NotificationBell from './NotificationBell';
 import { useNavigationHandler } from '../hooks/useNavigationHandler';
 import TarmeerLogo from './TarmeerLogo';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
-import { translateServiceLabel } from '@/i18n/sections/services';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
@@ -27,51 +26,17 @@ export default function Navbar({
   noBorder?: boolean;
   variant?: NavbarVariant;
 }) {
-  const { tr, lang } = useSiteLocale();
-  const isVn = lang === 'vi';
+  const { tr } = useSiteLocale();
 
   const navLinks = [{ to: '/', label: tr.footer.navLinks.Home }];
-
-  // 找专家 — 双语文案（组件内处理，不改翻译文件）
-  const findExpertsLabel = isVn ? 'Tìm Chuyên Gia' : 'Find Experts';
-  const allExpertsLabel = isVn ? 'Tất cả chuyên gia' : 'All Experts';
-  // AE 没有独立专家数据，服务商=公司：找专家按九大服务指向公司目录；VN 指向专家
-  const expertsBase = isVn ? '/experts' : '/companies';
 
   // 空间类型 label：已有翻译则用翻译，后台新配置项直接显示 key
   const spaceLabel = (key: string) => (tr.spaces as Record<string, string>)[key] ?? key;
 
-  const portfolioCategories: Record<string, { label: string; to: string }[]> = {
-    [tr.nav.byRoom]: [
-      { label: tr.rooms['Living Room'], to: '/portfolio?tag=Living+Room' },
-      { label: tr.rooms.Bedroom, to: '/portfolio?tag=Bedroom' },
-      { label: tr.rooms.Kitchen, to: '/portfolio?tag=Kitchen' },
-      { label: tr.rooms.Bathroom, to: '/portfolio?tag=Bathroom' },
-      { label: tr.rooms['Dining Room'], to: '/portfolio?tag=Dining+Room' },
-      { label: tr.rooms.Office, to: '/portfolio?tag=Office' },
-      { label: tr.rooms.Hallway, to: '/portfolio?tag=Hallway' },
-      { label: tr.rooms.Outdoor, to: '/portfolio?tag=Outdoor' },
-    ],
-    [tr.nav.byStyle]: [
-      { label: tr.styles.Modern, to: '/portfolio?tag=Modern' },
-      { label: tr.styles.Luxury, to: '/portfolio?tag=Luxury' },
-      { label: tr.styles.Minimalist, to: '/portfolio?tag=Minimalist' },
-      { label: tr.styles.Classical, to: '/portfolio?tag=Classical' },
-      { label: tr.styles.Arabic, to: '/portfolio?tag=Arabic' },
-      { label: tr.styles.Industrial, to: '/portfolio?tag=Industrial' },
-      { label: tr.styles.Scandinavian, to: '/portfolio?tag=Scandinavian' },
-      { label: tr.styles['Art Deco'], to: '/portfolio?tag=Art+Deco' },
-    ],
-  };
-
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [expertsDropdownOpen, setExpertsDropdownOpen] = useState(false);
-  const [portfolioDropdownOpen, setPortfolioDropdownOpen] = useState(false);
   const [materialsDropdownOpen, setMaterialsDropdownOpen] = useState(false);
-  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-  const [navCategories, setNavCategories] = useState<{ name: string; subs: string[] }[]>([]);
   const [spaceTypes, setSpaceTypes] = useState<{ key: string; to: string }[]>([]);
   const [supplierNavGroups, setSupplierNavGroups] = useState<{ value: string; label: string; categories: { value: string; label: string }[] }[]>([]);
   const [supplierNavUngrouped, setSupplierNavUngrouped] = useState<{ value: string; label: string }[]>([]);
@@ -80,27 +45,7 @@ export default function Navbar({
   const isAuthPage = pathname === '/auth' || pathname === '/login' || pathname === '/register';
   const isPortalPage = pathname.startsWith('/company') || pathname.startsWith('/supplier') || pathname.startsWith('/auth/callback') || pathname.startsWith('/admin') || pathname.startsWith('/field');
 
-  const dropdownPanelRef = useRef<HTMLDivElement>(null);
-  const [dropdownLeft, setDropdownLeft] = useState(0);
-
-  useLayoutEffect(() => {
-    if (!expertsDropdownOpen) { setHoveredCategory(null); setDropdownLeft(0); return; }
-    setHoveredCategory((prev) => prev ?? navCategories[0]?.name ?? null);
-    const el = dropdownPanelRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const overflow = rect.right - (window.innerWidth - 60);
-    setDropdownLeft(overflow > 0 ? -overflow : 0);
-  }, [expertsDropdownOpen, navCategories]);
-
   useEffect(() => {
-    fetch(`${API_BASE}/public/service-categories`)
-      .then((r) => r.json())
-      .then((d: unknown) => {
-        const data = d as { categories?: { name: string; subs: string[] }[] };
-        if (Array.isArray(data?.categories)) setNavCategories(data.categories);
-      })
-      .catch(() => {});
     fetch(`${API_BASE}/public/product-categories`)
       .then((r) => r.json())
       .then((d: unknown) => {
@@ -111,16 +56,16 @@ export default function Navbar({
       .catch(() => {});
   }, []);
 
-  // 找公司下拉的空间类型 — 后台可配置，按国家拉取
+  // 找公司下拉的空间类型 — 后台可配置
   useEffect(() => {
-    fetch(`${API_BASE}/site/space-types?country=${isVn ? 'vn' : 'ae'}`)
+    fetch(`${API_BASE}/site/space-types?country=ae`)
       .then((r) => r.json())
       .then((d: unknown) => {
         const data = d as { items?: { key: string; to: string }[] };
         if (Array.isArray(data?.items)) setSpaceTypes(data.items);
       })
       .catch(() => {});
-  }, [isVn]);
+  }, []);
 
   // 仅客户端读取登录态，保证 SSR 与 CSR 首屏一致（避免 hydration mismatch）
   useEffect(() => { setMounted(true); }, []);
@@ -157,8 +102,6 @@ export default function Navbar({
     handleNavClick(to);
     setOpen(false);
     setDropdownOpen(false);
-    setExpertsDropdownOpen(false);
-    setPortfolioDropdownOpen(false);
     setMaterialsDropdownOpen(false);
   };
 
@@ -181,49 +124,6 @@ export default function Navbar({
           {navLinks.map(({ to, label }) => (
             <Fragment key={to}>{renderNavLink(to, label)}</Fragment>
           ))}
-
-          {/* Portfolio Dropdown — AE 站隐藏（作品集瀑布流为旧定位遗留，页面保留不删仅隐藏入口，SEO 不受影响）；VN 站仍在用故保留 */}
-          {isVn && (
-          <div
-            className="relative"
-            onMouseEnter={() => setPortfolioDropdownOpen(true)}
-            onMouseLeave={() => setPortfolioDropdownOpen(false)}
-          >
-            <Link
-              href="/portfolio"
-              onClick={() => { setPortfolioDropdownOpen(false); handleClick('/portfolio'); }}
-              className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-            >
-              {tr.nav.portfolio}
-              <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
-            </Link>
-            <div className={`absolute top-full left-0 pt-2 w-max z-50 transition-all duration-150 ${portfolioDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
-              <div className="bg-white shadow-xl rounded-lg border border-stone-200">
-                <div className="p-6 grid grid-cols-2 gap-8 min-w-max">
-                  {Object.entries(portfolioCategories).map(([category, items]) => (
-                    <div key={category}>
-                      <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider mb-3">{category}</h3>
-                      <ul className="space-y-2">
-                        {items.map((item) => (
-                          <li key={item.to}>
-                            <Link href={item.to} onClick={() => handleClick(item.to)} className="text-sm text-stone-600 hover:text-[#b8864a] transition">
-                              {item.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t border-stone-200 px-6 py-4 bg-stone-50 rounded-b-lg">
-                  <Link href="/portfolio" onClick={() => handleClick('/portfolio')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
-                    {tr.nav.allProjects} {'>'}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-          )}
 
           {/* Find Company Dropdown — 空间类型（后台可配置） */}
           <div
@@ -262,94 +162,7 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Find Experts Dropdown — 仅 VN 显示（AE 隐藏：AE 的"专家"指向公司，与"找公司"重复） */}
-          {isVn && (
-          <div
-            className="relative"
-            onMouseEnter={() => setExpertsDropdownOpen(true)}
-            onMouseLeave={() => { setExpertsDropdownOpen(false); setHoveredCategory(null); }}
-          >
-            <Link
-              href={expertsBase}
-              onClick={() => { setExpertsDropdownOpen(false); handleClick(expertsBase); }}
-              className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-            >
-              {findExpertsLabel}
-              <ChevronDown className={`w-4 h-4 transition-transform ${expertsDropdownOpen ? 'rotate-180' : ''}`} />
-            </Link>
-            <div
-              className={`absolute top-full pt-2 z-50 transition-all duration-150 ${expertsDropdownOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
-              style={{ left: dropdownLeft }}
-            >
-              <div ref={dropdownPanelRef} className="bg-white shadow-xl rounded-lg border border-stone-200 overflow-hidden">
-                <div className="border-b border-stone-200 px-6 py-3 bg-stone-50">
-                  <Link href={expertsBase} onClick={() => handleClick(expertsBase)} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition">
-                    {allExpertsLabel} {'>'}
-                  </Link>
-                </div>
-                <div className="flex">
-                  <div className="p-6 w-52 border-r border-stone-100 flex-shrink-0">
-                    <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">{tr.nav.serviceType}</h3>
-                    <ul className="space-y-1">
-                      {navCategories.map((cat) => (
-                        <li key={cat.name}>
-                          <button
-                            onMouseEnter={() => setHoveredCategory(cat.name)}
-                            className={`w-full flex items-center justify-between px-2 py-1.5 rounded text-sm transition text-left ${
-                              hoveredCategory === cat.name ? 'bg-stone-50 text-[#b8864a]' : 'text-stone-600 hover:bg-stone-50 hover:text-[#b8864a]'
-                            }`}
-                          >
-                            {translateServiceLabel(cat.name, lang)}
-                            {cat.subs.length > 0 && <span className="text-stone-300 text-xs ml-2">›</span>}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  {(() => {
-                    const tallest = navCategories.reduce((a, b) => b.subs.length > a.subs.length ? b : a, { name: '', subs: [] as string[] });
-                    return (
-                      <div className="w-[220px] flex-shrink-0 relative">
-                        <div className="p-6 invisible pointer-events-none" aria-hidden="true">
-                          <h3 className="text-xs font-bold uppercase tracking-wider mb-3">x</h3>
-                          <ul className="space-y-2">
-                            {tallest.subs.map((svc) => (
-                              <li key={svc}><span className="text-sm block">{translateServiceLabel(svc, lang)}</span></li>
-                            ))}
-                          </ul>
-                        </div>
-                        {navCategories.map((cat) => (
-                          <div
-                            key={cat.name}
-                            className={`absolute inset-0 p-6 transition-opacity duration-150 ${hoveredCategory === cat.name ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                          >
-                            <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3">{translateServiceLabel(cat.name, lang)}</h3>
-                            <ul className="space-y-2">
-                              {cat.subs.map((svc) => (
-                                <li key={svc}>
-                                  <Link
-                                    href={`${expertsBase}?service=${encodeURIComponent(svc)}`}
-                                    onClick={() => handleClick(`${expertsBase}?service=${encodeURIComponent(svc)}`)}
-                                    className="text-sm text-stone-600 hover:text-[#b8864a] transition block"
-                                  >
-                                    {translateServiceLabel(svc, lang)}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-          </div>
-          )}
-
-          {/* Materials Dropdown — VN 站隐藏供应商/材料导航（移到"找公司"后、"Mall"前） */}
-          {!isVn && (
+          {/* Materials Dropdown */}
           <div
             className="relative"
             onMouseEnter={() => setMaterialsDropdownOpen(true)}
@@ -423,18 +236,15 @@ export default function Navbar({
               </div>
             </div>
           </div>
-          )}
 
-          {/* Mall 入口 — 中国材料落地页（AE 专属，VN 站隐藏）；置于 Materials 之后 */}
-          {!isVn && (
-            <Link
-              href="/mall"
-              onClick={() => handleClick('/mall')}
-              className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
-            >
-              Mall
-            </Link>
-          )}
+          {/* Mall 入口 */}
+          <Link
+            href="/mall"
+            onClick={() => handleClick('/mall')}
+            className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition"
+          >
+            Mall
+          </Link>
 
           {showUserEntry ? (
             <div className="flex items-center gap-3">
@@ -475,41 +285,8 @@ export default function Navbar({
               <Fragment key={to}>{renderNavLink(to, label, 'py-2')}</Fragment>
             ))}
 
-            {/* Mobile Mall 入口 — 中国材料落地页（AE 专属） */}
-            {!isVn && renderNavLink('/mall', 'Mall', 'py-2')}
-
-            {/* Mobile Portfolio — AE 站隐藏（同桌面端），VN 保留 */}
-            {isVn && (
-            <div className="py-2">
-              <button onClick={() => setPortfolioDropdownOpen(!portfolioDropdownOpen)} className="inline-flex items-center gap-1.5 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
-                {tr.nav.portfolio}
-                <ChevronDown className={`w-4 h-4 transition-transform ${portfolioDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {portfolioDropdownOpen && (
-                <div className="mt-3 pl-4 space-y-4">
-                  {Object.entries(portfolioCategories).map(([category, items]) => (
-                    <div key={category}>
-                      <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{category}</h3>
-                      <ul className="space-y-1">
-                        {items.map((item) => (
-                          <li key={item.to}>
-                            <Link href={item.to} onClick={() => handleClick(item.to)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-1">
-                              {item.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                  <div className="border-t border-stone-200 pt-2">
-                    <Link href="/portfolio" onClick={() => handleClick('/portfolio')} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
-                      {tr.nav.allProjects} {'>'}
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-            )}
+            {/* Mobile Mall 入口 */}
+            {renderNavLink('/mall', 'Mall', 'py-2')}
 
             {/* Mobile Find Company */}
             <div className="py-2">
@@ -540,44 +317,7 @@ export default function Navbar({
               )}
             </div>
 
-            {/* Mobile Find Experts — 仅 VN 显示（AE 隐藏，同桌面端） */}
-            {isVn && (
-            <div className="py-2">
-              <div className="flex items-center justify-between">
-                <Link href={expertsBase} onClick={() => handleClick(expertsBase)} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
-                  {findExpertsLabel}
-                </Link>
-                <button onClick={() => setExpertsDropdownOpen(!expertsDropdownOpen)} className="p-1 text-[#2c2c2c]/60 hover:text-[#2c2c2c] transition">
-                  <ChevronDown className={`w-4 h-4 transition-transform ${expertsDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
-              {expertsDropdownOpen && (
-                <div className="mt-3 pl-4 space-y-4">
-                  <div>
-                    <Link href={expertsBase} onClick={() => handleClick(expertsBase)} className="text-sm font-medium text-[#b8864a] hover:text-[#a07540] transition block py-1">
-                      {allExpertsLabel} {'>'}
-                    </Link>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-2">{tr.nav.serviceType}</h4>
-                    {navCategories.map((cat) => (
-                      <div key={cat.name} className="py-1">
-                        <p className="text-xs font-semibold text-stone-500 mb-1">{translateServiceLabel(cat.name, lang)}</p>
-                        {cat.subs.map((svc: string) => (
-                          <Link key={svc} href={`${expertsBase}?service=${encodeURIComponent(svc)}`} onClick={() => handleClick(`${expertsBase}?service=${encodeURIComponent(svc)}`)} className="text-sm text-stone-600 hover:text-[#b8864a] transition block py-0.5 pl-2">
-                            {translateServiceLabel(svc, lang)}
-                          </Link>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            )}
-
-            {/* Mobile Materials — VN 站隐藏供应商/材料导航 */}
-            {!isVn && (
+            {/* Mobile Materials */}
             <div className="py-2">
               <div className="flex items-center justify-between">
                 <Link href="/materials" onClick={() => handleClick('/materials')} className="text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">
@@ -634,7 +374,6 @@ export default function Navbar({
                 </div>
               )}
             </div>
-            )}
 
             {isLoggedIn ? (
               <Link href={accountEntry.to} onClick={() => handleClick(accountEntry.to)} className="py-2 inline-flex items-center gap-2 text-base font-medium text-[#2c2c2c]/80 hover:text-[#2c2c2c] transition">

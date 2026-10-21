@@ -4,19 +4,17 @@ import { Plus, Trash2, ExternalLink, ImageOff, ChevronDown, ChevronUp } from 'lu
 import { adminApi } from '@/lib/adminApi';
 import { showToast } from '@/components/ui/Toast';
 import { useAdminT } from '@/hooks/useAdminLang';
-import { useAdminCountry } from '@/contexts/AdminCountryContext';
 
 export default function AdminShowcaseImagesPage() {
   const { t } = useAdminT();
-  const { country } = useAdminCountry();
-  const configKey = country === 'vn' ? 'showcase_images_vn' : 'showcase_images';
+  const configKey = 'showcase_images';
 
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newUrl, setNewUrl] = useState('');
 
-  // VN image picker state
+  // Portfolio image picker state
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerImages, setPickerImages] = useState<string[]>([]);
   const [pickerLoading, setPickerLoading] = useState(false);
@@ -41,16 +39,14 @@ export default function AdminShowcaseImagesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  useEffect(() => { setPickerImages([]); setPickerOpen(false); }, [country]);
-
   const loadPickerImages = async () => {
     if (pickerImages.length > 0) return; // already loaded
     setPickerLoading(true);
     try {
-      const data = await adminApi.request(`/portfolio-images?country=${country}`);
+      const data = await adminApi.request('/portfolio-images?country=ae');
       setPickerImages(data.images || []);
     } catch {
-      showToast('图片加载失败', 'error');
+      showToast(t('Failed to load images', '图片加载失败'), 'error');
     } finally {
       setPickerLoading(false);
     }
@@ -142,13 +138,13 @@ export default function AdminShowcaseImagesPage() {
         </button>
       </div>
 
-      {/* VN portfolio image picker */}
+      {/* Portfolio image picker */}
       <div className="mb-6 rounded-xl border border-stone-200 overflow-hidden">
         <button
           onClick={togglePicker}
           className="w-full flex items-center justify-between px-4 py-3 bg-stone-50 hover:bg-stone-100 transition text-sm font-medium text-[#44403c]"
         >
-          <span>从{country === 'vn' ? '越南' : 'UAE'}装企图库选取</span>
+          <span>{t('Pick from Company Portfolio', '从装企图库选取')}</span>
           {pickerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
         {pickerOpen && (

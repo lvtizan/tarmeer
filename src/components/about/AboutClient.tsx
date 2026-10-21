@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSiteLocale } from '@/contexts/SiteLocaleContext';
 import { COUNTRY } from '@/lib/country';
-import { ADDRESS, VN_ADDRESS, GOOGLE_MAPS_URL, VN_GOOGLE_MAPS_URL, WHATSAPP_LINK, VN_WHATSAPP_NUMBERS } from '@/lib/constants';
+import { ADDRESS, GOOGLE_MAPS_URL, WHATSAPP_LINK } from '@/lib/constants';
 import { resolveImageUrl, resolveVariantUrl } from '@/lib/imageUrl';
 import type { Supplier } from '@/components/materials/MaterialsClient';
 import { supplierPublicTitle } from '@/lib/supplierConstants';
@@ -22,48 +22,28 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 export default function AboutClient() {
-  const { lang, tr } = useSiteLocale();
+  const { tr } = useSiteLocale();
   const t = tr.about;
-  const isVn = lang === 'vi';
 
-  // Section imagery is country-aware: AE uses on-brand UAE villa scenes,
-  // VN keeps culture-neutral interiors (no Gulf-specific imagery for VN users).
-  // Canonical variant scheme (matches the site-wide image pipeline):
-  // -blur (40px, instant placeholder) → -thumb (600) → -medium (1200) → full (1672).
   const aboutImg = (base: string) => ({
     src: `/images/about/${base}-medium.webp`,
     srcSet: `/images/about/${base}-thumb.webp 600w, /images/about/${base}-medium.webp 1200w, /images/about/${base}.webp 1672w`,
     blur: `/images/about/${base}-blur.webp`,
   });
-  // Both heroes are auto-cycling 3:1 slideshows.
-  // VN uses its own dedicated advisor/client banners (3:1, same scheme as `about`).
-  const vnHeroImg = (base: string) => ({
-    src: `/images/hero/vn/${base}-medium.webp`,
-    srcSet: `/images/hero/vn/${base}-thumb.webp 600w, /images/hero/vn/${base}-medium.webp 1200w, /images/hero/vn/${base}.webp 3000w`,
-    blur: `/images/hero/vn/${base}-blur.webp`,
-  });
-  const heroSlides = isVn
-    ? [vnHeroImg('hero-1'), vnHeroImg('hero-2'), vnHeroImg('hero-3')]
-    : [aboutImg('hero-villa-ae'), aboutImg('hero-villa-ae-2'), aboutImg('hero-villa-ae-3')];
-  // VN 用越南人实景（复用 VN hero 的越南人图，避免西方人观感）；AE 用 villa 实景。
-  const whoImg = isVn ? vnHeroImg('hero-2') : aboutImg('who-villa-ae');
-  const servicesImg = isVn ? vnHeroImg('hero-3') : aboutImg('services-villa-ae');
-  // 两站内容图均 3:1 cinematic（VN 复用的 hero 图也是 3:1）。
+
+  const heroSlides = [aboutImg('hero-villa-ae'), aboutImg('hero-villa-ae-2'), aboutImg('hero-villa-ae-3')];
+  const whoImg = aboutImg('who-villa-ae');
+  const servicesImg = aboutImg('services-villa-ae');
   const contentAspect = 'aspect-[3/1]';
 
-  // WhatsApp is country-aware (matches the footer): AE → +971, VN → local number.
-  const waList = isVn ? VN_WHATSAPP_NUMBERS : [{ label: '+971 58 838 8922', link: WHATSAPP_LINK }];
+  const waList = [{ label: '+971 58 838 8922', link: WHATSAPP_LINK }];
 
-  // Coverage shows only the current country (AE never shows VN info and vice-versa).
-  const op = isVn
-    ? { title: t.coverageVnTitle, cities: COUNTRY.vn.cities, address: VN_ADDRESS, map: VN_GOOGLE_MAPS_URL }
-    : { title: t.coverageUaeTitle, cities: COUNTRY.ae.cities, address: ADDRESS, map: GOOGLE_MAPS_URL };
+  const op = { title: t.coverageUaeTitle, cities: COUNTRY.ae.cities, address: ADDRESS, map: GOOGLE_MAPS_URL };
 
-  // Materials/suppliers section is AE-only (VN hides materials).
   const sections = [
     { id: 'who', label: t.tocWhoWeAre },
     { id: 'services', label: t.tocServices },
-    ...(isVn ? [] : [{ id: 'materials', label: t.tocMaterials }]),
+    { id: 'materials', label: t.tocMaterials },
     { id: 'coverage', label: t.tocCoverage },
     { id: 'contact', label: t.tocContact },
   ];
@@ -94,11 +74,10 @@ export default function AboutClient() {
     });
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVn]);
+  }, []);
 
   // Live supplier strip — AE only.
   useEffect(() => {
-    if (isVn) return;
     let mounted = true;
     // 多拉一些，优先展示有图的供应商（无图的排后，仅在不足 6 个时兜底）
     fetch(`${API_BASE}/suppliers?limit=24`)
@@ -112,7 +91,7 @@ export default function AboutClient() {
       })
       .catch(() => {});
     return () => { mounted = false; };
-  }, [isVn]);
+  }, []);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -236,9 +215,8 @@ export default function AboutClient() {
             </div>
           </section>
 
-          {/* Building materials — AE only */}
-          {!isVn && (
-            <section id="materials" className="scroll-mt-24">
+          {/* Building materials */}
+          <section id="materials" className="scroll-mt-24">
               <h2 className="text-2xl font-bold text-[#2c2c2c]">{t.materialsTitle}</h2>
               <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-stone-600">
                 <p>{t.materialsBody1}</p>
@@ -317,7 +295,6 @@ export default function AboutClient() {
                 </span>
               </Link>
             </section>
-          )}
 
           {/* Coverage */}
           <section id="coverage" className="scroll-mt-24">

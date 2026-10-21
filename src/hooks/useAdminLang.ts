@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from 'react';
 
-export type AdminLang = 'en' | 'zh' | 'vi';
+export type AdminLang = 'en' | 'zh';
 
 interface AdminLangContextValue {
   lang: AdminLang;

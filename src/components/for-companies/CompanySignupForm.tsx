@@ -17,11 +17,7 @@ const GCC_PHONE_OPTIONS = [
   { label: 'Oman', code: '+968', maxDigits: 8 },
   { label: 'Bahrain', code: '+973', maxDigits: 8 },
 ];
-const VN_PHONE_OPTIONS = [
-  { label: 'Vietnam', code: '+84', maxDigits: 10 },
-];
-// VN 站用 +84，AE/GCC 站用海湾区号
-const PHONE_OPTIONS_BY_LANG = (lang: string) => (lang === 'vi' ? VN_PHONE_OPTIONS : GCC_PHONE_OPTIONS);
+const PHONE_OPTIONS = GCC_PHONE_OPTIONS;
 
 
 const COMPANY_TYPE_GROUPS: Record<string, string> = {
@@ -77,8 +73,7 @@ interface CompanySignupFormProps {
 export default function CompanySignupForm({ lang }: CompanySignupFormProps) {
   const router = useRouter();
 
-  const PHONE_OPTIONS = PHONE_OPTIONS_BY_LANG(lang);
-  const cityOptions = countryFromLang(lang).cities; // 城市按国家取（VN→越南城市，AE→海湾城市）
+  const cityOptions = countryFromLang(lang).cities;
   const [contactName, setContactName] = useState('');
   const [phoneRegion, setPhoneRegion] = useState(PHONE_OPTIONS[0]);
   const [phoneDigits, setPhoneDigits] = useState('');

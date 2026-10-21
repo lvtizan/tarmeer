@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { headers } from 'next/headers';
+import { jsonLdHtml } from '@/lib/schema/jsonLdScript';
 import ExpertsClient from '@/components/experts/ExpertsClient';
 import type { ExpertListItem, ExpertsPagination } from '@/components/experts/types';
 
@@ -11,17 +12,9 @@ const API_BASE =
   process.env.API_INTERNAL_URL?.trim() ?? 'http://localhost:3002/api';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const headersList = await headers();
-  const country = headersList.get('x-country') ?? 'ae';
-  const isVn = country === 'vn';
-
-  const title = isVn
-    ? 'Tìm Nhà Thiết Kế & Thi Công Nội Thất - Tarmeer'
-    : 'Find Interior Designers in UAE - Tarmeer';
-  const description = isVn
-    ? 'Kết nối với các nhà thiết kế nội thất, thi công và hoàn thiện đã được xác minh tại Việt Nam. Xem hồ sơ, kinh nghiệm và chứng chỉ.'
-    : 'Connect with verified interior design, carpentry, fit-out and finishing professionals in Dubai, Abu Dhabi and across the UAE. View profiles, experience and certificates.';
-  const canonical = isVn ? 'https://vn.tarmeer.com/experts' : 'https://www.tarmeer.com/experts';
+  const title = 'Find Interior Designers in UAE - Tarmeer';
+  const description = 'Connect with verified interior design, carpentry, fit-out and finishing professionals in Dubai, Abu Dhabi and across the UAE. View profiles, experience and certificates.';
+  const canonical = 'https://www.tarmeer.com/experts';
 
   return {
     title,
@@ -71,7 +64,6 @@ interface Props {
 export default async function ExpertsPage({ searchParams }: Props) {
   const headersList = await headers();
   const country = headersList.get('x-country') ?? 'ae';
-  const isVn = country === 'vn';
 
   const sp = await searchParams;
   const service = typeof sp.service === 'string' ? sp.service : '';
@@ -91,9 +83,7 @@ export default async function ExpertsPage({ searchParams }: Props) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: isVn
-      ? 'Nhà Thiết Kế Nội Thất tại Việt Nam'
-      : 'Interior Designers in UAE',
+    name: 'Interior Designers in UAE',
     numberOfItems: pagination.total,
     itemListElement: experts.slice(0, 30).map((e, i) => ({
       '@type': 'ListItem',
@@ -107,7 +97,7 @@ export default async function ExpertsPage({ searchParams }: Props) {
           address: {
             '@type': 'PostalAddress',
             addressLocality: e.city,
-            addressCountry: isVn ? 'VN' : 'AE',
+            addressCountry: 'AE',
           },
         }),
       },
@@ -118,7 +108,7 @@ export default async function ExpertsPage({ searchParams }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
       <Suspense>
         <ExpertsClient
@@ -127,7 +117,7 @@ export default async function ExpertsPage({ searchParams }: Props) {
           service={service}
           city={city}
           certified={certified}
-          isVn={isVn}
+          isVn={false}
           country={country}
         />
       </Suspense>

@@ -145,8 +145,10 @@ function normalizeUploadsPath(url) {
         if (value.startsWith('http://') || value.startsWith('https://')) {
             const parsed = new URL(value);
             // 只把自家 /uploads 绝对链接削成相对路径(做磁盘存在性校验);
-            // 外部 CDN(如 Cloudinary res.cloudinary.com)原样返回,否则削掉域名→404 全白。
-            if (parsed.pathname.includes('/uploads/')) {
+            // 外部网站/CDN(如 mignonbuild.ae/wp-content/uploads/...)原样返回,否则削掉域名→404 全白。
+            const isLocalHost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+            const isTarmeerDomain = parsed.hostname.endsWith('tarmeer.com') || parsed.hostname === '47.91.108.104';
+            if ((isLocalHost || isTarmeerDomain) && parsed.pathname.includes('/uploads/')) {
                 value = parsed.pathname;
             }
             else {
