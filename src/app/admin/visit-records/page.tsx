@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { useAdminT } from '@/hooks/useAdminLang';
 import { useAdminCountry } from '@/contexts/AdminCountryContext';
 import AdminSelect from '@/components/ui/AdminSelect';
-import { MapPin, ExternalLink, X, ClipboardList, Trash2, FileText, Download, Pencil } from 'lucide-react';
+import { MapPin, ExternalLink, X, ClipboardList, Trash2, FileText, Download, Pencil, History } from 'lucide-react';
 import VerificationRecordSections from '@/components/admin/VerificationRecordSections';
 import { parseRecordSchema, parseRecordFiles, exportRecordPayload, parseRecordServiceAreas as parseServiceAreas, type RecordServiceArea as SvcArea } from '@/components/admin/VerificationRecordModel';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
@@ -113,6 +113,144 @@ const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
 ];
 
+function cleanVal(v: string): string {
+  if (!v) return '';
+  let s = v.trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1);
+  }
+  return s.trim();
+}
+
+function parseJsonPairs(str: string): Record<string, string> {
+  const pairs: Record<string, string> = {};
+  if (!str) return pairs;
+  const unescaped = str.replace(/\\"/g, '"');
+  const regex = /"([a-zA-Z0-9_]+)"\s*:\s*(?:"([^"]*)"|(\[[^\]]*\])|([^,}]+))/g;
+  let m;
+  while ((m = regex.exec(unescaped)) !== null) {
+    const k = m[1];
+    const val = m[2] !== undefined ? m[2] : (m[3] !== undefined ? m[3] : (m[4] || '').trim());
+    pairs[k] = val;
+  }
+  return pairs;
+}
+
+function formatKeyLabel(key: string): string {
+  if (!key) return '';
+  const match = key.match(/^section_(\d+)$/);
+  if (match) return `Section ${match[1]}`;
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+interface ParsedDiff {
+  label: string;
+  from: string;
+  to: string;
+}
+
+function parseEditSummary(raw: string): ParsedDiff[] {
+  if (!raw || raw.trim() === 'Initial submission') {
+    return [{ label: '', from: '', to: 'Initial submission' }];
+  }
+  if (raw.trim() === 'Re-submitted (no field changes)') {
+    return [{ label: '', from: '', to: 'Re-submitted (no field changes)' }];
+  }
+  if (raw.startsWith('Admin updated:')) {
+    return [{ label: 'Admin update', from: '', to: raw.replace(/^Admin updated:\s*/, '') }];
+  }
+
+  const items = raw.split(/;\s*(?=[a-zA-Z0-9_]+:)/g);
+  const diffs: ParsedDiff[] = [];
+
+  for (const item of items) {
+    const colonIdx = item.indexOf(':');
+    if (colonIdx === -1) {
+      diffs.push({ label: '', from: '', to: cleanVal(item) });
+      continue;
+    }
+    const rawKey = item.slice(0, colonIdx).trim();
+    const valueChange = item.slice(colonIdx + 1).trim();
+    const arrowMatch = valueChange.match(/\s*(?:->|→)\s*/);
+
+    if (!arrowMatch) {
+      diffs.push({ label: formatKeyLabel(rawKey), from: '', to: cleanVal(valueChange) });
+      continue;
+    }
+
+    const arrowIdx = arrowMatch.index || 0;
+    const arrowLen = arrowMatch[0].length;
+    const rawFrom = valueChange.slice(0, arrowIdx).trim();
+    const rawTo = valueChange.slice(arrowIdx + arrowLen).trim();
+    const cleanFrom = cleanVal(rawFrom);
+    const cleanTo = cleanVal(rawTo);
+
+    const fromPairs = parseJsonPairs(cleanFrom);
+    const toPairs = parseJsonPairs(cleanTo);
+    const hasJson = Object.keys(fromPairs).length > 0 || Object.keys(toPairs).length > 0;
+
+    if (hasJson) {
+      const allKeys = Array.from(new Set([...Object.keys(fromPairs), ...Object.keys(toPairs)]));
+      let subDiffCount = 0;
+      for (const k of allKeys) {
+        const fv = fromPairs[k] || '';
+        const tv = toPairs[k] || '';
+        if (fv !== tv) {
+          diffs.push({
+            label: `${formatKeyLabel(rawKey)} · ${formatKeyLabel(k)}`,
+            from: fv || '—',
+            to: tv || '—',
+          });
+          subDiffCount++;
+        }
+      }
+      if (subDiffCount === 0) {
+        diffs.push({ label: formatKeyLabel(rawKey), from: '—', to: 'Updated' });
+      }
+    } else {
+      diffs.push({
+        label: formatKeyLabel(rawKey),
+        from: cleanFrom || '—',
+        to: cleanTo || '—',
+      });
+    }
+  }
+
+  return diffs;
+}
+
+function renderEditSummary(raw: string) {
+  const diffs = parseEditSummary(raw);
+  if (diffs.length === 1 && !diffs[0].label && !diffs[0].from) {
+    return <span className="text-xs sm:text-sm text-stone-400 italic">{diffs[0].to}</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-1.5 text-xs sm:text-sm">
+      {diffs.map((d, idx) => (
+        <div
+          key={idx}
+          className="inline-flex items-center gap-1.5 text-xs sm:text-sm bg-stone-50 px-2.5 py-0.5 rounded border border-stone-200/70"
+        >
+          {d.label && <span className="font-semibold text-stone-700">{d.label}:</span>}
+          {d.from && d.from !== '—' && (
+            <>
+              <span className="text-stone-400 font-mono line-through max-w-[180px] truncate" title={d.from}>
+                {d.from}
+              </span>
+              <span className="text-stone-300">→</span>
+            </>
+          )}
+          <span className="text-stone-800 font-mono font-medium max-w-[260px] truncate" title={d.to}>
+            {d.to}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function AdminVisitRecordsContent() {
   const { t } = useAdminT();
   const { country } = useAdminCountry();
@@ -148,13 +286,13 @@ function AdminVisitRecordsContent() {
   const [bindSearching, setBindSearching] = useState(false);
   const [bindError, setBindError] = useState(false);
   const [binding, setBinding] = useState(false);
-  const detailBackRef = useRef<HTMLButtonElement>(null);
+  const detailBackRef = useRef<HTMLDivElement>(null);
   const detailOverviewRef = useRef<HTMLDivElement>(null);
   const [detailBackHeight, setDetailBackHeight] = useState(0);
   const [detailOverviewHeight, setDetailOverviewHeight] = useState(0);
 
   useLayoutEffect(() => {
-    const nodes = [detailBackRef.current, detailOverviewRef.current].filter((node): node is HTMLButtonElement | HTMLDivElement => node !== null);
+    const nodes = [detailBackRef.current, detailOverviewRef.current].filter((node): node is HTMLDivElement => node !== null);
     if (!nodes.length || typeof ResizeObserver === 'undefined') return;
     const measure = () => {
       const backHeight = Math.ceil(detailBackRef.current?.getBoundingClientRect().height || 0);
@@ -388,65 +526,97 @@ function AdminVisitRecordsContent() {
   // Detail view
   if (selectedId !== null && detailCountry === country) {
     return (
-      <div className="space-y-4">
-        <button
+      <div className="space-y-2.5">
+        <div
           ref={detailBackRef}
-          onClick={closeDetail}
-          className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800 xl:sticky xl:top-0 xl:z-30 xl:bg-[#fafaf9]/95 xl:py-3"
+          className="xl:sticky xl:top-0 xl:z-30 xl:bg-[#fafaf9] -mx-4 md:-mx-6 px-4 md:px-6 py-1.5"
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-          {t('Back to Records', '返回访谈列表')}
-        </button>
+          <div className="mx-auto max-w-[1500px] w-full flex items-center justify-between">
+            <button
+              onClick={closeDetail}
+              className="flex items-center gap-1.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors py-1"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+              {t('Back to Records', '返回访谈列表')}
+            </button>
+          </div>
+        </div>
 
-        {detailError ? (
-          <div role="alert" className="rounded-xl border border-red-200 bg-white p-5 text-sm text-red-600">{t('Record could not be loaded.', '记录加载失败。')} <button className="underline" onClick={() => openDetail(selectedId)}>{t('Retry', '重试')}</button></div>
-        ) : detailLoading || !detail ? (
-          <div className="flex justify-center py-16"><Spinner /></div>
-        ) : (
-          <>
-            <div ref={detailOverviewRef} style={{ '--record-detail-back-height': `${detailBackHeight}px` } as CSSProperties} className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 xl:sticky xl:top-[var(--record-detail-back-height)] xl:z-20">
-              {/* Title row: company name + status badge */}
-              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+        <div className="mx-auto max-w-[1500px] w-full space-y-2.5">
+          {detailError ? (
+            <div role="alert" className="rounded-xl border border-red-200 bg-white p-5 text-sm text-red-600">{t('Record could not be loaded.', '记录加载失败。')} <button className="underline" onClick={() => openDetail(selectedId)}>{t('Retry', '重试')}</button></div>
+          ) : detailLoading || !detail ? (
+            <div className="flex justify-center py-16"><Spinner /></div>
+          ) : (
+            <>
+              <div ref={detailOverviewRef} style={{ '--record-detail-back-height': `${detailBackHeight}px` } as CSSProperties} className="w-full bg-white rounded-xl border border-stone-200/80 p-3.5 sm:px-5 sm:py-3 xl:sticky xl:top-[var(--record-detail-back-height)] xl:z-20 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {/* Left: Company name + bind status + inline metadata */}
                 <div className="min-w-0">
-                  <h1 className="text-[17px] sm:text-[22px] font-bold text-[#2c2c2c] leading-snug break-words [overflow-wrap:anywhere]">{detail.company_name || '—'}</h1>
-                  {/* 绑定状态 + 操作 */}
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {detail.company_ref_id ? (
-                      <>
-                        <span className="text-xs text-stone-400 flex items-center gap-1">
-                          → {detail.linked_company_name || `#${detail.company_ref_id}`}
-                          <a
-                            href={detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#b8864a] hover:opacity-70"
-                          >
-                            <ExternalLink size={12} />
-                          </a>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => { setBindOpen(v => !v); setBindQuery(detail.company_name || ''); if (!bindOpen) handleBindSearch(detail.company_name || ''); }}
-                          className="text-xs text-stone-400 hover:text-[#b8864a] underline decoration-dotted"
-                        >{t('Rebind', '改绑')}</button>
-                        <button
-                          type="button"
-                          onClick={handleUnbind}
-                          disabled={binding}
-                          className="text-xs text-stone-400 hover:text-red-500 underline decoration-dotted disabled:opacity-50"
-                        >{t('Unbind', '解绑')}</button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">{t('Not bound', '未绑定公司')}</span>
-                        <button
-                          type="button"
-                          onClick={() => { setBindOpen(v => !v); setBindQuery(detail.company_name || ''); if (!bindOpen) handleBindSearch(detail.company_name || ''); }}
-                          className="text-xs text-[#b8864a] hover:underline font-medium"
-                        >{t('Bind company', '绑定公司')}</button>
-                      </>
-                    )}
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className="text-base sm:text-lg font-bold text-[#2c2c2c] leading-snug break-words [overflow-wrap:anywhere]">{detail.company_name || '—'}</h1>
+                    {/* 绑定状态 + 操作 */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {detail.company_ref_id ? (
+                        <>
+                          <span className="text-sm text-stone-500 flex items-center gap-1">
+                            → {detail.linked_company_name || `#${detail.company_ref_id}`}
+                            <a
+                              href={detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#b8864a] hover:opacity-70"
+                            >
+                              <ExternalLink size={13} />
+                            </a>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => { setBindOpen(v => !v); setBindQuery(detail.company_name || ''); if (!bindOpen) handleBindSearch(detail.company_name || ''); }}
+                            className="text-sm text-stone-500 hover:text-[#b8864a] underline decoration-dotted"
+                          >{t('Rebind', '改绑')}</button>
+                          <button
+                            type="button"
+                            onClick={handleUnbind}
+                            disabled={binding}
+                            className="text-sm text-stone-500 hover:text-red-500 underline decoration-dotted disabled:opacity-50"
+                          >{t('Unbind', '解绑')}</button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs sm:text-sm px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium">{t('Not bound', '未绑定公司')}</span>
+                          <button
+                            type="button"
+                            onClick={() => { setBindOpen(v => !v); setBindQuery(detail.company_name || ''); if (!bindOpen) handleBindSearch(detail.company_name || ''); }}
+                            className="text-sm text-[#b8864a] hover:underline font-medium"
+                          >{t('Bind company', '绑定公司')}</button>
+                        </>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Clean inline meta text without borders or boxes */}
+                  <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap text-sm text-stone-500 mt-1">
+                    {[
+                      detail.interviewer_name ? (
+                        <span key="interviewer">{t('Interviewer', '访谈人')}: <strong className="font-medium text-stone-800">{detail.interviewer_name}</strong></span>
+                      ) : null,
+                      detail.filled_by ? (
+                        <span key="filled_by">{t('Filled by', '填写人')}: <strong className="font-medium text-stone-800">{detail.filled_by}</strong></span>
+                      ) : null,
+                      <span key="created_at" className={ADMIN_TIME_CLS}>{formatDate(detail.created_at)}</span>,
+                      detail.submitted_at ? (
+                        <span key="submitted_at">{t('Submitted', '提交')}: <span className={ADMIN_TIME_CLS}>{formatDate(detail.submitted_at)}</span></span>
+                      ) : null,
+                      <span key="id" className="font-mono text-stone-400">#{detail.id}</span>,
+                    ].filter(Boolean).map((item, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-2 sm:gap-2.5">
+                        {idx > 0 && <span className="text-stone-300">·</span>}
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
                   {/* 绑定搜索面板 */}
                   {bindOpen && (
                     <div className="mt-2 w-full sm:w-96 border border-stone-200 rounded-xl bg-stone-50/60 p-3">
@@ -483,107 +653,28 @@ function AdminVisitRecordsContent() {
                     </div>
                   )}
                 </div>
-                <div className="w-full sm:w-auto min-w-0 max-w-full flex flex-wrap items-center gap-2 print:hidden">
-                  <button type="button" onClick={handleExport} className="inline-flex items-center gap-1.5 min-h-9 px-3 rounded-lg border border-stone-200 bg-white text-xs text-stone-600"><Download size={14}/>{t('Export JSON', '导出 JSON')}</button>
-                  <button type="button" onClick={() => window.print()} className="inline-flex items-center min-h-9 px-3 rounded-lg border border-stone-200 bg-white text-xs text-stone-600">{t('Print', '打印')}</button>
+
+                {/* Right: Actions */}
+                <div className="w-full sm:w-auto min-w-0 flex items-center gap-2 print:hidden">
+                  <button type="button" onClick={handleExport} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-sm text-stone-700 hover:bg-stone-50 transition"><Download size={14}/>{t('Export JSON', '导出 JSON')}</button>
+                  <button type="button" onClick={() => window.print()} className="inline-flex items-center h-8 px-3 rounded-lg border border-stone-200 bg-white text-sm text-stone-700 hover:bg-stone-50 transition">{t('Print', '打印')}</button>
                   {detail.status === 'submitted' && (
                     <a
                       href={`/field/survey?edit=${detail.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       title={t('Edit (field staff login required)', '编辑（需外勤人员登录）')}
-                      className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07640] transition"
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07640] transition"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       {t('Edit', '编辑')}
                     </a>
                   )}
-                  <span className={`mt-0.5 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    detail.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                    detail.status === 'submitted' ? 'bg-green-50 text-green-700 border border-green-200/60' : 'bg-amber-50 text-amber-700 border border-amber-200/60'
                   }`}>
                     {detail.status === 'submitted' ? t('Submitted', '已提交') : t('Draft', '草稿')}
                   </span>
-                </div>
-              </div>
-
-              {/* Meta — compact inline on mobile, grid on desktop */}
-              <div className="pt-3 border-t border-stone-100">
-                {/* Mobile: values only, no labels */}
-                <div className="sm:hidden space-y-1 text-sm">
-                  <div className="flex items-center gap-2 flex-wrap text-stone-600">
-                    {detail.interviewer_name && <span className="font-medium text-[#2c2c2c]">{detail.interviewer_name}</span>}
-                    {detail.filled_by && <span>{t("Filled by", "填写人")}: {detail.filled_by}</span>}
-                    {detail.company_name && <>
-                      <span className="text-stone-300">·</span>
-                      {detail.company_ref_id ? (
-                        <a
-                          href={`${detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}?from=visit-records&recordId=${detail.id}`}
-                          className="text-[#b8864a] hover:underline inline-flex items-center gap-0.5"
-                        >
-                          {detail.company_name}<ExternalLink size={11} />
-                        </a>
-                      ) : (
-                        <a href={`/admin/companies?search=${encodeURIComponent(detail.company_name)}`} className="text-stone-500 inline-flex items-center gap-0.5">
-                          {detail.company_name}<ExternalLink size={11} className="text-stone-400" />
-                        </a>
-                      )}
-                    </>}
-                  </div>
-                  <div className={`flex items-center gap-2 flex-wrap ${ADMIN_TIME_CLS}`}>
-                    <span>{formatDate(detail.created_at)}</span>
-                    {detail.submitted_at && <>
-                      <span className="text-stone-300">→</span>
-                      <span>{formatDate(detail.submitted_at)}</span>
-                    </>}
-                    <span className="text-stone-300">·</span>
-                    <span>#{detail.id}</span>
-                  </div>
-                </div>
-
-                {/* Desktop: 5-col English info bar */}
-                <div className="hidden sm:flex flex-wrap items-start gap-y-4 text-sm divide-x divide-stone-100">
-                  <div className="pr-6">
-                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Interviewer</div>
-                    <div className="font-medium text-[#2c2c2c]">{detail.interviewer_name || '—'}</div>
-                  </div>
-                  {detail.filled_by && (
-                    <div className="px-6">
-                      <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Filled by</div>
-                      <div className="font-medium text-[#2c2c2c]">{detail.filled_by}</div>
-                    </div>
-                  )}
-                  <div className="px-6">
-                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Subject</div>
-                    {detail.company_ref_id ? (
-                      <a
-                        href={`${detail.company_ref_source === 'profile' ? `/admin/profile-companies/${detail.company_ref_id}` : `/admin/companies/${detail.company_ref_id}`}?from=visit-records&recordId=${detail.id}`}
-                        className="font-medium text-[#b8864a] hover:underline inline-flex items-center gap-1"
-                      >
-                        {detail.company_name || '—'}<ExternalLink size={12} />
-                      </a>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-medium text-[#2c2c2c]">{detail.company_name || '—'}</span>
-                        {detail.company_name && (
-                          <a href={`/admin/companies?search=${encodeURIComponent(detail.company_name)}`} title="Search in companies" className="text-stone-400 hover:text-[#b8864a] transition-colors">
-                            <ExternalLink size={12} />
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="px-6">
-                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Created</div>
-                    <div className={ADMIN_TIME_CLS}>{formatDate(detail.created_at)}</div>
-                  </div>
-                  <div className="px-6">
-                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Submitted</div>
-                    <div className={ADMIN_TIME_CLS}>{formatDate(detail.submitted_at) || '—'}</div>
-                  </div>
-                  <div className="pl-6">
-                    <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">ID</div>
-                    <div className="text-stone-500">#{detail.id}</div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -675,95 +766,112 @@ function AdminVisitRecordsContent() {
               </>
             )}
 
-            {/* Service Area（多套） */}
+            {/* Additional sections aligned with the main questionnaire content column */}
             {(() => {
               const areas = parseServiceAreas(detail.section_9);
-              if (areas.length === 0) return null;
+              const pin = (() => {
+                const raw = detail.location_pin;
+                if (!raw) return null;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                let p: any = raw;
+                if (typeof raw === 'string') { try { p = JSON.parse(raw); } catch { return null; } }
+                if (!Number.isFinite(Number(p?.lat)) || !Number.isFinite(Number(p?.lng)) || p.lat == null || p.lng == null) return null;
+                return p;
+              })();
+              const hasExtras = areas.length > 0 || Boolean(pin) || editLogs.length > 0;
+              if (!hasExtras) return null;
+
               return (
-                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
-                    <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{t('Service Area', '服务区域')}</h2>
-                  </div>
-                  <div className="divide-y divide-stone-50">
-                    {areas.map((a, i) => (
-                      <div key={i} className="px-5 py-3.5">
-                        <div className="text-sm font-medium text-[#2c2c2c] mb-1.5">
-                          {areas.length > 1 ? `${t('Area', '区域')} ${i + 1} — ` : ''}{a.emirate || '—'}
+                <div className="mx-auto min-w-0 max-w-[1500px] xl:grid xl:grid-cols-[232px_minmax(0,1fr)] xl:gap-7">
+                  <div className="hidden xl:block" />
+                  <div className="min-w-0 space-y-3">
+                    {/* Service Area */}
+                    {areas.length > 0 && (
+                      <div className="bg-white rounded-xl border border-stone-200/80 overflow-hidden shadow-xs">
+                        <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
+                          <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{t('Service Area', '服务区域')}</h2>
                         </div>
-                        <div className="space-y-1.5">
-                          {a.sectors.map((s, j) => (
-                            <div key={j} className="flex items-start gap-2 flex-wrap">
-                              {s.group && <span className="text-xs text-stone-500 pt-1">{s.group}:</span>}
-                              <div className="flex flex-wrap gap-1.5">
-                                {s.districts.length > 0
-                                  ? s.districts.map(d => (
-                                      <span key={d} className="px-2 py-0.5 rounded-md bg-[#b8864a]/10 text-[#b8864a] text-xs">{d}</span>
-                                    ))
-                                  : <span className="text-xs text-stone-300">—</span>}
+                        <div className="divide-y divide-stone-50">
+                          {areas.map((a, i) => (
+                            <div key={i} className="px-5 py-3.5">
+                              <div className="text-sm font-medium text-[#2c2c2c] mb-1.5">
+                                {areas.length > 1 ? `${t('Area', '区域')} ${i + 1} — ` : ''}{a.emirate || '—'}
+                              </div>
+                              <div className="space-y-1.5">
+                                {a.sectors.map((s, j) => (
+                                  <div key={j} className="flex items-start gap-2 flex-wrap">
+                                    {s.group && <span className="text-xs text-stone-500 pt-1">{s.group}:</span>}
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {s.districts.length > 0
+                                        ? s.districts.map(d => (
+                                            <span key={d} className="px-2 py-0.5 rounded-md bg-[#b8864a]/10 text-[#b8864a] text-xs">{d}</span>
+                                          ))
+                                        : <span className="text-xs text-stone-300">—</span>}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
+                    )}
 
-            {/* Company Address Pin */}
-            {(() => {
-              const raw = detail.location_pin;
-              if (!raw) return null;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              let pin: any = raw;
-              if (typeof raw === 'string') { try { pin = JSON.parse(raw); } catch { return null; } }
-              if (!Number.isFinite(Number(pin?.lat)) || !Number.isFinite(Number(pin?.lng)) || pin.lat == null || pin.lng == null) return null;
-              return (
-                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                  <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
-                    <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{t('Company Address Pin', '公司地址定位')}</h2>
-                  </div>
-                  <div className="px-5 py-3.5">
-                    {typeof pin.address === "string" && pin.address && <p className="text-sm text-[#2c2c2c] mb-1">{pin.address}</p>}
-                    <a
-                      href={`https://www.google.com/maps?q=${pin.lat},${pin.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-[#b8864a] hover:underline"
-                    >
-                      {Number(pin.lat).toFixed(5)}, {Number(pin.lng).toFixed(5)} ↗
-                    </a>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {editLogs.length > 0 && (
-              <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-                <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
-                  <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">修改历史 ({editLogs.length})</h2>
-                </div>
-                <div className="p-5 space-y-3">
-                  {editLogs.map((log, i) => (
-                    <div key={log.id} className="flex gap-3">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-stone-100 flex items-center justify-center text-xs text-stone-500 font-medium mt-0.5">
-                        {i + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-stone-800">{log.editor_name}</span>
-                          <span className="text-xs text-stone-400">{formatDate(log.edited_at)}</span>
+                    {/* Company Address Pin */}
+                    {pin && (
+                      <div className="bg-white rounded-xl border border-stone-200/80 overflow-hidden shadow-xs">
+                        <div className="px-5 py-3 bg-stone-50 border-b border-stone-100">
+                          <h2 className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{t('Company Address Pin', '公司地址定位')}</h2>
                         </div>
-                        <p className="text-xs text-stone-500 mt-0.5 leading-relaxed break-words">{log.edit_summary}</p>
+                        <div className="px-5 py-3.5">
+                          {typeof pin.address === 'string' && pin.address && <p className="text-sm text-[#2c2c2c] mb-1">{pin.address}</p>}
+                          <a
+                            href={`https://www.google.com/maps?q=${pin.lat},${pin.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[#b8864a] hover:underline"
+                          >
+                            {Number(pin.lat).toFixed(5)}, {Number(pin.lng).toFixed(5)} ↗
+                          </a>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )}
+
+                    {/* Edit Logs — collapsible compact card */}
+                    {editLogs.length > 0 && (
+                      <details className="group bg-white rounded-xl border border-stone-200/80 overflow-hidden shadow-xs">
+                        <summary className="px-4 py-2.5 sm:px-5 sm:py-3 bg-stone-50/60 hover:bg-stone-100/70 cursor-pointer flex items-center justify-between transition-colors list-none select-none">
+                          <div className="flex items-center gap-2">
+                            <History className="w-4 h-4 text-stone-400" />
+                            <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wider">{t('Edit History', '修改历史')} ({editLogs.length})</h2>
+                          </div>
+                          <span className="text-xs text-stone-400 group-open:rotate-180 transition-transform">▾</span>
+                        </summary>
+                        <div className="p-3.5 sm:p-4 space-y-3 max-h-80 overflow-y-auto divide-y divide-stone-100">
+                          {editLogs.map((log, i) => (
+                            <div key={log.id} className={`flex gap-3 ${i > 0 ? 'pt-3' : ''}`}>
+                              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-stone-100 flex items-center justify-center text-xs text-stone-500 font-semibold mt-0.5">
+                                {i + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap text-sm">
+                                  <span className="font-medium text-stone-800">{log.editor_name}</span>
+                                  <span className="text-stone-400 text-xs sm:text-sm">{formatDate(log.edited_at)}</span>
+                                </div>
+                                {renderEditSummary(log.edit_summary)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </>
         )}
+        </div>
       {lightbox}
     </div>
   );

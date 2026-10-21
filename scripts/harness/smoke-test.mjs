@@ -272,6 +272,13 @@ try {
 } catch (e) {
   ng('admin 创建免邮箱验证供应商账号', commandTail(e));
 }
+try {
+  execSync('node scripts/harness/visit-record-detail-navigation.mjs', { cwd: ROOT, stdio: 'pipe' });
+  execSync('node scripts/harness/visit-record-edit-summary.mjs', { cwd: ROOT, stdio: 'pipe' });
+  ok('访谈记录详情粘性定位、双列栅格与修改历史解析');
+} catch (e) {
+  ng('访谈记录详情粘性定位、双列栅格与修改历史解析', commandTail(e));
+}
 
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────
 // 用户侧展示的"分类/枚举"必须从权威源(后台管理的 DB,经 /api/public/... 接口)拉取,
