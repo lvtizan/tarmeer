@@ -251,6 +251,117 @@ function renderEditSummary(raw: string) {
   );
 }
 
+interface OfficialPostmarkStampProps {
+  status?: string;
+  submittedAt?: string | null;
+  createdAt?: string | null;
+}
+
+const POSTMARK_RIPPLE_Y = [17, 25, 33, 41, 49];
+
+function OfficialPostmarkStamp({ status, submittedAt, createdAt }: OfficialPostmarkStampProps) {
+  const isSubmitted = status === 'submitted';
+  const color = isSubmitted ? '#047857' : '#b45309';
+  const bgFill = isSubmitted ? 'rgba(16, 185, 129, 0.04)' : 'rgba(245, 158, 11, 0.04)';
+  const statusText = isSubmitted ? 'SUBMITTED' : 'DRAFT';
+  const dateStr = (submittedAt || createdAt || '')
+    ? (submittedAt || createdAt)!.slice(0, 10).replace(/-/g, '.')
+    : 'OFFICIAL';
+
+  return (
+    <svg
+      viewBox="0 0 200 66"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-40 sm:w-48 h-auto drop-shadow-2xs opacity-90"
+    >
+      {/* Circular Postmark Seal */}
+      <circle
+        cx="34"
+        cy="33"
+        r="30"
+        stroke={color}
+        strokeWidth="2"
+        strokeDasharray={isSubmitted ? 'none' : '5 2.5'}
+        strokeOpacity="0.9"
+        fill={bgFill}
+      />
+      <circle
+        cx="34"
+        cy="33"
+        r="26"
+        stroke={color}
+        strokeWidth="1"
+        strokeDasharray={isSubmitted ? 'none' : '3 2'}
+        strokeOpacity="0.75"
+      />
+
+      {/* Top Arc Label */}
+      <text
+        x="34"
+        y="19"
+        textAnchor="middle"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        fontSize="6.5"
+        fontWeight="700"
+        letterSpacing="0.12em"
+        fill={color}
+        fillOpacity="0.9"
+      >
+        ★ TARMEER ★
+      </text>
+
+      {/* Top Divider Line */}
+      <line x1="14" y1="23.5" x2="54" y2="23.5" stroke={color} strokeWidth="0.8" strokeOpacity="0.7" />
+
+      {/* Status Label */}
+      <text
+        x="34"
+        y="35"
+        textAnchor="middle"
+        fontFamily="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
+        fontSize="9.5"
+        fontWeight="900"
+        letterSpacing="0.12em"
+        fill={color}
+      >
+        {statusText}
+      </text>
+
+      {/* Bottom Divider Line */}
+      <line x1="14" y1="39.5" x2="54" y2="39.5" stroke={color} strokeWidth="0.8" strokeOpacity="0.7" />
+
+      {/* Date Label */}
+      <text
+        x="34"
+        y="48.5"
+        textAnchor="middle"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        fontSize="6.5"
+        fontWeight="600"
+        letterSpacing="0.06em"
+        fill={color}
+        fillOpacity="0.85"
+      >
+        {dateStr}
+      </text>
+
+      {/* Wavy Cancellation Ripple Lines */}
+      {POSTMARK_RIPPLE_Y.map(y => (
+        <path
+          key={y}
+          d={`M 68 ${y} q 7.5 -3.5 15 0 t 15 0 t 15 0 t 15 0 t 15 0 t 15 0 t 15 0`}
+          fill="none"
+          stroke={color}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeOpacity="0.8"
+        />
+      ))}
+    </svg>
+  );
+}
+
 function AdminVisitRecordsContent() {
   const { t: _rawT } = useAdminT();
   const t = (en: string, _zh?: string) => en;
@@ -550,11 +661,11 @@ function AdminVisitRecordsContent() {
             <div className="flex justify-center py-16"><Spinner /></div>
           ) : (
             <>
-              <div ref={detailOverviewRef} style={{ '--record-detail-back-height': `${detailBackHeight}px` } as CSSProperties} className="w-full bg-white rounded-xl border border-stone-200/80 p-3.5 sm:px-5 sm:py-3 xl:sticky xl:top-[var(--record-detail-back-height)] xl:z-20 shadow-xs">
+              <div ref={detailOverviewRef} style={{ '--record-detail-back-height': `${detailBackHeight}px` } as CSSProperties} className="relative w-full bg-white rounded-xl border border-stone-200/80 p-3.5 sm:px-5 sm:py-3 xl:sticky xl:top-[var(--record-detail-back-height)] xl:z-20 shadow-xs">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 {/* Left: Company name + bind status + inline metadata */}
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap">
+                  <div className="flex items-center gap-2.5 flex-wrap pr-36 sm:pr-0">
                     <h1 className="text-lg sm:text-xl font-bold text-[#2c2c2c] leading-snug break-words [overflow-wrap:anywhere]">{detail.company_name || '—'}</h1>
                     {/* Bind status + actions */}
                     <div className="flex items-center gap-2 flex-wrap">
@@ -655,8 +766,8 @@ function AdminVisitRecordsContent() {
                   )}
                 </div>
 
-                {/* Right: Actions + Status Stamp */}
-                <div className="w-full sm:w-auto min-w-0 flex items-center gap-2 print:hidden flex-wrap sm:flex-nowrap">
+                {/* Right: Actions */}
+                <div className="w-full sm:w-auto min-w-0 flex items-center gap-2 print:hidden flex-wrap sm:flex-nowrap sm:mr-44 lg:mr-48">
                   <button type="button" onClick={handleExport} className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-stone-200 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 transition"><Download size={15}/>{t('Export JSON', 'Export JSON')}</button>
                   <button type="button" onClick={() => window.print()} className="inline-flex items-center h-9 px-3.5 rounded-lg border border-stone-200 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 transition">{t('Print', 'Print')}</button>
                   {detail.status === 'submitted' && (
@@ -671,26 +782,18 @@ function AdminVisitRecordsContent() {
                       {t('Edit', 'Edit')}
                     </a>
                   )}
+                </div>
 
-                  {/* Divider separating interactive action buttons from official status stamp */}
-                  <div className="hidden sm:block w-px h-6 bg-stone-200 mx-1" aria-hidden="true" />
-
-                  {/* Status Stamp */}
-                  <div className="select-none pointer-events-none shrink-0" aria-label={`Status: ${detail.status === 'submitted' ? 'Submitted' : 'Draft'}`}>
-                    {detail.status === 'submitted' ? (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md border-2 border-emerald-600/90 bg-emerald-50/70 text-emerald-800 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-2xs -rotate-2 ring-1 ring-emerald-600/20">
-                        <svg className="w-3.5 h-3.5 stroke-[2.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        <span>{t('Submitted', 'Submitted')}</span>
-                      </div>
-                    ) : (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md border-2 border-dashed border-amber-600/80 bg-amber-50/70 text-amber-800 text-xs sm:text-sm font-bold uppercase tracking-wider -rotate-2 ring-1 ring-amber-600/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        <span>{t('Draft', 'Draft')}</span>
-                      </div>
-                    )}
-                  </div>
+                {/* Official Postmark Stamp — tilted, wavy ripple lines, breaking out of the rounded card boundary */}
+                <div
+                  className="absolute -top-4 sm:-top-5.5 right-2 sm:right-5 pointer-events-none select-none z-10 transform -rotate-6 sm:-rotate-8 transition-transform"
+                  aria-label={`Status: ${detail.status === 'submitted' ? 'Submitted' : 'Draft'}`}
+                >
+                  <OfficialPostmarkStamp
+                    status={detail.status}
+                    submittedAt={detail.submitted_at}
+                    createdAt={detail.created_at}
+                  />
                 </div>
               </div>
             </div>
