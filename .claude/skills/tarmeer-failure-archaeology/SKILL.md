@@ -487,3 +487,10 @@ description: Tarmeer 失败案例考古——历史事故的现象/根因/修复
 - **根因**：模板和草稿分两次查询可能读到不同提交的版本；恢复草稿后的并发 GET 也可能用旧响应覆盖新版本；全局配置由另一页修改时同样会产生正常版本冲突。
 - **修复**：编辑上下文单语句一致读取并禁用缓存；前端按请求代次及草稿归属接收响应，写入时使旧 GET 失效；重新加载保留名称与待确认操作，由用户再次保存。
 - **预防规则**：配置 CAS 的相关版本必须来自同一数据库快照；测试乱序 GET、恢复后慢响应、真实并发冲突及 Reload 保值。不能取消 CAS，也不能自动重放用户操作。
+
+
+## [2026-10-21] 外部 WordPress 项目图片路径被误削域名导致后台全白
+- **现象**：后台公司详情页（如 Mignon Home Renovations）作品集卡片封面显示为空白框，但点击进入项目详情页却能正常看到图片。
+- **根因**：后端 `companyAdminController.js` 的 `normalizeUploadsPath` 原逻辑判定 `if (parsed.pathname.includes('/uploads/')) { value = parsed.pathname; }`，本意是只对 Tarmeer 自家上传的绝对路径削掉域名，但 WordPress 站点的图片（如 `https://mignonbuild.ae/wp-content/uploads/...`）路径中也包含 `/uploads/`，导致其域名被误削成 `/wp-content/uploads/...`。公司详情接口在本地磁盘校验该文件不存在后将其过滤或返回相对路径导致 404；而项目详情页 `getAdminProject` 直接返回原图 URL 未经削减，因而能够正常显示。
+- **修复**：在 `normalizeUploadsPath` 中增加域名严格判定，仅当 `hostname` 为 `localhost`、`127.0.0.1`、`tarmeer.com` 或服务器 IP 时才将 `/uploads/` 削减为相对路径，外部 CMS/CDN 域名（WordPress 等）一律原样保留完整绝对 URL。
+- **预防规则**：URL 规整与相对路径转换必须严格限定为本站受信任域名，绝不能仅靠 `pathname.includes('/uploads/')` 这类通用目录名粗暴截断外部外链；修改图像规整逻辑后必须覆盖外部 WordPress / Cloudinary / 本地 uploads 三类测试场景。
