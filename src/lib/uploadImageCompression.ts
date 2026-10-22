@@ -1,9 +1,10 @@
 /**
- * Keep client-side uploads comfortably below the 60MB reverse-proxy body limit.
- * The headroom covers multipart boundaries and prevents a near-limit image from
- * being rejected before the API has a chance to optimise it with Sharp.
+ * Safe threshold before client-side image compression.
+ * Images larger than this (e.g. phone/camera raw photos > 1.5MB) are automatically
+ * compressed in browser memory to ensure ultra-fast cross-border uploads
+ * and match the server's maximum stored dimension (2400px).
  */
-export const IMAGE_UPLOAD_SAFE_BYTES = 18 * 1024 * 1024;
+export const IMAGE_UPLOAD_SAFE_BYTES = 1.5 * 1024 * 1024;
 
 export interface CompressionAttempt {
   maxDimension: number;
@@ -11,12 +12,9 @@ export interface CompressionAttempt {
 }
 
 const COMPRESSION_ATTEMPTS: readonly CompressionAttempt[] = [
-  { maxDimension: 4096, quality: 0.9 },
-  { maxDimension: 3584, quality: 0.86 },
-  { maxDimension: 3072, quality: 0.82 },
-  { maxDimension: 2560, quality: 0.78 },
-  { maxDimension: 2048, quality: 0.74 },
-  { maxDimension: 1600, quality: 0.7 },
+  { maxDimension: 2400, quality: 0.88 },
+  { maxDimension: 2048, quality: 0.84 },
+  { maxDimension: 1600, quality: 0.80 },
 ];
 
 export function buildCompressionAttempts(): readonly CompressionAttempt[] {
@@ -49,7 +47,7 @@ function extensionForMimeType(type: string): 'jpg' | 'webp' {
   return type === 'image/webp' ? 'webp' : 'jpg';
 }
 
-function replacementFileName(fileName: string, type: string): string {
+export function replacementFileName(fileName: string, type: string): string {
   const base = fileName.replace(/\.[^/.]+$/, '') || 'image';
   return `${base}-optimized.${extensionForMimeType(type)}`;
 }
@@ -116,17 +114,24 @@ export interface PreparedImageUpload {
   compressed: boolean;
 }
 
-/** Compress only files that cannot safely pass the proxy as-is. */
+/** Compress images exceeding the safe threshold before transmission. */
 export async function prepareImageForUpload(file: File): Promise<PreparedImageUpload> {
   if (!shouldCompressImageBeforeUpload(file)) {
     return { file, originalName: file.name, compressed: false };
   }
 
   const image = await loadImage(file);
+  let smallestBlob: { blob: Blob; type: 'image/jpeg' | 'image/webp' } | null = null;
+
   for (const attempt of COMPRESSION_ATTEMPTS) {
     const { canvas, context } = drawScaled(image, attempt.maxDimension);
     const type = outputMimeTypeForImage(inferredImageMimeType(file), containsTransparency(context, canvas.width, canvas.height));
     const blob = await canvasToBlob(canvas, type, attempt.quality);
+
+    if (!smallestBlob || blob.size < smallestBlob.blob.size) {
+      smallestBlob = { blob, type };
+    }
+
     if (blob.size <= IMAGE_UPLOAD_SAFE_BYTES) {
       return {
         file: new File([blob], replacementFileName(file.name, type), { type, lastModified: file.lastModified }),
@@ -136,5 +141,13 @@ export async function prepareImageForUpload(file: File): Promise<PreparedImageUp
     }
   }
 
-  throw new Error('图片自动压缩后仍超过上传上限，请先裁剪图片后重试。');
+  if (smallestBlob) {
+    return {
+      file: new File([smallestBlob.blob], replacementFileName(file.name, smallestBlob.type), { type: smallestBlob.type, lastModified: file.lastModified }),
+      originalName: file.name,
+      compressed: true,
+    };
+  }
+
+  throw new Error('图片自动压缩后仍无法处理，请换一张图片后重试。');
 }

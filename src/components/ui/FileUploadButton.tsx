@@ -34,8 +34,11 @@ export default function FileUploadButton({
   }, [value]);
 
   const uploadFnRef = useRef<(file: File) => void>(() => {});
+  const uploadingRef = useRef(false);
 
   const upload = async (file: File) => {
+    if (uploadingRef.current) return;
+    uploadingRef.current = true;
     setUploading(true);
     setErr('');
     try {
@@ -46,6 +49,7 @@ export default function FileUploadButton({
         method: 'POST',
         headers: getHeaders(),
         body: formData,
+        signal: AbortSignal.timeout(45000),
       });
       const text = await resp.text();
       let data: { url?: string; error?: string } = {};
@@ -61,6 +65,7 @@ export default function FileUploadButton({
     } catch (e: unknown) {
       setErr((e instanceof Error ? e.message : null) || 'Upload failed');
     } finally {
+      uploadingRef.current = false;
       setUploading(false);
     }
   };

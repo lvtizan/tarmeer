@@ -46,11 +46,14 @@ function xhrPost(url: string, headers: Record<string, string>, formData: FormDat
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
+    xhr.timeout = 45000; // 45s timeout 防止网络挂起无限等待
     Object.keys(headers).forEach(k => xhr.setRequestHeader(k, headers[k]));
     if (onProgress) xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100)); };
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error(getUploadResponseError(xhr.status, xhr.responseText)));
+        const error = new Error(getUploadResponseError(xhr.status, xhr.responseText));
+        (error as { status?: number }).status = xhr.status;
+        reject(error);
         return;
       }
       try {
@@ -60,6 +63,7 @@ function xhrPost(url: string, headers: Record<string, string>, formData: FormDat
         reject(new Error('上传成功响应格式异常，未能读取文件地址，请重新上传。'));
       }
     };
+    xhr.ontimeout = () => reject(new Error('上传请求超时（网络不稳定），请检查网络后重试。'));
     xhr.onerror = () => reject(new Error('网络连接失败，文件未上传，请检查网络后重试。'));
     xhr.send(formData);
   });
@@ -85,15 +89,19 @@ export default function ImageUploadZone({
 }: ImageUploadZoneProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState('');
   const [err, setErr] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
+  const uploadingRef = useRef(false); // 供 paste/并发判断,避免与进行中的上传并发导致状态错乱
   // Keep the latest committed value so batched uploads append without clobbering
   // each other (fixes lost images when many files/a folder are dropped at once).
+  // 仅在非上传中同步外部 value prop，上传进行中由内部累积真源推进，防止 re-render 时被旧 prop 覆盖丢图
   const valueRef = useRef(value);
-  valueRef.current = value;
+  if (!uploadingRef.current) {
+    valueRef.current = value;
+  }
   const uploadManyRef = useRef<(files: File[]) => void>(() => {});
-  const uploadingRef = useRef(false); // 供 paste 判断,避免与进行中的上传并发导致状态错乱
   // 页面上可以同时存在产品、项目等多个上传区。粘贴只交给最后操作过的一个，
   // 不能让每个 document 监听器并发上传同一张截图。
   const zoneIdRef = useRef(Symbol('image-upload-zone'));
@@ -116,7 +124,7 @@ export default function ImageUploadZone({
     return a === 'application/pdf' && fileExt(file.name) === 'pdf';
   });
 
-  const uploadOne = async (sourceFile: File): Promise<{ url: string; original_name?: string }> => {
+  const uploadOne = async (sourceFile: File, onProgressCb?: (p: number) => void): Promise<{ url: string; original_name?: string }> => {
     const prepared = await prepareImageForUpload(sourceFile);
     const file = prepared.file;
     // A compressed image is already kept below the safe single-request budget.
@@ -137,7 +145,7 @@ export default function ImageUploadZone({
         fd.append('total_chunks', String(totalChunks));
         fd.append('original_name', prepared.originalName);
         data = await xhrPost(chunkUploadUrl, getHeaders(), fd) as typeof data;
-        setProgress(Math.round((i + 1) / totalChunks * 100));
+        onProgressCb?.(Math.round((i + 1) / totalChunks * 100));
       }
       return data;
     }
@@ -145,8 +153,25 @@ export default function ImageUploadZone({
     const fd = new FormData();
     fd.append('file', file, file.name);
     fd.append('original_name', prepared.originalName);
-    return await xhrPost(uploadUrl, getHeaders(), fd, setProgress) as { url: string; original_name?: string };
+    return await xhrPost(uploadUrl, getHeaders(), fd, onProgressCb) as { url: string; original_name?: string };
   };
+
+  const uploadOneWithRetry = async (sourceFile: File, onProgressCb?: (p: number) => void): Promise<{ url: string; original_name?: string }> => {
+    try {
+      return await uploadOne(sourceFile, onProgressCb);
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      const message = err instanceof Error ? err.message : String(err);
+      if ((status !== undefined && status >= 400 && status < 500) || /HTTP 4\d\d|超过|不支持|格式异常|无法处理/.test(message)) {
+        throw err;
+      }
+      // 网络抖动/超时等瞬态错误，延迟 1 秒后自动重试一次
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return await uploadOne(sourceFile, onProgressCb);
+    }
+  };
+
+  const UPLOAD_CONCURRENCY = 3;
 
   const uploadMany = async (files: File[]) => {
     if (disabledRef.current || uploadingRef.current) return; // 上传进行中/父表单保存中不接受新文件
@@ -165,34 +190,71 @@ export default function ImageUploadZone({
     setUploading(true);
     onUploadStateChange?.(true);
     setProgress(0);
+    setStatusText('');
     setErr('');
     try {
-      // 顺序上传且逐项容错：一张失败不阻断文件夹中其余图片。
       const failures: string[] = rejected.map(file => {
         if (maxFileBytesRef.current !== undefined && file.size > maxFileBytesRef.current) {
           return `${file.name}（超过 ${Math.floor(maxFileBytesRef.current / 1024 / 1024)} MB 限制，请压缩或拆分文件后重试）`;
         }
         return `${file.name}（类型不支持）`;
       });
-      for (const file of valid) {
-        setProgress(0);
-        try {
-          const data = await uploadOne(file);
-          if (!data.url) throw new Error('上传服务未返回文件地址，请重新上传。');
-          const merged = [...valueRef.current, data.url];
-          valueRef.current = merged;
-          onUpload(merged);
-          if (onFileMeta) onFileMeta({ original_name: data.original_name || file.name });
-        } catch (error) {
-          failures.push(`${file.name}（${error instanceof Error ? error.message : '上传失败'}）`);
+
+      const fileProgresses = new Array(valid.length).fill(0);
+      let completedCount = 0;
+      const initialValue = valueRef.current;
+      const uploadedUrls: (string | null)[] = new Array(valid.length).fill(null);
+
+      const updateProgressUI = () => {
+        const sum = fileProgresses.reduce((a, b) => a + b, 0);
+        const overall = Math.round(sum / valid.length);
+        setProgress(overall);
+        if (valid.length > 1) {
+          setStatusText(`正在上传 (${Math.min(completedCount + 1, valid.length)}/${valid.length}) ${overall}%`);
+        } else {
+          setStatusText(`${overall}%`);
         }
-      }
+      };
+
+      let nextIndex = 0;
+      const runWorker = async () => {
+        while (nextIndex < valid.length) {
+          const idx = nextIndex++;
+          const file = valid[idx];
+          try {
+            const data = await uploadOneWithRetry(file, (p) => {
+              fileProgresses[idx] = p;
+              updateProgressUI();
+            });
+            if (!data.url) throw new Error('上传服务未返回文件地址，请重新上传。');
+            uploadedUrls[idx] = data.url;
+            const completedUrls = uploadedUrls.filter((u): u is string => Boolean(u));
+            const merged = [...initialValue, ...completedUrls];
+            valueRef.current = merged;
+            onUpload(merged);
+            if (onFileMeta) onFileMeta({ original_name: data.original_name || file.name });
+          } catch (error) {
+            failures.push(`${file.name}（${error instanceof Error ? error.message : '上传失败'}）`);
+          } finally {
+            completedCount++;
+            fileProgresses[idx] = 100;
+            updateProgressUI();
+          }
+        }
+      };
+
+      // 分片/大文件目录上传后端有严格单用户排他限流 (limitCatalogBodyConcurrency)，须保持串行 workerCount=1
+      const workerCount = chunkUploadUrl ? 1 : Math.min(UPLOAD_CONCURRENCY, valid.length);
+      const workers = Array.from({ length: workerCount }, () => runWorker());
+      await Promise.all(workers);
+
       if (failures.length > 0) setErr(`以下文件未上传：${failures.join('、')}`);
     } finally {
       uploadingRef.current = false;
       setUploading(false);
       onUploadStateChange?.(false);
       setProgress(0);
+      setStatusText('');
     }
   };
 
@@ -299,7 +361,7 @@ export default function ImageUploadZone({
             <div className="w-full bg-stone-200 rounded-full h-1.5 overflow-hidden">
               <div className="bg-[#b8864a] h-1.5 rounded-full transition-all duration-200" style={{ width: `${progress}%` }} />
             </div>
-            <span className="text-xs text-stone-400">{progress}%</span>
+            <span className="text-xs text-stone-400">{statusText || `${progress}%`}</span>
           </div>
         ) : (
           <>

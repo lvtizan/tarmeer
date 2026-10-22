@@ -6,7 +6,12 @@ import {
   isImageUpload,
   shouldCompressImageBeforeUpload,
   outputMimeTypeForImage,
+  replacementFileName,
 } from './uploadImageCompression.ts';
+
+test('安全上传线设定为 1.5MB，确保手机和相机大图在客户端自动压缩后疾速上传', () => {
+  assert.equal(IMAGE_UPLOAD_SAFE_BYTES, 1.5 * 1024 * 1024);
+});
 
 test('小于安全上传线的图片保留原文件', () => {
   assert.equal(shouldCompressImageBeforeUpload({ name: 'small.jpg', type: 'image/jpeg', size: IMAGE_UPLOAD_SAFE_BYTES - 1 }), false);
@@ -28,10 +33,17 @@ test('所有透明图片输出为 WebP，其余图片输出 JPEG', () => {
   assert.equal(outputMimeTypeForImage('image/jpeg', false), 'image/jpeg');
 });
 
-test('压缩轮次逐步降低质量和最大边，最终能够达到安全目标', () => {
+test('压缩轮次逐步降低质量和最大边，初始尺寸与服务端 2400px 上限对齐', () => {
   const attempts = buildCompressionAttempts();
   assert.ok(attempts.length >= 3);
+  assert.equal(attempts[0].maxDimension, 2400);
   assert.ok(attempts.every((attempt) => attempt.maxDimension >= 1600));
   assert.ok(attempts.every((attempt, index) => index === 0 || attempt.maxDimension <= attempts[index - 1].maxDimension));
   assert.ok(attempts.every((attempt, index) => index === 0 || attempt.quality <= attempts[index - 1].quality));
+});
+
+test('文件名扩展名按输出格式正确重命名', () => {
+  assert.equal(replacementFileName('photo.png', 'image/webp'), 'photo-optimized.webp');
+  assert.equal(replacementFileName('photo.jpeg', 'image/jpeg'), 'photo-optimized.jpg');
+  assert.equal(replacementFileName('photo.PNG', 'image/jpeg'), 'photo-optimized.jpg');
 });
