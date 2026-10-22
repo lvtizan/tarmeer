@@ -211,6 +211,7 @@ try {
 try {
   execSync('node scripts/harness/survey-schema-editor.mjs', { cwd: ROOT, stdio: 'pipe', timeout: 30000 });
   execSync('node scripts/harness/survey-schema-editor-ui.mjs', { cwd: ROOT, stdio: 'pipe', timeout: 30000 });
+  execSync('node --test src/lib/verification-render.test.mjs', { cwd: ROOT, stdio: 'pipe', timeout: 30000 });
   execSync('node scripts/harness/survey-schema-editor-db.mjs', { cwd: ROOT, stdio: 'pipe', timeout: 30000 });
   ok('问卷字段管理权限、增删改名、配置并发与历史数据保留');
 } catch (e) {

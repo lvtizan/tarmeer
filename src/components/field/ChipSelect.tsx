@@ -47,6 +47,7 @@ export default function ChipSelect({ options, value, onChange, multi = false, ot
             <button
               key={opt}
               type="button"
+              aria-pressed={active}
               onClick={() => toggle(opt)}
               className={`min-h-[44px] px-4 py-2 rounded-2xl border text-sm font-medium transition-colors ${
                 active

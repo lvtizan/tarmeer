@@ -18,7 +18,7 @@ function mount({authenticated=true,canEdit=true,flush=async()=>{},mutation,recov
  const field={key:'phone',label:'Phone / WhatsApp',labelEn:'Phone / WhatsApp',type:'tel',required:true};
  function open(action,f=field,path=[f.key]){render();context.open({action,field:f,fieldPath:path});render();}
  const click=async name=>{const button=render().find(n=>n.type==='button'&&n.props.children===name);assert(button,'missing '+name);await button.props.onClick();await new Promise(r=>setImmediate(r));render();};
- render();return{render,open,click,calls,changes,busyChanges,field,props,setLabel(value){render().find(n=>n.type==='input').props.onChange({target:{value}});render();},label(f=field){context=tree.props.value;return nodes(exports.SurveyFieldLabel({field:f,fieldPath:[f.key],htmlFor:'input'}));}};
+ render();return{render,open,click,calls,changes,busyChanges,field,props,setLabel(value){render().find(n=>n.type==='input').props.onChange({target:{value}});render();},label(f=field,sectionKey){context=tree.props.value;return nodes(exports.SurveyFieldLabel({field:f,fieldPath:[f.key],htmlFor:'input',sectionKey}));}};
 }
 const tick=()=>new Promise(r=>setImmediate(r));
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return{promise,resolve,reject};};
@@ -34,6 +34,10 @@ check('rename flushes answers first then sends exact field path and concurrency 
 check('successful mutation updates displayed draft schema without replacing answers',()=>{assert.equal(admin.changes.length,2);assert.deepEqual(admin.busyChanges,[true,false]);});
 const add=mount();await tick();add.open('add',add.field,['contacts','phone']);add.setLabel('新联系人');await add.click('Save');
 check('nested new text field uses section and full schema path',()=>{const body=add.calls.find(x=>typeof x==='object');assert.equal(body.action,'add');assert.equal(body.sectionKey,'section');assert.deepEqual(Array.from(body.fieldPath),['contacts','phone']);});
+const crossSection=mount();await tick();crossSection.render();
+crossSection.label(crossSection.field,'second_section').find(node=>node.type==='button'&&node.props['aria-label']==='Rename Phone / WhatsApp').props.onClick();
+crossSection.setLabel('Second section phone');await crossSection.click('Save');
+check('one shared editor sends the section of the clicked field, rather than its provider default',()=>assert.equal(crossSection.calls.find(call=>typeof call==='object').sectionKey,'second_section'));
 const del=mount();await tick();del.open('delete',{...del.field,custom:true});
 check('delete opens a confirmation prompt before any mutation',()=>{assert(!del.calls.some(x=>typeof x==='object'));assert(del.render().some(n=>JSON.stringify(n.props.children)?.includes('Historical records and saved answers will be preserved.')));});
 await del.click('Cancel');
@@ -153,7 +157,7 @@ function surveyMount({loadError=Object.assign(Error('Missing'),{status:404}),evi
   if(name==='react')return react;if(name==='react/jsx-runtime')return{jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props})};
   if(name.endsWith('/adminApi'))return{fieldApi:api};if(name.endsWith('/verification'))return helpers;
   if(name==='./survey-schema-editor')return{default:'schema-editor'};if(name==='./verification-field')return{VerificationFields:'fields'};
-  if(name.endsWith('/LoadingButton'))return{default:'loading-button'};throw Error(name);
+  if(name.endsWith('/LoadingButton'))return{default:'loading-button'};if(name.endsWith('.css'))return{};throw Error(name);
  }});
  const schema={version:'tarmeer-verification-v7',country:'ae',sections:[{key:'s',title:'Details',fields:[{key:'name',label:'Name',type:'text'}]}]};
  const record={id:123,country:'ae',schema_version:schema.version,verification_data:{name:'Ali'},attachments:evidence};

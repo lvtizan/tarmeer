@@ -5,19 +5,20 @@ import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { fieldApi, type SurveySchemaEditorContext, type SurveySchemaMutation } from '@/lib/adminApi';
 import { captureVerificationAuth, type VerificationField, type VerificationSchema } from '@/lib/verification';
 
+type EditorSelection = Omit<Selection,'sectionKey'> & {sectionKey?:string};
 type Selection = { action: SurveySchemaMutation['action']; field: VerificationField; fieldPath: string[]; sectionKey: string };
-const EditorContext = createContext<{open:(selection:Omit<Selection,'sectionKey'>)=>void;disabled:boolean}|null>(null);
+const EditorContext = createContext<{open:(selection:EditorSelection)=>void;disabled:boolean}|null>(null);
 const actionClass = 'relative after:pointer-events-none after:absolute after:right-0 after:top-full after:z-10 after:mt-1 after:w-max after:max-w-48 after:whitespace-normal after:rounded-md after:bg-stone-800 after:px-2 after:py-1 after:text-xs after:font-normal after:text-white after:opacity-0 after:content-[attr(data-tooltip)] hover:after:opacity-100 focus-visible:after:opacity-100 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-1.5 sm:min-h-8 sm:min-w-8 text-stone-500 hover:bg-[#b8864a]/10 hover:text-[#8b6537] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8864a] disabled:opacity-40';
 
-export function SurveyFieldLabel({field,fieldPath,htmlFor}:{field:VerificationField;fieldPath:string[];htmlFor:string}) {
+export function SurveyFieldLabel({field,fieldPath,htmlFor,sectionKey,displayLabel}:{field:VerificationField;fieldPath:string[];htmlFor:string;sectionKey?:string;displayLabel?:string}) {
   const edit = useContext(EditorContext);
-  const label = field.labelEn || field.label;
+  const label = displayLabel || field.labelEn || field.label;
   return <div className="group/field-label mb-2 flex min-h-7 items-center gap-1.5">
     <label htmlFor={htmlFor} className="min-w-0 flex-1 break-words [overflow-wrap:anywhere] text-sm font-medium text-stone-800">{label}{field.required && <span className="ml-1 text-red-600">*</span>}</label>
     {edit && <div className="flex shrink-0 items-center opacity-100 transition-opacity sm:opacity-0 group-hover/field-label:opacity-100 group-focus-within/field-label:opacity-100 [@media(hover:none)]:opacity-100">
-      <button type="button" className={actionClass} aria-label={`Rename ${label}`} data-tooltip="Rename field" disabled={edit.disabled} onClick={()=>edit.open({action:'rename',field,fieldPath})}><Pencil className="h-4 w-4" /></button>
-      <button type="button" className={actionClass} aria-label={`Add field after ${label}`} data-tooltip="Add text field" disabled={edit.disabled} onClick={()=>edit.open({action:'add',field,fieldPath})}><Plus className="h-4 w-4" /></button>
-      {field.custom && <button type="button" className={`${actionClass} hover:!text-red-600`} aria-label={`Delete ${label}`} data-tooltip="Delete added field" disabled={edit.disabled} onClick={()=>edit.open({action:'delete',field,fieldPath})}><Trash2 className="h-4 w-4" /></button>}
+      <button type="button" className={actionClass} aria-label={`Rename ${label}`} data-tooltip="Rename field" disabled={edit.disabled} onClick={()=>edit.open({action:'rename',field,fieldPath,sectionKey})}><Pencil className="h-4 w-4" /></button>
+      <button type="button" className={actionClass} aria-label={`Add field after ${label}`} data-tooltip="Add text field" disabled={edit.disabled} onClick={()=>edit.open({action:'add',field,fieldPath,sectionKey})}><Plus className="h-4 w-4" /></button>
+      {field.custom && <button type="button" className={`${actionClass} hover:!text-red-600`} aria-label={`Delete ${label}`} data-tooltip="Delete added field" disabled={edit.disabled} onClick={()=>edit.open({action:'delete',field,fieldPath,sectionKey})}><Trash2 className="h-4 w-4" /></button>}
     </div>}
   </div>;
 }
@@ -69,9 +70,9 @@ export default function SurveySchemaEditor({country,draftId,sectionKey,enabled,d
   },[selection]);
 
   function close(){if(!busy.current){setSelection(null);setError('');setConflict(false);}}
-  function open(value:Omit<Selection,'sectionKey'>){
+  function open(value:EditorSelection){
     if(disabled || busy.current)return;
-    setSelection({...value,sectionKey});setLabel(value.action==='rename'?(value.field.labelEn||value.field.label):'');setError('');setConflict(false);
+    setSelection({...value,sectionKey:value.sectionKey||sectionKey});setLabel(value.action==='rename'?(value.field.labelEn||value.field.label):'');setError('');setConflict(false);
   }
   async function recoverSettings(){
     if(disabled || busy.current)return;

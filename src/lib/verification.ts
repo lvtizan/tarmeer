@@ -1,6 +1,6 @@
 export interface VerificationInputPolicy {kind:string;minLength?:number;maxLength?:number;min?:number;max?:number;precision?:number;integer?:boolean;country?:string;requireLetter?:boolean;allowHandle?:boolean;allowNewlines?:boolean;}
 export interface VerificationField {
-  custom?: boolean; retired?: boolean;
+  custom?: boolean; retired?: boolean; layout?: 'inline';
   inputPolicy?:VerificationInputPolicy;
   key: string; label: string; labelEn?: string; type: string; options?: (string | {label:string; value:string})[];
   datePolicy?: {minYear:number;maxYearsFromToday:number;timeZone:string};

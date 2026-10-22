@@ -481,42 +481,33 @@ async function uploadPhoto(req, res) {
     }
 }
 async function uploadAttachment(req, res) {
-    const { id } = req.params;
-    if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-    }
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    let db;
     try {
-        if(req.interview?.schema_version===verification.VERSION) {
-            const snapshot=verification.parseJSON(req.interview.schema_snapshot);
-            const field=snapshot.sections.flatMap(s=>s.fields).find(f=>f.key===req.body.field_key && f.type==='attachment');
-            const error=!field ? 'Select an evidence category from the survey.' : verification.validateEvidenceFile(req.file);
-            if(error) { fs_1.default.unlinkSync(req.file.path); return res.status(400).json({error}); }
+        db = await database_1.default.getConnection();
+        await db.beginTransaction();
+        const row = await fetchAccessibleInterview(req, res, req.admin ? null : 'draft', db, true);
+        if (!row) { await db.rollback(); await fs_1.default.promises.unlink(req.file.path); return; }
+        const attachments = verification.parseJSON(row.attachments) || [];
+        let error;
+        if (row.schema_version === verification.VERSION) {
+            const snapshot = verification.parseJSON(row.schema_snapshot);
+            const field = snapshot.sections.flatMap(section => section.fields).find(field => field.key === req.body.field_key && field.type === 'attachment' && !field.retired);
+            error = !field ? 'Select an evidence category from the survey.' : verification.validateEvidenceFile(req.file);
+            if (!error && field.maxBytes && req.file.size > field.maxBytes) error = `Maximum ${Math.round(field.maxBytes / 1024 / 1024)} MB per file.`;
+            if (!error && field.accept && !field.accept.split(',').map(type => type.trim()).includes(req.file.mimetype)) error = 'This file format is not allowed for this field.';
+            if (!error && field.maxItems && attachments.filter(item => item.field_key === field.key).length >= field.maxItems) error = `Choose up to ${field.maxItems} files for this project.`;
         }
-        const [rows] = await database_1.default.execute('SELECT attachments FROM company_interviews WHERE id = ?', [id]);
-        if (rows.length === 0) {
-            fs_1.default.unlinkSync(req.file.path);
-            return res.status(404).json({ error: 'Interview not found' });
-        }
+        if (error) { await db.rollback(); await fs_1.default.promises.unlink(req.file.path); return res.status(400).json({ error, field_key: req.body.field_key }); }
         await fs_1.default.promises.chmod(req.file.path, 0o644);
-        const url = `/uploads/field-attachments/${req.file.filename}`;
-        const meta = {
-            url,
-            name: req.file.originalname,
-            type: req.file.mimetype,
-            size: req.file.size,
-            field_key: req.body.field_key || undefined,
-            uploaded_at: new Date().toISOString(),
-        };
-        await database_1.default.execute("UPDATE company_interviews SET attachments = JSON_ARRAY_APPEND(COALESCE(attachments, JSON_ARRAY()), '$', CAST(? AS JSON)) WHERE id = ?", [JSON.stringify(meta), id]);
-        res.json(meta);
-    }
-    catch (e) {
-        console.error('uploadAttachment error:', e);
-        if (req.file?.path) {
-            try { fs_1.default.unlinkSync(req.file.path); } catch {}
-        }
+        const meta = { url: `/uploads/field-attachments/${req.file.filename}`, name: req.file.originalname, type: req.file.mimetype, size: req.file.size, field_key: req.body.field_key || undefined, uploaded_at: new Date().toISOString() };
+        await db.execute("UPDATE company_interviews SET attachments = JSON_ARRAY_APPEND(COALESCE(attachments, JSON_ARRAY()), '$', CAST(? AS JSON)) WHERE id = ?", [JSON.stringify(meta), row.id]);
+        await db.commit(); res.json(meta);
+    } catch (error) {
+        if (db) await db.rollback(); console.error('uploadAttachment error:', error);
+        if (req.file?.path) { try { await fs_1.default.promises.unlink(req.file.path); } catch {} }
         res.status(500).json({ error: 'Upload failed' });
-    }
+    } finally { if (db) db.release(); }
 }
 exports.uploadAttachment = uploadAttachment;
 async function getSurveySchema(req,res) {

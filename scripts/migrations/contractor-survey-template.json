@@ -1,0 +1,177 @@
+{
+  "sections": [
+    {
+      "title": "Contractor company information",
+      "description": "Company details, locations and completed projects",
+      "fields": [
+        {
+          "key": "company_name",
+          "label": "Company name",
+          "type": "text",
+          "placeholder": "Registered company name",
+          "role": "company_name",
+          "required": true
+        },
+        {
+          "key": "licence_number",
+          "label": "Trade licence number",
+          "type": "text",
+          "placeholder": "Trade licence number"
+        },
+        {
+          "key": "registration_years",
+          "label": "Trade licence registration years",
+          "type": "text",
+          "placeholder": "e.g. 2018 or 8 years"
+        },
+        {
+          "key": "website",
+          "label": "Website",
+          "type": "text",
+          "placeholder": "https://www.company.com"
+        },
+        {
+          "key": "owner_phone",
+          "label": "Owner phone number",
+          "type": "tel",
+          "placeholder": "+971"
+        },
+        {
+          "key": "partners",
+          "label": "Partner phone numbers",
+          "type": "repeat",
+          "placeholder": "",
+          "layout": "inline",
+          "maxItems": 3,
+          "fields": [
+            {
+              "key": "phone",
+              "label": "Partner",
+              "type": "tel",
+              "placeholder": "+971"
+            }
+          ]
+        },
+        {
+          "key": "email",
+          "label": "Company official email",
+          "type": "email",
+          "placeholder": "name@company.com"
+        },
+        {
+          "key": "engineer_phone",
+          "label": "Site engineer / supervisor number",
+          "type": "tel",
+          "placeholder": "+971"
+        },
+        {
+          "key": "emergency_phone",
+          "label": "Emergency number",
+          "type": "tel",
+          "placeholder": "+971"
+        },
+        {
+          "key": "office_address",
+          "label": "Office address",
+          "type": "text",
+          "placeholder": "Building, street and area"
+        },
+        {
+          "key": "workshop_location",
+          "label": "Location of workshop / store",
+          "type": "select",
+          "options": [
+            "Dubai",
+            "Abu Dhabi",
+            "Sharjah",
+            "Ajman",
+            "Ras Al Khaimah",
+            "Umm Al Quwain"
+          ]
+        },
+        {
+          "key": "office_location",
+          "label": "Office registration location",
+          "type": "select",
+          "options": [
+            "Dubai",
+            "Abu Dhabi",
+            "Sharjah",
+            "Ajman",
+            "Ras Al Khaimah",
+            "Umm Al Quwain"
+          ]
+        },
+        {
+          "key": "project_1",
+          "label": "Completed project 01",
+          "type": "attachment",
+          "accept": "image/jpeg,image/png",
+          "maxBytes": 10485760,
+          "maxItems": 5,
+          "help": "Add photos of an existing completed project · JPG or PNG · Up to 5 photos · 10 MB each"
+        },
+        {
+          "key": "project_2",
+          "label": "Completed project 02",
+          "type": "attachment",
+          "accept": "image/jpeg,image/png",
+          "maxBytes": 10485760,
+          "maxItems": 5,
+          "help": "Add photos of an existing completed project · JPG or PNG · Up to 5 photos · 10 MB each"
+        },
+        {
+          "key": "project_3",
+          "label": "Completed project 03",
+          "type": "attachment",
+          "accept": "image/jpeg,image/png",
+          "maxBytes": 10485760,
+          "maxItems": 5,
+          "help": "Add photos of an existing completed project · JPG or PNG · Up to 5 photos · 10 MB each"
+        }
+      ],
+      "key": "contractor_company"
+    },
+    {
+      "title": "Contractor business profile",
+      "description": "Select all the services your company provides",
+      "fields": [
+        {
+          "key": "specialist_civil",
+          "label": "Civil work",
+          "type": "checkbox",
+          "options": [
+            "General civil work",
+            "Excavation work",
+            "Concrete work",
+            "Block work",
+            "Plaster & tiles work",
+            "Road paving",
+            "Interlock installation",
+            "External décor work",
+            "Stone work"
+          ]
+        },
+        {
+          "key": "specialist_mechanical",
+          "label": "Mechanical work",
+          "type": "checkbox",
+          "options": [
+            "HVAC work",
+            "Chiller AC system",
+            "Plumbing works",
+            "Firefighting work + piping + DP dressing",
+            "Water supply system",
+            "Pump installation",
+            "Ducting — all kinds",
+            "Drainage system installation"
+          ]
+        }
+      ],
+      "key": "contractor_business"
+    }
+  ],
+  "version": "tarmeer-verification-v7",
+  "country": "ae",
+  "title": "Contractor registration"
+}

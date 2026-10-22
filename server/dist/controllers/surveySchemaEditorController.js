@@ -135,6 +135,20 @@ function sameTarget(publishedTarget, draftTarget) {
         && draftTarget.field.retired !== true;
 }
 
+function compatibleTemplate(published, draft) {
+    function fieldsMatch(current, saved) {
+        return saved.filter(field => !field.retired).every(field => {
+            const match = current.find(candidate => candidate.key === field.key && candidate.type === field.type && !candidate.retired);
+            return match && (!field.fields || fieldsMatch(match.fields || [], field.fields));
+        });
+    }
+    return draft.sections.every(section => {
+        if (!section.fields.some(field => !field.retired)) return true;
+        const match = published.sections.find(candidate => candidate.key === section.key);
+        return match && fieldsMatch(match.fields, section.fields);
+    });
+}
+
 function inheritedVisibility(field) {
     const inherited = {};
     if (field.group !== undefined) inherited.group = clone(field.group);
@@ -242,6 +256,9 @@ async function getSurveySchemaEditor(req, res) {
             || record.draft_schema_version !== verification.VERSION || !validSnapshot(published) || !validSnapshot(draft)) {
             return res.status(404).json({ error: 'Editable survey draft not found.' });
         }
+        // Old drafts retain their own answers/fields after a template replacement.
+        // Do not offer field management against an incompatible published form.
+        if (!compatibleTemplate(published, draft)) return res.json({ canEdit: false });
         return res.json({
             canEdit: true,
             revision: revision(published),
@@ -265,6 +282,7 @@ async function updateSurveySchemaEditor(req, res) {
         await db.beginTransaction();
         const context = await lockedContext(db, input.draftId);
         if (!context) return res.status(404).json({ error: 'Editable survey draft not found.' });
+        if (!compatibleTemplate(context.published, context.draft)) return res.status(409).json({ error: 'This draft uses an earlier survey. Start a new form to manage fields.' });
         if (revision(context.published) !== input.revision || revision(context.draft) !== input.draftRevision) {
             return res.status(409).json({ error: 'Survey fields changed. Reload field settings before trying again.' });
         }

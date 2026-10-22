@@ -907,7 +907,7 @@ export default function FieldSurveyPage() {
         const response = await fieldApi.loadInterview(editingId) as {interview:VerificationRecord|null};
         record = response.interview;
         if (!record) throw new Error('Interview not found.');
-      } else {
+      } else if (new URLSearchParams(window.location.search).get('new') !== '1') {
         record = await restoreStoredVerificationDraft(localStorage, country, id => fieldApi.getDraft(id), fieldApi.clearDraftAccess);
       }
       if (record?.country && record.country !== country) {
@@ -942,6 +942,7 @@ export default function FieldSurveyPage() {
       if (!draft.id) throw new Error('Unable to create a verification draft.');
       localStorage.setItem(`field_draft_id_${country}`,String(draft.id));
       localStorage.setItem('field_draft_id',String(draft.id));
+      const cleanUrl = new URL(window.location.href); cleanUrl.searchParams.delete('new'); window.history.replaceState(null,'',cleanUrl);
       if (active) setState({legacy:false,schema,record:draft,editingId});
     })().catch(e => {
       if (!active) return;

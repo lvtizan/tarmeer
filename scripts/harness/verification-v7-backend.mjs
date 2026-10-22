@@ -32,6 +32,7 @@ const legacySource=readFileSync(path.join(root,'server/dist/routes/admin.js'),'u
 const literal=legacySource.match(/const DEFAULT_SURVEY_SCHEMA = JSON.stringify\((\[[^\n]+\])\);/)[1];
 const legacy=JSON.parse(literal);
 await conn.execute('INSERT INTO survey_schema(id,schema_json) VALUES(1,?) ON DUPLICATE KEY UPDATE schema_json=VALUES(schema_json)',[JSON.stringify(legacy)]);
+await conn.execute('DELETE FROM survey_schema WHERE id = 7');
 const [old]=await conn.execute("INSERT INTO company_interviews(company_name,status,interviewer_id,country,section_1,section_9) VALUES('HARNESS legacy preserved','submitted',1,'ae',?,?)",[JSON.stringify({unknown_old_key:'Do not lose this'}),JSON.stringify({emirates_served:['Dubai']})]);
 const ids=[old.insertId];const temp=mkdtempSync(path.join(os.tmpdir(),'verification-v7-backup-'));
 let server,pool,pass=0;
@@ -48,7 +49,7 @@ try {
  await new Promise(r=>setTimeout(r,150));
  const express=require('express');const app=express();app.use(express.json());
  app.use((req,res,next)=>{req.country=req.headers['x-country']||'ae';if(req.headers['x-harness-role']){req.admin={role:req.headers['x-harness-role'],country:req.headers['x-harness-admin-country']||'ae',full_name:'Harness reviewer'};req.adminId=1;}next();});
- app.get('/schema',ctrl.getSurveySchema);app.post('/draft',ctrl.createDraft);app.get('/draft',ctrl.getMyDraft);app.patch('/draft/:id',ctrl.saveDraft);app.post('/draft/:id/submit',ctrl.submitInterview);
+ app.get('/editor',require(path.join(root,'server/dist/controllers/surveySchemaEditorController.js')).getSurveySchemaEditor);app.patch('/editor',require(path.join(root,'server/dist/controllers/surveySchemaEditorController.js')).updateSurveySchemaEditor);app.get('/schema',ctrl.getSurveySchema);app.post('/draft',ctrl.createDraft);app.get('/draft',ctrl.getMyDraft);app.patch('/draft/:id',ctrl.saveDraft);app.post('/draft/:id/submit',ctrl.submitInterview);
  app.post('/draft/:id/attachments',ctrl.guardDraftUpload,ctrl.uploadAttachmentMiddleware,ctrl.uploadAttachment);
  app.get('/admin',admin.listInterviews);app.get('/admin/:id',admin.getInterview);app.patch('/admin/:id',admin.editInterview);app.post('/resubmit/:id',ctrl.reSubmitInterview);
  app.use((e,req,res,next)=>res.status(400).json({error:e.message}));
@@ -142,6 +143,25 @@ try {
   assert.equal((await hit('/resubmit/'+draft.id,'POST',{company_ref_id:102,company_ref_source:'profile'},auth)).status,400);
   assert.equal((await hit('/resubmit/'+draft.id,'POST',{verification_data:{verifyNotes:'Verified again'}},auth)).status,200);
   const [row]=await conn.execute('SELECT verification_data FROM company_interviews WHERE id=?',[draft.id]);assert.equal(row[0].verification_data.verifyNotes,'Verified again');assert.equal(row[0].verification_data.case3_name,'Project 3');
+ });
+ await check('new template publication is backed up, CAS protected, idempotent and preserves every existing record',async()=>{
+  const [before]=await conn.execute('SELECT * FROM company_interviews ORDER BY id');const [catalog]=await conn.execute('SELECT schema_json FROM survey_schema WHERE id=7');const {createHash}=await import('node:crypto');const hash=createHash('sha256').update(catalog[0].schema_json).digest('hex');
+  const run=args=>spawnSync(process.execPath,[path.join(root,'scripts/migrations/publish-contractor-survey.cjs'),...args],{env:{...process.env,VERIFICATION_BACKUP_DIR:temp},encoding:'utf8'});
+  assert.equal(run(['--apply','--expected-sha256=wrong']).status,1);const result=run(['--apply','--expected-sha256='+hash]);assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/"recordsModified":0/);assert.equal(run(['--apply']).status,0);const [after]=await conn.execute('SELECT * FROM company_interviews ORDER BY id');assert.deepEqual(after,before);
+ });
+ await check('old draft retains its schema but cannot edit the replacement template',async()=>{
+  const oldDraft=await hit('/draft','POST',{country:'ae',schema_version:helper.VERSION});assert.equal(oldDraft.status,201);ids.push(oldDraft.data.id);const original=structuredClone(oldDraft.data.schema_snapshot);original.sections[0].fields.push({key:'old_only',label:'Old question',type:'text'});await conn.execute('UPDATE company_interviews SET schema_snapshot=? WHERE id=?',[JSON.stringify(original),oldDraft.data.id]);
+  const context=await hit('/editor?country=ae&draftId='+oldDraft.data.id,'GET',null,{'x-harness-role':'super_admin'});assert.equal(context.data.canEdit,false);
+  const editor=require(path.join(root,'server/dist/controllers/surveySchemaEditorController.js'));const [published]=await conn.execute('SELECT schema_json FROM survey_schema WHERE id=7');const current=typeof published[0].schema_json==='string'?JSON.parse(published[0].schema_json):published[0].schema_json;const patch=await hit('/editor','PATCH',{country:'ae',draftId:oldDraft.data.id,revision:editor.revision(current),draftRevision:editor.revision(original),action:'rename',sectionKey:original.sections[0].key,fieldPath:['company_name'],label:'Should never replace template'}, {'x-harness-role':'super_admin'});assert.equal(patch.status,409);const [after]=await conn.execute('SELECT schema_json FROM survey_schema WHERE id=7');assert.deepEqual(after,published);const [kept]=await conn.execute('SELECT schema_snapshot FROM company_interviews WHERE id=?',[oldDraft.data.id]);assert.deepEqual(kept[0].schema_snapshot,original);
+  const fresh=await hit('/draft','POST',{country:'ae',schema_version:helper.VERSION});ids.push(fresh.data.id);const allowed=await hit('/editor?country=ae&draftId='+fresh.data.id,'GET',null,{'x-harness-role':'super_admin'});assert.equal(allowed.data.canEdit,true);
+ });
+ await check('preview questions save, reload, upload with limits, submit and display in admin',async()=>{
+  const created=await hit('/draft','POST',{country:'ae',schema_version:helper.VERSION});assert.equal(created.status,201);const record=created.data;ids.push(record.id);assert.equal(record.schema_snapshot.sections.length,2);const headers={'x-interview-token':record.draft_token};
+  assert.equal((await hit('/draft/'+record.id,'PATCH',{verification_data:{website:'www.company.com'}},headers)).status,400);
+  const answers={website:'https://www.company.com',company_name:'Contractor harness',partners:[{phone:'+971501234567'},{},{}],specialist_civil:['General civil work']};assert.equal((await hit('/draft/'+record.id,'PATCH',{verification_data:answers},headers)).status,200);const loaded=await hit('/draft?id='+record.id,'GET',null,headers);assert.deepEqual(loaded.data.draft.verification_data,answers);
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jrN8AAAAASUVORK5CYII=','base64');
+  const upload=(key,type='image/png',bytes=png)=>{const body=new FormData();body.append('field_key',key);body.append('file',new Blob([bytes],{type}),type==='application/pdf'?'test.pdf':'project.png');return hit('/draft/'+record.id+'/attachments','POST',body,headers);};
+  assert.equal((await upload('project_1','application/pdf',Buffer.from('%PDF-1.4 test'))).status,400);assert.equal((await upload('project_1','image/png',Buffer.concat([png,Buffer.alloc(10*1024*1024)]))).status,400);for(let i=0;i<4;i++)assert.equal((await upload('project_1')).status,200);const concurrent=await Promise.all([upload('project_1'),upload('project_1')]);assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,400]);assert.equal((await upload('project_2')).status,200);assert.equal((await hit('/draft/'+record.id+'/submit','POST',{},headers)).status,200);const detail=await hit('/admin/'+record.id,'GET',null,{'x-harness-role':'super_admin'});assert.equal(detail.data.interview.verification_data.company_name,'Contractor harness');assert.equal(detail.data.interview.attachments.length,6);
  });
  console.log(`\n${pass}/${pass} PASS — V7 real HTTP + MySQL persistence/isolation/backup/evidence/audit`);
 } finally {
