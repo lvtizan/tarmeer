@@ -4,9 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { Paperclip, X, FileText } from 'lucide-react';
 import { getDroppedFiles } from '@/lib/dropFiles';
 import { resolveImageUrl } from '@/lib/imageUrl';
-import { prepareImageForUpload } from '@/lib/uploadImageCompression';
+import { prepareImageForUpload, type PreparedImageUpload } from '@/lib/uploadImageCompression';
 import { createPasteZoneRegistry, getPasteFiles, isWithinFileLimit } from '@/lib/uploadPasteRouting';
-import { getUploadResponseError } from '@/lib/uploadResponseError';
+import { xhrPost } from '@/lib/uploadRequest';
 
 // A page can contain a product form behind a project dialog. Pasting must still
 // work without first focusing a zone, but exactly one (the latest mounted) zone
@@ -42,33 +42,6 @@ function isPdf(url: string) { return url.toLowerCase().includes('.pdf'); }
 
 const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB per chunk
 
-function xhrPost(url: string, headers: Record<string, string>, formData: FormData, onProgress?: (p: number) => void): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', url);
-    xhr.timeout = 45000; // 45s timeout 防止网络挂起无限等待
-    Object.keys(headers).forEach(k => xhr.setRequestHeader(k, headers[k]));
-    if (onProgress) xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100)); };
-    xhr.onload = () => {
-      if (xhr.status < 200 || xhr.status >= 300) {
-        const error = new Error(getUploadResponseError(xhr.status, xhr.responseText));
-        (error as { status?: number }).status = xhr.status;
-        reject(error);
-        return;
-      }
-      try {
-        const res = JSON.parse(xhr.responseText);
-        resolve(res);
-      } catch {
-        reject(new Error('上传成功响应格式异常，未能读取文件地址，请重新上传。'));
-      }
-    };
-    xhr.ontimeout = () => reject(new Error('上传请求超时（网络不稳定），请检查网络后重试。'));
-    xhr.onerror = () => reject(new Error('网络连接失败，文件未上传，请检查网络后重试。'));
-    xhr.send(formData);
-  });
-}
-
 export default function ImageUploadZone({
   value,
   onUpload,
@@ -91,6 +64,19 @@ export default function ImageUploadZone({
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
   const [err, setErr] = useState('');
+  const [failedFiles, setFailedFiles] = useState<File[]>([]);
+  const failedUploadsRef = useRef(new Map<File, string>());
+  const uploadTarget = `${uploadUrl}\n${chunkUploadUrl || ''}`;
+  const targetRef = useRef({ key: uploadTarget, generation: 0 });
+  if (targetRef.current.key !== uploadTarget) {
+    targetRef.current = { key: uploadTarget, generation: targetRef.current.generation + 1 };
+  }
+  const targetGeneration = targetRef.current.generation;
+  useEffect(() => {
+    failedUploadsRef.current.clear();
+    setFailedFiles([]);
+    setErr('');
+  }, [targetGeneration]);
   const fileRef = useRef<HTMLInputElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
   const uploadingRef = useRef(false); // 供 paste/并发判断,避免与进行中的上传并发导致状态错乱
@@ -124,8 +110,7 @@ export default function ImageUploadZone({
     return a === 'application/pdf' && fileExt(file.name) === 'pdf';
   });
 
-  const uploadOne = async (sourceFile: File, onProgressCb?: (p: number) => void): Promise<{ url: string; original_name?: string }> => {
-    const prepared = await prepareImageForUpload(sourceFile);
+  const uploadOne = async (prepared: PreparedImageUpload, onProgressCb?: (p: number) => void): Promise<{ url: string; original_name?: string }> => {
     const file = prepared.file;
     // A compressed image is already kept below the safe single-request budget.
     // Send it normally so the server infers its extension from the actual WebP/JPEG
@@ -157,17 +142,18 @@ export default function ImageUploadZone({
   };
 
   const uploadOneWithRetry = async (sourceFile: File, onProgressCb?: (p: number) => void): Promise<{ url: string; original_name?: string }> => {
+    const prepared = await prepareImageForUpload(sourceFile);
     try {
-      return await uploadOne(sourceFile, onProgressCb);
+      return await uploadOne(prepared, onProgressCb);
     } catch (err) {
       const status = (err as { status?: number })?.status;
       const message = err instanceof Error ? err.message : String(err);
-      if ((status !== undefined && status >= 400 && status < 500) || /HTTP 4\d\d|超过|不支持|格式异常|无法处理/.test(message)) {
+      if ((status !== undefined && status >= 400 && status < 500) || /HTTP 4\d\d|不支持|格式异常|无法处理/.test(message)) {
         throw err;
       }
       // 网络抖动/超时等瞬态错误，延迟 1 秒后自动重试一次
       await new Promise(resolve => setTimeout(resolve, 1000));
-      return await uploadOne(sourceFile, onProgressCb);
+      return await uploadOne(prepared, onProgressCb);
     }
   };
 
@@ -186,6 +172,7 @@ export default function ImageUploadZone({
       }
       return;
     }
+    const generation = targetRef.current.generation;
     uploadingRef.current = true;
     setUploading(true);
     onUploadStateChange?.(true);
@@ -218,15 +205,18 @@ export default function ImageUploadZone({
 
       let nextIndex = 0;
       const runWorker = async () => {
-        while (nextIndex < valid.length) {
+        while (nextIndex < valid.length && targetRef.current.generation === generation) {
           const idx = nextIndex++;
           const file = valid[idx];
           try {
             const data = await uploadOneWithRetry(file, (p) => {
-              fileProgresses[idx] = p;
+              if (targetRef.current.generation !== generation) return;
+              fileProgresses[idx] = Math.min(p, 99);
               updateProgressUI();
             });
+            if (targetRef.current.generation !== generation) return;
             if (!data.url) throw new Error('上传服务未返回文件地址，请重新上传。');
+            failedUploadsRef.current.delete(file);
             uploadedUrls[idx] = data.url;
             const completedUrls = uploadedUrls.filter((u): u is string => Boolean(u));
             const merged = [...initialValue, ...completedUrls];
@@ -234,11 +224,11 @@ export default function ImageUploadZone({
             onUpload(merged);
             if (onFileMeta) onFileMeta({ original_name: data.original_name || file.name });
           } catch (error) {
-            failures.push(`${file.name}（${error instanceof Error ? error.message : '上传失败'}）`);
+            if (targetRef.current.generation === generation) failedUploadsRef.current.set(file, `${file.name}（${error instanceof Error ? error.message : '上传失败'}）`);
           } finally {
             completedCount++;
             fileProgresses[idx] = 100;
-            updateProgressUI();
+            if (targetRef.current.generation === generation) updateProgressUI();
           }
         }
       };
@@ -248,6 +238,9 @@ export default function ImageUploadZone({
       const workers = Array.from({ length: workerCount }, () => runWorker());
       await Promise.all(workers);
 
+      if (targetRef.current.generation !== generation) return;
+      failures.push(...failedUploadsRef.current.values());
+      setFailedFiles(Array.from(failedUploadsRef.current.keys()));
       if (failures.length > 0) setErr(`以下文件未上传：${failures.join('、')}`);
     } finally {
       uploadingRef.current = false;
@@ -372,7 +365,13 @@ export default function ImageUploadZone({
         )}
       </button>
 
-      {err && <p className="text-xs text-red-500">{err}</p>}
+      {err && <p role="alert" className="text-xs text-red-500">{err}</p>}
+      {failedFiles.length > 0 && <button
+        type="button"
+        disabled={disabled || uploading}
+        onClick={() => void uploadMany(failedFiles)}
+        className="min-h-11 rounded-xl bg-[#b8864a] px-4 py-2 text-sm text-white hover:bg-[#a07640] disabled:opacity-40"
+      >重试失败的 {failedFiles.length} 个文件</button>}
       <input ref={fileRef} type="file" accept={accept} multiple className="hidden" onChange={handleChange} />
     </div>
   );

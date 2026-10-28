@@ -93,3 +93,7 @@ ssh tarmeer-production 'pm2 restart tarmeer-api'
 - **根因**：PM2 缓存的 PATH 为 `/usr/bin:/bin`，没有服务器实际使用的 NVM Node 目录。
 - **修复**：SSH 验证 `command -v node` 和运行路径后，以正确环境执行 `pm2 restart tarmeer-next --update-env`，再确认 PM2 online、进程持续运行及公开登录页 HTTP 200。
 - **预防规则**：部署前检查目标进程的 PM2 PATH 是否包含已验证 Node 目录；缺失时在已验证 SSH 环境中更新该进程环境。重启命令返回成功不等于应用启动成功，必须再验收 HTTP 和真实浏览器。
+
+## 2026-10-28 生产连接复验
+- 本机 `~/.ssh/tarmeer_ecs` 已恢复（600），真实只读预检通过；当前以该已验证私钥连接，配置入口 `~/.config/tarmeer/deploy.env` 已重建为非秘密的 host/user/key 路径配置（600）。此前缺失状态仅作历史记录，后续仍先跑预检。
+- 本次预检确认前端 cwd `/tarmeer/tarmeer_web_next`，前后端均 online。不得输出私钥内容，也不再尝试已知被拒绝的其它密钥。

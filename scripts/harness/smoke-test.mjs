@@ -281,6 +281,13 @@ try {
   ng('访谈记录详情粘性定位、双列栅格与修改历史解析', commandTail(e));
 }
 
+try {
+  execSync('node --test src/lib/uploadRequest.test.mjs src/lib/uploadImageCompression.test.mjs scripts/harness/image-upload-recovery.mjs', { cwd: ROOT, stdio: 'pipe', timeout: 30000 });
+  ok('弱网上传时限、停滞中断、失败单独重试及供应商切换隔离');
+} catch (e) {
+  ng('批量图片上传恢复', commandTail(e));
+}
+
 // ─── 静态守卫: 禁止硬编码权威枚举(规则8) ──────────────────────────────────
 // 用户侧展示的"分类/枚举"必须从权威源(后台管理的 DB,经 /api/public/... 接口)拉取,
 // 不得硬编码,否则会与管理后台不一致(供应商品类踩坑 2026-06-30)。

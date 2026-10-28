@@ -75,3 +75,6 @@ ssh -i ~/.ssh/tarmeer_ecs root@47.91.108.104 \
 - **根因**：PM2 缓存的 PATH 为 `/usr/bin:/bin`，没有服务器实际使用的 NVM Node 目录。
 - **修复**：SSH 验证 `command -v node` 和运行路径后，以正确环境执行 `pm2 restart tarmeer-next --update-env`，再确认 PM2 online、进程持续运行及公开登录页 HTTP 200。
 - **预防规则**：部署前检查目标进程的 PM2 PATH 是否包含已验证 Node 目录；缺失时在已验证 SSH 环境中更新该进程环境。重启命令返回成功不等于应用启动成功，必须再验收 HTTP 和真实浏览器。
+
+## 2026-10-28 连接状态更新
+当前 `~/.ssh/tarmeer_ecs` 已恢复并经只读预检验证，仓库外 `~/.config/tarmeer/deploy.env` 保存 host/user/key 路径。旧“私钥缺失”是历史状态；发布仍必须执行预检、备份、build 和 BUILD_ID 验收。
