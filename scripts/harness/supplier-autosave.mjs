@@ -37,11 +37,12 @@ try{
  check((await hit(1,'PUT',{revision:-1,data:draft})).status,400);
  check((await hit(1,'PUT',{revision:2,data:{text:'a'.repeat(100001)}})).status,400);
  check((await hit(1,'PUT',{revision:2,data:{images:['/uploads/suppliers/s2/photos/x.webp']}})).status,400);
+ for(const data of [{extras:null},{product:null},{images:null},{extras:{specs:[null]}},{extras:{certifications:[{}]}}])check((await hit(1,'PUT',{revision:2,data})).status,400);
  check((await hit(1,'PUT',{revision:2,data:{}})).status,200);check((await hit(1)).data.data,{});
  // Exercise real queue ordering under concurrent edits and a failed write.
  const writes=[];let release;const q=createDraftQueue(async value=>{writes.push(value);if(value===1)await new Promise(r=>{release=r;});});q.enqueue(1);const saving=q.flush();q.enqueue(2);q.enqueue(3);release();await saving;check(writes,[1,3]);
  let fail=true;const recovery=createDraftQueue(async()=>{if(fail)throw Error('offline');});recovery.enqueue('kept');await assert.rejects(recovery.flush(),/offline/);check(recovery.hasPending(),true);fail=false;await recovery.flush();check(recovery.hasPending(),false);
- const page=readFileSync(path.join(root,'src/app/admin/suppliers/[id]/page.tsx'),'utf8');check(page.includes("Save draft','保存草稿"),true);check(page.includes('onUpload={receiveProductImages}'),true);check(page.includes('role="status"'),true);
+ const page=readFileSync(path.join(root,'src/app/admin/suppliers/[id]/page.tsx'),'utf8');check(page.includes('<SupplierDraftPanel draft={productDraft}'),true);check(page.includes('onUpload={receiveProductImages}'),true);check(readFileSync(path.join(root,'src/components/admin/SupplierDraftPanel.tsx'),'utf8').includes('role="status"'),true);
  const routes=readFileSync(path.join(root,'server/dist/routes/admin.js'),'utf8');check(/drafts\/:scope'.*requirePermission\)\('can_view_suppliers'\)/.test(routes),true);
  console.log(`supplier-autosave: ${passed}/${passed} PASS`);
 }finally{await new Promise(r=>server?server.close(r):r());await db.query(`DROP DATABASE IF EXISTS ${name}`);await db.end();rmSync(temp,{recursive:true,force:true});}

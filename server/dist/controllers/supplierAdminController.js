@@ -702,7 +702,13 @@ async function adminAddProduct(req, res) {
         // Draft retries consume the same owned upload once, even after a lost response.
         if (req.body.from_draft === true) {
             const [existing] = await database_1.default.execute('SELECT * FROM supplier_products WHERE supplier_profile_id = ? AND image_url = ? LIMIT 1', [id, image_url]);
-            if (existing[0]) return res.json({product:existing[0]});
+            if (existing[0]) {
+                // A retry can contain edits made after an uncertain response. Apply them to the
+                // existing product rather than returning stale fields and clearing the draft.
+                const originalProductId=req.params.productId;
+                req.params.productId=String(existing[0].id);
+                try{return await adminUpdateProduct(req,res);}finally{req.params.productId=originalProductId;}
+            }
         }
         // 新增时也落规格/认证/应用场景(与编辑一致);数组→JSON串(空→'[]'),未传→null
         const jarr = (x) => Array.isArray(x) ? JSON.stringify(x) : null;
@@ -896,9 +902,10 @@ async function adminUploadProjectImage(req, res) {
     }
 }
 async function adminAddProject(req, res) {
+    const writeDb=req.supplierWriteConnection||database_1.default;
     try {
         const supplierId = Number(req.params.id);
-        const [supRows] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [supplierId]);
+        const [supRows] = await writeDb.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [supplierId]);
         if (supRows.length === 0)
             return res.status(404).json({ error: 'Supplier not found.' });
         const { title, description, location, area_sqm, budget, year, images } = req.body;
@@ -910,7 +917,7 @@ async function adminAddProject(req, res) {
             if (!await supplierImagePathIsOwned(supRows[0], url, 'projects'))
                 return res.status(400).json({ error: 'Project images must be uploaded for this supplier.' });
         }
-        const [result] = await database_1.default.execute(`INSERT INTO supplier_projects
+        const [result] = await writeDb.execute(`INSERT INTO supplier_projects
          (supplier_profile_id, title, description, location, area_sqm, budget, year, images, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`, [
             supplierId,
@@ -923,7 +930,7 @@ async function adminAddProject(req, res) {
             JSON.stringify(imgs),
         ]);
         const insertId = result.insertId;
-        const [created] = await database_1.default.execute('SELECT * FROM supplier_projects WHERE id = ?', [insertId]);
+        const [created] = await writeDb.execute('SELECT * FROM supplier_projects WHERE id = ?', [insertId]);
         await logSupplierAction(req, 'supplier_project_add', supplierId, `供应商#${supplierId} 新增项目#${insertId}`);
         res.status(201).json({ project: created[0] });
     }
@@ -933,9 +940,10 @@ async function adminAddProject(req, res) {
     }
 }
 async function adminUpdateProject(req, res) {
+    const writeDb=req.supplierWriteConnection||database_1.default;
     try {
         const { id, projectId } = req.params;
-        const [rows] = await database_1.default.execute('SELECT id, images FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?', [projectId, id]);
+        const [rows] = await writeDb.execute('SELECT id, images FROM supplier_projects WHERE id = ? AND supplier_profile_id = ?', [projectId, id]);
         if (rows.length === 0)
             return res.status(404).json({ error: 'Project not found.' });
         const { title, description, location, area_sqm, budget, year, images } = req.body;
@@ -943,7 +951,7 @@ async function adminUpdateProject(req, res) {
             return res.status(400).json({ error: 'Title is required.' });
         const imgs = images === undefined ? [] : images;
         if (!validProjectImageList(imgs)) return res.status(400).json({ error: `A project supports up to ${MAX_ADMIN_PROJECT_IMAGES} images.` });
-        const [profiles] = await database_1.default.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [id]);
+        const [profiles] = await writeDb.execute('SELECT id, slug FROM supplier_profiles WHERE id = ?', [id]);
         if (profiles.length === 0) return res.status(404).json({ error: 'Supplier not found.' });
         let previousImages = [];
         try { previousImages = Array.isArray(rows[0].images) ? rows[0].images : JSON.parse(rows[0].images || '[]'); } catch { previousImages = []; }
@@ -952,7 +960,7 @@ async function adminUpdateProject(req, res) {
             if (!previousSet.has(url) && !await supplierImagePathIsOwned(profiles[0], url, 'projects'))
                 return res.status(400).json({ error: 'Project images must be uploaded for this supplier.' });
         }
-        await database_1.default.execute(`UPDATE supplier_projects
+        await writeDb.execute(`UPDATE supplier_projects
        SET title=?, description=?, location=?, area_sqm=?, budget=?, year=?, images=?
        WHERE id=?`, [
             title.trim(),
@@ -964,7 +972,7 @@ async function adminUpdateProject(req, res) {
             JSON.stringify(imgs),
             projectId,
         ]);
-        const [updated] = await database_1.default.execute('SELECT * FROM supplier_projects WHERE id = ?', [projectId]);
+        const [updated] = await writeDb.execute('SELECT * FROM supplier_projects WHERE id = ?', [projectId]);
         await logSupplierAction(req, 'supplier_project_update', id, `供应商#${id} 编辑项目#${projectId}`);
         res.json({ project: updated[0] });
     }

@@ -19,11 +19,12 @@ const db={execute:async(sql,args)=>{
  throw Error(sql);
 }};
 const script=source.slice(source.indexOf('async function adminAddProduct('),source.indexOf('async function adminDeleteProduct('));
-const handler=vm.runInNewContext(script+';adminAddProduct',{database_1:{default:db},supplierImagePathIsOwned:async()=>true,productPriceRange_1:{parseProductPrice:()=>({kind:'valid',value:1}),validateProductPriceRange:()=>null},SUPPORTED_PRICE_CURRENCIES:['AED'],logSupplierAction:async()=>{},console,require:()=>({validateProduct:async()=>null,validatePriceContext:()=>null})});
-const hit=async()=>{let payload;await withCatalogChunkLock(pool,1,()=>handler({params:{id:'1'},body:{from_draft:true,image_url:'/uploads/owned.webp',price_currency:'AED'}},{status(){return this;},json(data){payload=data;}}),'admin-product');return payload;};
+const handler=vm.runInNewContext(script+';adminAddProduct',{database_1:{default:db},supplierImagePathIsOwned:async()=>true,productPriceRange_1:{parseProductPrice:()=>({kind:'valid',value:1}),validateProductPriceRange:()=>null},adminUpdateProduct:async(req,res)=>{const product=products.find(p=>p.id===Number(req.params.productId));product.title=req.body.title;return res.json({product});},SUPPORTED_PRICE_CURRENCIES:['AED'],logSupplierAction:async()=>{},console,require:()=>({validateProduct:async()=>null,validatePriceContext:()=>null})});
+const hit=async(title='Original')=>{let payload;await withCatalogChunkLock(pool,1,()=>handler({params:{id:'1'},body:{from_draft:true,title,image_url:'/uploads/owned.webp',price_currency:'AED'}},{status(){return this;},json(data){payload=data;}}),'admin-product');return payload;};
 try {
  const first=await hit(); // Simulate successful POST followed by failed draft acknowledgement.
  const retry=await hit();assert.equal(first.product.id,retry.product.id);assert.equal(inserts,1);
+ const edited=await hit('Edited after lost response');assert.equal(edited.product.title,'Edited after lost response');assert.equal(inserts,1);
  const simultaneous=await Promise.all([hit(),hit()]);assert.equal(simultaneous[0].product.id,simultaneous[1].product.id);assert.equal(inserts,1);
  let active=0,max=0;
  await Promise.all([1,2].map(()=>withCatalogChunkLock(pool,2,async()=>{active++;max=Math.max(max,active);await new Promise(r=>setTimeout(r,20));active--;},'admin-catalog')));
@@ -32,5 +33,5 @@ try {
  assert.match(routes,/supplierWriteLock\('admin-product', supplierAdminController_1.adminAddProduct\)/);
  assert.match(routes,/supplierWriteLock\('admin-catalog', supplierAdminController_1.adminAddCatalog\)/);
  assert.match(readFileSync('server/dist/lib/adminCatalogChunks.js','utf8'),/},'admin-catalog'\)/);
- console.log('supplier-save-retries: 9/9 PASS');
+ console.log('supplier-save-retries: 11/11 PASS');
 }finally{await pool.end();}

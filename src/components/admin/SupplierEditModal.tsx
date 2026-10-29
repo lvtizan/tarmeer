@@ -10,6 +10,13 @@ import { showConfirm } from '@/components/ui/ConfirmModal';
 import { getCountry } from '@/lib/country';
 import { PRODUCT_CURRENCIES, PRODUCT_UNITS, formatProductPrice, buildProductPriceSubmission } from '@/lib/supplierProductUnits';
 
+import { useAdmin } from '@/contexts/AdminContext';
+import { useSupplierDraft } from '@/hooks/useSupplierDraft';
+import SupplierDraftPanel from '@/components/admin/SupplierDraftPanel';
+import { useUploadNavigationGuard } from '@/hooks/useUploadNavigationGuard';
+import { prepareImageForUpload } from '@/lib/uploadImageCompression';
+import { xhrPost } from '@/lib/uploadRequest';
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface SupplierData {
   id: number;
@@ -34,6 +41,10 @@ interface Product {
   category: string | null;
   image_url: string;
   sort_order: number;
+  description?: string | null;
+  specs?: unknown;
+  certifications?: unknown;
+  application_scenes?: unknown;
   price?: number | null;
   price_max?: number | null;
   price_unit?: string | null;
@@ -58,16 +69,23 @@ interface Props {
 
 const labelCls = 'block text-xs font-medium text-stone-500 mb-1';
 const inputCls =
-  'w-full h-9 px-3 rounded-lg border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
+  'w-full h-9 px-3 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition';
+
+function draftArray<T>(raw: unknown): T[] {
+  if (Array.isArray(raw)) return raw as T[];
+  try { const parsed = typeof raw === 'string' ? JSON.parse(raw) : null; return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+}
 
 // ── ProductAddModal ────────────────────────────────────────────────────────────
 function ProductAddModal({
   supplierId,
+  country,
   categoryOptions,
   onClose,
   onAdded,
 }: {
   supplierId: number;
+  country: string;
   categoryOptions: { value: string; label: string }[];
   onClose: () => void;
   onAdded: (product: Product) => void;
@@ -85,26 +103,51 @@ function ProductAddModal({
   const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | 'currency' | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { admin } = useAdmin();
+  const draftValue = { title, titleEn, category, imageUrl, price, priceMax, priceUnit, priceCurrency, priceFrom };
+  const latestDraftValue = useRef(draftValue);
+  latestDraftValue.current = draftValue;
+  const baseline = useRef(draftValue).current;
+  const draft = useSupplierDraft({ supplierId, adminId: admin?.id, country, scope: 'quick-product-new', value: draftValue, fallback: baseline, restore: saved => {
+    const next = { ...baseline, ...saved };
+    setTitle(next.title); setTitleEn(next.titleEn); setCategory(next.category);
+    setPrice(next.price); setPriceMax(next.priceMax); setPriceUnit(next.priceUnit); setPriceCurrency(next.priceCurrency); setPriceFrom(next.priceFrom);
+    setImageUrl(next.imageUrl);
+  } });
+
   const fileRef = useRef<HTMLInputElement>(null);
-  const busy = uploading || saving;
-  const requestClose = () => { if (!busy) onClose(); };
+  const busy = uploading || saving || !draft.ready;
+  useUploadNavigationGuard({ blocked: uploading || saving, message: '产品正在上传或保存，请稍候。' });
+  const closeInFlight = useRef(false);
+  const requestClose = async () => {
+    if (uploading || saving || draft.recovering || closeInFlight.current) return;
+    if (!draft.ready) { onClose(); return; }
+    closeInFlight.current = true;
+    setSaving(true);
+    try {
+      await draft.save();
+      onClose();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '草稿保存失败，请重试后关闭。';
+      showToast(message, 'error');
+    } finally {
+      closeInFlight.current = false;
+      setSaving(false);
+    }
+  };
 
   const handleUpload = async (file: File) => {
     if (busy) return;
     setUploading(true);
     try {
       const fd = new FormData();
-      fd.append('file', file, file.name);
+      const prepared = await prepareImageForUpload(file, 'product');
+      fd.append('file', prepared.file, prepared.originalName);
       const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
       const API_BASE = (process.env.NEXT_PUBLIC_API_URL?.trim() || '/api') + '/admin';
-      const res = await fetch(`${API_BASE}/suppliers/${supplierId}/product-image`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: fd,
-      });
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
+      const data = await xhrPost(`${API_BASE}/suppliers/${supplierId}/product-image`, token ? { Authorization: `Bearer ${token}` } : {}, fd) as {url:string};
       setImageUrl(data.url);
+      await draft.save({ ...latestDraftValue.current, imageUrl: data.url });
     } catch (e: unknown) {
       showToast((e instanceof Error ? e.message : null) || 'Upload failed', 'error');
     } finally {
@@ -129,13 +172,15 @@ function ProductAddModal({
     }
     setSaving(true);
     try {
+      await draft.save();
       const data = await adminApi.request(`/suppliers/${supplierId}/products`, {
         method: 'POST',
         body: JSON.stringify({
           title: title.trim() || null, title_translated: titleEn.trim() || null, category: category || null, image_url: imageUrl,
-          ...priceSubmission.payload,
+          from_draft: true, ...priceSubmission.payload,
         }),
       }) as { product: Product };
+      await draft.complete();
       onAdded(data.product);
       showToast('产品已添加', 'success');
     } catch (e: unknown) {
@@ -150,9 +195,9 @@ function ProductAddModal({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
         <div className="flex items-center justify-between p-5 border-b border-stone-100">
           <h3 className="text-base font-bold text-[#2c2c2c]">添加产品</h3>
-          <button onClick={requestClose} disabled={busy} className="text-stone-400 hover:text-stone-600 p-1 disabled:opacity-40"><X className="w-5 h-5" /></button>
+          <button onClick={requestClose} disabled={uploading || saving} className="text-stone-400 hover:text-stone-600 p-1 disabled:opacity-40"><X className="w-5 h-5" /></button>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-5"><SupplierDraftPanel draft={draft} value={draftValue} disabled={saving || uploading || !draft.ready} /><fieldset disabled={!draft.ready || saving || uploading} className="space-y-4">
           <div>
             <label className={labelCls}>图片 *</label>
             {imageUrl ? (
@@ -214,12 +259,12 @@ function ProductAddModal({
           </div>
           {priceError && <p id="quick-add-product-price-error" role="alert" className="text-xs text-red-600">{priceError}</p>}
           <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} />未填写最高价时显示为起价</label>
-        </div>
+        </fieldset></div>
         <div className="flex justify-end gap-2 px-5 pb-5">
-          <button onClick={requestClose} disabled={busy} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition disabled:opacity-40">取消</button>
+          <button onClick={requestClose} disabled={uploading || saving} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition disabled:opacity-40">取消</button>
           <button
             onClick={handleSave}
-            disabled={saving || uploading}
+            disabled={saving || uploading || !draft.ready}
             className="px-5 h-9 text-sm bg-[#b8864a] text-white rounded-lg hover:bg-[#a07540] disabled:opacity-50 font-medium transition"
           >
             {saving ? '保存中...' : '保存'}
@@ -233,12 +278,14 @@ function ProductAddModal({
 // ── ProductEditInlineModal ─────────────────────────────────────────────────────
 function ProductEditInlineModal({
   supplierId,
+  country,
   product,
   categoryOptions,
   onClose,
   onSaved,
 }: {
   supplierId: number;
+  country: string;
   product: Product;
   categoryOptions: { value: string; label: string }[];
   onClose: () => void;
@@ -255,8 +302,38 @@ function ProductEditInlineModal({
   const [priceError, setPriceError] = useState('');
   const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | 'currency' | null>(null);
   const [saving, setSaving] = useState(false);
+  const { admin } = useAdmin();
+  const [preserved, setPreserved] = useState({ description: product.description || '', extras: { specs: draftArray<{label:string;value:string}>(product.specs), certifications: draftArray<string>(product.certifications), application_scenes: draftArray<string>(product.application_scenes), certificationInput: '' } });
+  const draftValue = { title, titleEn, category, ...preserved, price, priceMax, priceUnit, priceCurrency, priceFrom };
+  const baseline = useRef(draftValue).current;
+  const draft = useSupplierDraft({ supplierId, adminId: admin?.id, country, scope: `product-${product.id}`, value: draftValue, fallback: baseline, restore: saved => {
+    const next = { ...baseline, ...saved };
+    setTitle(next.title); setTitleEn(next.titleEn); setCategory(next.category);
+    setPrice(next.price); setPriceMax(next.priceMax); setPriceUnit(next.priceUnit); setPriceCurrency(next.priceCurrency); setPriceFrom(next.priceFrom);
+    setPreserved({ description: next.description, extras: { ...baseline.extras, ...next.extras } });
+  } });
+  useUploadNavigationGuard({ blocked: saving, message: '产品正在保存，请稍候。' });
+  const closeInFlight = useRef(false);
+  const requestClose = async () => {
+    if (saving || draft.recovering || closeInFlight.current) return;
+    if (!draft.ready) { onClose(); return; }
+    closeInFlight.current = true;
+    setSaving(true);
+    try {
+      await draft.save();
+      onClose();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '草稿保存失败，请重试后关闭。';
+      showToast(message, 'error');
+    } finally {
+      closeInFlight.current = false;
+      setSaving(false);
+    }
+  };
+
 
   const handleSave = async () => {
+    if (saving || !draft.ready) return;
     const priceDirty = price !== (product.price != null ? String(product.price) : '')
       || priceMax !== (product.price_max != null ? String(product.price_max) : '')
       || priceUnit !== (product.price_unit || '') || priceCurrency !== (product.price_currency || '')
@@ -274,13 +351,17 @@ function ProductEditInlineModal({
     }
     setSaving(true);
     try {
+      await draft.save();
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
         method: 'PUT',
         body: JSON.stringify({
           title: title.trim() || null, title_translated: titleEn.trim() || null, category: category || null,
+          description: preserved.description || null,
+          specs: preserved.extras.specs, certifications: [...new Set([...preserved.extras.certifications, preserved.extras.certificationInput?.trim() || ''].filter(Boolean))], application_scenes: preserved.extras.application_scenes,
           ...priceSubmission.payload,
         }),
       }) as { product: Product };
+      await draft.complete();
       onSaved(data.product);
       showToast('产品已更新', 'success');
     } catch (e: unknown) {
@@ -295,9 +376,9 @@ function ProductEditInlineModal({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
         <div className="flex items-center justify-between p-5 border-b border-stone-100">
           <h3 className="text-base font-bold text-[#2c2c2c]">编辑产品</h3>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
+          <button onClick={requestClose} disabled={saving} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-5"><SupplierDraftPanel draft={draft} value={draftValue} disabled={saving || !draft.ready} /><fieldset disabled={!draft.ready || saving} className="space-y-4">
           <div>
             <label htmlFor="quick-edit-product-original-title" className={labelCls}>原名称 / 中文名称</label>
             <input id="quick-edit-product-original-title" className={inputCls} value={title} onChange={e => setTitle(e.target.value)} />
@@ -329,12 +410,12 @@ function ProductEditInlineModal({
           </div>
           {priceError && <p id="quick-edit-product-price-error" role="alert" className="text-xs text-red-600">{priceError}</p>}
           <label className="flex items-center gap-2 text-xs text-stone-600"><input type="checkbox" checked={priceFrom} onChange={e => setPriceFrom(e.target.checked)} />未填写最高价时显示为起价</label>
-        </div>
+        </fieldset></div>
         <div className="flex justify-end gap-2 px-5 pb-5">
-          <button onClick={onClose} className="px-4 h-9 text-sm text-stone-600 rounded-lg hover:bg-stone-100 transition">取消</button>
+          <button onClick={requestClose} disabled={saving} className="px-4 h-9 text-sm text-stone-600 rounded-lg hover:bg-stone-100 transition">取消</button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || !draft.ready}
             className="px-5 h-9 text-sm bg-[#b8864a] text-white rounded-lg hover:bg-[#a07540] disabled:opacity-50 font-medium transition"
           >
             {saving ? '保存中...' : '保存'}
@@ -362,6 +443,28 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const descRef = useRef<HTMLTextAreaElement>(null);
+  const { admin } = useAdmin();
+  const [baseline, setBaseline] = useState<Partial<SupplierData>>({});
+  const draft = useSupplierDraft({ supplierId, adminId: admin?.id, country: baseline.country, scope: 'supplier-edit', value: data, fallback: baseline, enabled: !loading && !!baseline.country, restore: saved => setData({ ...baseline, ...saved }) });
+  useUploadNavigationGuard({ blocked: saving, message: '供应商正在保存，请稍候。' });
+  const closeInFlight = useRef(false);
+  const requestClose = async () => {
+    if (saving || editingProduct || showAddProduct || draft.recovering || closeInFlight.current) return;
+    if (!draft.ready) { onClose(); return; }
+    closeInFlight.current = true;
+    setSaving(true);
+    try {
+      await draft.save();
+      onClose();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '草稿保存失败，请重试后关闭。';
+      setError(message);
+      showToast(message, 'error');
+    } finally {
+      closeInFlight.current = false;
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     const el = descRef.current;
@@ -383,6 +486,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
       }
       if (!Array.isArray(s.categories)) s.categories = [];
       setData(s);
+      setBaseline(s);
       setProducts(d.products || []);
       // 只保留启用项;大类(parent_value=null) + 子类都留在树里,picker 与产品下拉共用
       const tree = (pc.categories || []).filter((c) => c.is_enabled !== 0);
@@ -403,6 +507,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
   };
 
   const handleSave = async () => {
+    if (saving || !draft.ready) return;
     setSaving(true);
     setError('');
     try {
@@ -419,10 +524,12 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
         website: data.website,
         status: data.status,
       };
+      await draft.save();
       await adminApi.request(`/suppliers/${supplierId}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
+      await draft.complete();
       onSaved();
       onClose();
     } catch (e: unknown) {
@@ -466,7 +573,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={requestClose}>
         <div
           className="bg-white rounded-2xl w-[50vw] min-w-[640px] max-w-[900px] h-[80vh] flex flex-col shadow-xl"
           onClick={e => e.stopPropagation()}
@@ -487,7 +594,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                 </button>
               ))}
             </div>
-            <button onClick={onClose} className="p-1 hover:bg-stone-100 rounded-lg transition">
+            <button onClick={requestClose} className="p-1 hover:bg-stone-100 rounded-lg transition">
               <X className="w-5 h-5 text-stone-500" />
             </button>
           </div>
@@ -498,7 +605,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
             )}
 
             {activeTab === 'info' && (
-              <div className="space-y-4">
+              <div><SupplierDraftPanel draft={draft} value={data} disabled={saving || !draft.ready} /><fieldset disabled={!draft.ready || saving} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>公司名称</label>
@@ -555,7 +662,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                   <label className={labelCls}>描述</label>
                   <textarea
                     ref={descRef}
-                    className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-stone-50/80 text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none overflow-hidden"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-white text-sm text-[#1c1917] placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15 focus:border-[#B8864A] focus:bg-white transition resize-none overflow-hidden"
                     style={{ minHeight: '120px' }}
                     value={data.description || ''}
                     onChange={e => set('description', e.target.value)}
@@ -668,7 +775,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
                     </div>
                   </div>
                 )}
-              </div>
+              </fieldset></div>
             )}
 
             {activeTab === 'products' && (
@@ -724,12 +831,12 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
 
           {activeTab === 'info' && (
             <div className="flex-shrink-0 border-t border-stone-200 px-6 py-4 flex items-center justify-end gap-3">
-              <button onClick={onClose} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition">
+              <button onClick={requestClose} className="px-4 h-9 text-sm text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition">
                 取消
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || !draft.ready}
                 className="px-5 h-9 text-sm bg-[#b8864a] text-white rounded-lg hover:bg-[#a07540] disabled:opacity-50 font-medium transition"
               >
                 {saving ? '保存中…' : '保存'}
@@ -742,6 +849,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
       {editingProduct && (
         <ProductEditInlineModal
           supplierId={supplierId}
+          country={baseline.country || ''}
           product={editingProduct}
           categoryOptions={productCats}
           onClose={() => setEditingProduct(null)}
@@ -754,6 +862,7 @@ export default function SupplierEditModal({ supplierId, onClose, onSaved }: Prop
       {showAddProduct && (
         <ProductAddModal
           supplierId={supplierId}
+          country={baseline.country || ''}
           categoryOptions={productCats}
           onClose={() => setShowAddProduct(false)}
           onAdded={product => {

@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
 import { useSupplierDraft } from '@/hooks/useSupplierDraft';
+import { useUploadNavigationGuard } from '@/hooks/useUploadNavigationGuard';
+import SupplierDraftPanel from '@/components/admin/SupplierDraftPanel';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { getCountry } from '@/lib/country';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -73,11 +75,12 @@ interface ProductSpecRow { label: string; value: string }
 interface ProductExtraFields {
   specs: ProductSpecRow[];
   certifications: string[];
+  certificationInput?: string;
   application_scenes: string[];
 }
 
 function emptyExtraFields(): ProductExtraFields {
-  return { specs: [], certifications: [], application_scenes: [] };
+  return { specs: [], certifications: [], certificationInput: '', application_scenes: [] };
 }
 
 /** 后端可能返回 JSON 字符串或已 parse 的数组，两种都兼容 */
@@ -94,6 +97,7 @@ function parseJsonArray<T>(raw: unknown): T[] {
 
 function productToExtraFields(p: { specs?: unknown; certifications?: unknown; application_scenes?: unknown }): ProductExtraFields {
   return {
+    certificationInput:'',
     specs: parseJsonArray<ProductSpecRow>(p.specs).map(s => ({ label: String(s?.label ?? ''), value: String(s?.value ?? '') })),
     certifications: parseJsonArray<string>(p.certifications).map(String),
     application_scenes: parseJsonArray<string>(p.application_scenes).map(String),
@@ -104,7 +108,7 @@ function productToExtraFields(p: { specs?: unknown; certifications?: unknown; ap
 function cleanExtraFields(e: ProductExtraFields): ProductExtraFields {
   return {
     specs: e.specs.map(s => ({ label: s.label.trim(), value: s.value.trim() })).filter(s => s.label && s.value),
-    certifications: e.certifications.map(c => c.trim()).filter(Boolean),
+    certifications: [...new Set([...e.certifications, e.certificationInput || ''].map(c => c.trim()).filter(Boolean))],
     application_scenes: e.application_scenes,
   };
 }
@@ -114,7 +118,8 @@ function ProductExtraFieldsEditor({ value, onChange, t }: {
   onChange: (v: ProductExtraFields) => void;
   t: (en: string, zh: string) => string;
 }) {
-  const [certInput, setCertInput] = useState('');
+  const certInput=value.certificationInput||'';
+  const setCertInput=(text:string)=>onChange({...value,certificationInput:text});
 
   const setSpec = (idx: number, key: keyof ProductSpecRow, v: string) => {
     onChange({ ...value, specs: value.specs.map((s, i) => i === idx ? { ...s, [key]: v } : s) });
@@ -126,9 +131,8 @@ function ProductExtraFieldsEditor({ value, onChange, t }: {
     const c = certInput.trim();
     if (!c) return;
     if (!value.certifications.includes(c)) {
-      onChange({ ...value, certifications: [...value.certifications, c] });
-    }
-    setCertInput('');
+      onChange({ ...value, certifications: [...value.certifications, c], certificationInput:'' });
+    }else setCertInput('');
   };
   const removeCert = (c: string) => onChange({ ...value, certifications: value.certifications.filter(x => x !== c) });
 
@@ -237,6 +241,7 @@ function ProductExtraFieldsEditor({ value, onChange, t }: {
 }
 
 interface ProjectFormState {
+  draft_id?: string;
   title: string;
   location: string;
   year: string;
@@ -266,19 +271,35 @@ function projectToForm(p: { title?: string; location?: string; year?: number; ar
 
 interface ProjectModalProps {
   supplierId: number;
+  country?: string;
   editingProject: { id?: number; title?: string; location?: string; year?: number; area_sqm?: number; budget?: string; description?: string; images?: string[] | string } | null;
   onClose: () => void;
   onSaved: (project: { id: number; images: string[]; title?: string }, isNew: boolean) => void;
   t: (en: string, zh: string) => string;
 }
 
-function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: ProjectModalProps) {
+function ProjectModal({ supplierId, country, editingProject, onClose, onSaved, t }: ProjectModalProps) {
   const [form, setForm] = useState<ProjectFormState>(
-    editingProject ? projectToForm(editingProject) : emptyProjectForm()
+    editingProject ? projectToForm(editingProject) : {...emptyProjectForm(),draft_id:crypto.randomUUID()}
   );
   const [saving, setSaving] = useState(false);
   const [projectImagesUploading, setProjectImagesUploading] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+  const latestProjectForm=useRef(form);latestProjectForm.current=form;
+  const {admin}=useAdmin();
+  const draft=useSupplierDraft({supplierId,adminId:admin?.id,country,scope:editingProject?.id?`project-${editingProject.id}`:'project-new',value:form,restore:saved=>setForm({...emptyProjectForm(),...saved})});
+  useUploadNavigationGuard({blocked:projectImagesUploading||saving});
+  const closing=useRef(false);
+  const requestClose=async()=>{
+    if(closing.current||saving||projectImagesUploading||draft.recovering)return;
+    if(!draft.ready){onClose();return;}
+    closing.current=true;setSaving(true);
+    try{await draft.save();onClose();}
+    catch(error){showToast(error instanceof Error?error.message:t('Draft save failed','草稿保存失败，输入已保留。'),'error');}
+    finally{closing.current=false;setSaving(false);}
+  };
+
+
 
   const set = (k: keyof ProjectFormState, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -289,9 +310,12 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
   const handleSave = async () => {
     if (projectImagesUploading) { showToast(t('Wait for image upload to finish.', '请等待图片上传完成'), 'error'); return; }
     if (!form.title.trim()) { showToast(t('Title is required', '请填写标题'), 'error'); return; }
+    if(!draft.ready)return;
     setSaving(true);
     try {
+      await draft.save();
       const body = {
+        draft_id: form.draft_id,
         title: form.title.trim(),
         description: form.description.trim() || null,
         location: form.location.trim() || null,
@@ -318,6 +342,7 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
           try { return JSON.parse((raw as string) || '[]'); } catch { return []; }
         })(),
       };
+      await draft.complete();
       onSaved(proj, !editingProject);
       showToast(editingProject ? t('Project updated', '项目已更新') : t('Project added', '项目已添加'), 'success');
     } catch (e: unknown) {
@@ -348,7 +373,7 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
             <button type="button" onClick={() => setActiveImg(i)} className={`h-14 w-20 overflow-hidden rounded-lg border-2 ${i === curIdx ? 'border-[#b8864a]' : 'border-transparent opacity-70 hover:opacity-100'}`}>
               <img src={resolveImageUrl(url)} alt="" className="h-full w-full object-cover" />
             </button>
-            <button type="button" disabled={saving || projectImagesUploading} onClick={() => removeImage(i)} className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 disabled:opacity-40"><X className="h-3 w-3" /></button>
+            <button type="button" disabled={saving || projectImagesUploading || !draft.ready || draft.recovering} onClick={() => removeImage(i)} className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 disabled:opacity-40"><X className="h-3 w-3" /></button>
           </div>
         ))}
       </div>
@@ -363,17 +388,19 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
         <div className="flex w-full flex-col border-l border-stone-100 md:w-[30%]">
           <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3">
             <h2 className="text-sm font-bold text-[#2c2c2c]">{editingProject ? t('Edit Project', '编辑项目') : t('Add Project', '添加项目')}</h2>
-            <button onClick={onClose} disabled={saving || projectImagesUploading} className="p-1 text-stone-400 hover:text-stone-600 disabled:opacity-40"><X className="h-5 w-5" /></button>
+            <button onClick={()=>void requestClose()} disabled={saving || projectImagesUploading || draft.recovering} className="p-1 text-stone-400 hover:text-stone-600 disabled:opacity-40"><X className="h-5 w-5" /></button>
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            <SupplierDraftPanel draft={draft} value={form} t={t} disabled={saving||projectImagesUploading}/>
+            <fieldset disabled={!draft.ready||saving||draft.recovering} className="space-y-4 min-w-0">
             {/* 移动端图库(桌面在左栏) */}
             <div className="flex flex-col rounded-lg bg-stone-100 md:hidden">{gallery}</div>
             {/* 此上传区只挂载一次；桌面/移动端都复用同一实例，避免粘贴事件重复上传。 */}
             <ImageUploadZone
               value={form.images}
-              onUpload={(images) => { setForm(f => ({ ...f, images })); setActiveImg(Number.MAX_SAFE_INTEGER); }}
+              onUpload={(images) => { void draft.save({...latestProjectForm.current,images}).catch(()=>{});setActiveImg(Number.MAX_SAFE_INTEGER); }}
               onUploadStateChange={setProjectImagesUploading}
-              disabled={saving}
+              disabled={saving || !draft.ready || draft.recovering}
               uploadUrl={`${(process.env.NEXT_PUBLIC_API_URL?.trim() || '/api') + '/admin'}/suppliers/${supplierId}/project-image`}
               getHeaders={() => {
                 const token = adminApi.getToken();
@@ -409,10 +436,11 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
               <label className="mb-1 block text-xs font-medium text-stone-500">{t('Description', '描述')}</label>
               <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4} placeholder={t('Project description...', '项目描述...')} className="w-full resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-[#1c1917] placeholder:text-stone-400 focus:border-[#B8864A] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/15" />
             </div>
+            </fieldset>
           </div>
           <div className="flex shrink-0 justify-end gap-2 border-t border-stone-100 px-4 py-3">
-            <button onClick={onClose} disabled={saving || projectImagesUploading} className="rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-200 disabled:opacity-40">{t('Cancel', '取消')}</button>
-            <button onClick={handleSave} disabled={saving || projectImagesUploading} className="rounded-lg bg-[#b8864a] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#a07540] disabled:opacity-50">
+            <button onClick={()=>void requestClose()} disabled={saving || projectImagesUploading || draft.recovering} className="rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-200 disabled:opacity-40">{t('Cancel', '取消')}</button>
+            <button onClick={handleSave} disabled={saving || projectImagesUploading || !draft.ready || draft.recovering} className="rounded-lg bg-[#b8864a] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#a07540] disabled:opacity-50">
               {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
             </button>
           </div>
@@ -424,13 +452,14 @@ function ProjectModal({ supplierId, editingProject, onClose, onSaved, t }: Proje
 
 interface ProductEditModalProps {
   supplierId: number;
+  country?: string;
   product: { id: number; image_url?: string; title?: string; title_translated?: string | null; category?: string; description?: string | null; price?: number | string | null; price_max?: number | string | null; price_unit?: string | null; price_currency?: string | null; price_from?: number | string | null; specs?: unknown; certifications?: unknown; application_scenes?: unknown };
   onClose: () => void;
   onSaved: (product: { id: number; title?: string; title_translated?: string | null; category?: string; specs?: unknown; certifications?: unknown; application_scenes?: unknown }) => void;
   t: (en: string, zh: string) => string;
 }
 
-function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductEditModalProps) {
+function ProductEditModal({ supplierId, country, product, onClose, onSaved, t }: ProductEditModalProps) {
   const [title, setTitle] = useState(product.title || '');
   const [titleEn, setTitleEn] = useState(product.title_translated || '');
   const [category, setCategory] = useState(product.category || '');
@@ -447,6 +476,23 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   const [priceErrorField, setPriceErrorField] = useState<'min' | 'max' | 'unit' | 'currency' | null>(null);
   const [extras, setExtras] = useState<ProductExtraFields>(() => productToExtraFields(product));
   const [saving, setSaving] = useState(false);
+  const {admin}=useAdmin();
+  const draftValue={title,titleEn,category,description,price,priceMax,priceUnit,priceCurrency,priceFrom,extras};
+  const baseline=useRef(draftValue).current;
+  const draft=useSupplierDraft({supplierId,adminId:admin?.id,country,scope:`product-${product.id}`,value:draftValue,restore:saved=>{
+    const next={...baseline,...saved};setTitle(next.title);setTitleEn(next.titleEn);setCategory(next.category);setDescription(next.description);setPrice(next.price);setPriceMax(next.priceMax);setPriceUnit(next.priceUnit);setPriceCurrency(next.priceCurrency);setPriceFrom(next.priceFrom);setExtras(next.extras);
+  }});
+  useUploadNavigationGuard({blocked:saving});
+  const closing=useRef(false);
+  const requestClose=async()=>{
+    if(closing.current||saving||draft.recovering)return;
+    if(!draft.ready){onClose();return;}
+    closing.current=true;setSaving(true);
+    try{await draft.save();onClose();}
+    catch(error){showToast(error instanceof Error?error.message:t('Draft save failed','草稿保存失败，输入已保留。'),'error');}
+    finally{closing.current=false;setSaving(false);}
+  };
+
   // 描述框:默认4行(min-h),超4行随内容自动撑高
   const descRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -485,8 +531,10 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
       setPriceErrorField(priceSubmission.field); setPriceError(message); showToast(message, 'error');
       return;
     }
+    if(!draft.ready)return;
     setSaving(true);
     try {
+      await draft.save();
       const cleaned = cleanExtraFields(extras);
       const data = await adminApi.request(`/suppliers/${supplierId}/products/${product.id}`, {
         method: 'PUT',
@@ -501,6 +549,7 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
           application_scenes: cleaned.application_scenes,
         }),
       });
+      await draft.complete();
       onSaved(data.product);
       showToast(t('Product updated', '产品已更新'), 'success');
     } catch (e: unknown) {
@@ -524,9 +573,11 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
         <div className="flex w-full flex-col md:w-[30%] min-w-0 border-l border-stone-100">
           <div className="flex items-center justify-between border-b border-stone-100 px-4 py-3 shrink-0">
             <h2 className="text-sm font-bold text-[#2c2c2c]">{t('Edit Product', '编辑产品')}</h2>
-            <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
+            <button disabled={saving||draft.recovering} onClick={()=>void requestClose()} className="text-stone-400 hover:text-stone-600 p-1"><X className="w-5 h-5" /></button>
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            <SupplierDraftPanel draft={draft} value={draftValue} t={t} disabled={saving}/>
+            <fieldset disabled={!draft.ready||saving||draft.recovering} className="space-y-4 min-w-0">
             {/* 移动端顶部小图(桌面端已在左侧大图展示) */}
             {product.image_url && <img src={resolveImageUrl(product.image_url)} alt="" className="md:hidden w-full aspect-video object-cover rounded-lg bg-stone-100" />}
             <div>
@@ -587,10 +638,11 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
               {t('Show as a starting price when no maximum is provided', '未填写最高价时显示为起价')}
             </label>
             <ProductExtraFieldsEditor value={extras} onChange={setExtras} t={t} />
+            </fieldset>
           </div>
           <div className="flex justify-end gap-2 border-t border-stone-100 px-4 py-3 shrink-0">
-            <button onClick={onClose} className="px-4 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
-            <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07540] disabled:opacity-50 transition">
+            <button disabled={saving||draft.recovering} onClick={()=>void requestClose()} className="px-4 py-2 rounded-lg bg-stone-100 text-stone-600 text-sm font-medium hover:bg-stone-200 transition">{t('Cancel', '取消')}</button>
+            <button onClick={handleSave} disabled={saving || !draft.ready || draft.recovering} className="px-4 py-2 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07540] disabled:opacity-50 transition">
               {saving ? t('Saving...', '保存中...') : t('Save', '保存')}
             </button>
           </div>
@@ -689,7 +741,7 @@ function AdminSupplierDetailPage() {
   const [catalogError,setCatalogError]=useState('');
   const [failedCatalog,setFailedCatalog]=useState<File|null>(null);
   const supplierFetchGeneration=useRef(0);
-  useEffect(()=>{const warn=(event:BeforeUnloadEvent)=>{if(productImagesUploading||uploadingCatalog){event.preventDefault();event.returnValue='';}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[productImagesUploading,uploadingCatalog]);
+  useUploadNavigationGuard({blocked:productImagesUploading||uploadingCatalog||addingProduct||replacingId!==null});
   const catalogFileRef = useRef<HTMLInputElement>(null);
 
   const startEditCatalog = (c: { id: number; title: string }) => {
@@ -992,6 +1044,7 @@ function AdminSupplierDetailPage() {
       {showProjectModal && supplier && (
         <ProjectModal
           supplierId={supplier.id}
+          country={supplier.country}
           editingProject={editingProject}
           onClose={() => { setShowProjectModal(false); setEditingProject(null); }}
           onSaved={(proj, isNew) => {
@@ -1012,6 +1065,7 @@ function AdminSupplierDetailPage() {
       {editingProduct && supplier && (
         <ProductEditModal
           supplierId={supplier.id}
+          country={supplier.country}
           product={editingProduct}
           onClose={() => setEditingProduct(null)}
           onSaved={(updated) => {
@@ -1024,7 +1078,7 @@ function AdminSupplierDetailPage() {
       )}
 
       {/* Back */}
-      <button onClick={() => router.push(backHref)} className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
+      <button disabled={productImagesUploading||uploadingCatalog||addingProduct||replacingId!==null} onClick={() => router.push(backHref)} className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800">
         <ArrowLeft className="w-4 h-4" />
         {fromReport ? t('Back to Listing Report', '返回上架统计') : t('Back to Suppliers', '返回供应商列表')}
       </button>
@@ -1200,12 +1254,7 @@ function AdminSupplierDetailPage() {
             )}
           </section>
 
-          <div className="sticky top-0 z-20 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
-            <div className="min-w-0 text-xs"><p role="status" className={productDraft.status==='error'?'text-red-600':'text-stone-600'}>{productDraft.status==='loading'?t('Loading saved draft…','正在恢复草稿…'):productDraft.status==='saving'?t('Saving draft…','正在保存草稿…'):productDraft.status==='error'?t('Draft not saved','草稿未保存'):productDraft.status==='unsaved'?t('Unsaved changes','有待保存的修改'):t('Draft saved','草稿已保存')}{newProductImages.length>0?` · ${newProductImages.length} ${t('images','张图片')}`:''}</p>
-              <p className="mt-1 text-stone-400">{productDraft.error||t('Images and text are auto-saved as a draft. Complete the details, then confirm to add products.','图片和文字自动保存为草稿，补全信息后点「确认添加」才生成正式产品。')}</p>
-            </div>
-            <button type="button" onClick={()=>void saveProductDraft()} disabled={!productDraft.ready || addingProduct} className="min-h-11 shrink-0 rounded-xl bg-[#b8864a] px-4 py-2 text-sm text-white hover:bg-[#a07640] disabled:opacity-40">{t('Save draft','保存草稿')}</button>
-          </div>
+          <div className="sticky top-0 z-20 mb-4"><SupplierDraftPanel draft={productDraft} value={productDraftValue} t={t} disabled={addingProduct||productImagesUploading}/></div>
           {/* Products */}
           <section id="products" className="scroll-mt-24">
             <div className="flex items-center justify-between mb-3">
