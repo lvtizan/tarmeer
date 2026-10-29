@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Paperclip, X, FileText } from 'lucide-react';
 import { getDroppedFiles } from '@/lib/dropFiles';
 import { resolveImageUrl } from '@/lib/imageUrl';
-import { prepareImageForUpload, type PreparedImageUpload } from '@/lib/uploadImageCompression';
+import { prepareImageForUpload, type PreparedImageUpload, type ImageUploadProfile } from '@/lib/uploadImageCompression';
 import { createPasteZoneRegistry, getPasteFiles, isWithinFileLimit } from '@/lib/uploadPasteRouting';
 import { xhrPost } from '@/lib/uploadRequest';
 
@@ -15,6 +15,7 @@ let activePasteZone: symbol | null = null;
 const pasteZoneRegistry = createPasteZoneRegistry();
 
 interface ImageUploadZoneProps {
+  imageProfile?: ImageUploadProfile;
   value: string[];
   onUpload: (urls: string[]) => void;
   uploadUrl: string;
@@ -44,6 +45,7 @@ const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB per chunk
 
 export default function ImageUploadZone({
   value,
+  imageProfile = 'default',
   onUpload,
   uploadUrl,
   getHeaders,
@@ -60,6 +62,9 @@ export default function ImageUploadZone({
   activatePasteOnMount = false,
   acceptClipboardFiles = false,
 }: ImageUploadZoneProps) {
+  const localPreviews = useRef(new Map<string,string>());
+  useEffect(() => () => { for (const url of localPreviews.current.values()) URL.revokeObjectURL(url); localPreviews.current.clear(); }, []);
+  useEffect(() => { if (uploadingRef.current) return; for (const [key,url] of localPreviews.current) if (!value.includes(key)) { URL.revokeObjectURL(url); localPreviews.current.delete(key); } }, [value]);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
@@ -141,10 +146,10 @@ export default function ImageUploadZone({
     return await xhrPost(uploadUrl, getHeaders(), fd, onProgressCb) as { url: string; original_name?: string };
   };
 
-  const uploadOneWithRetry = async (sourceFile: File, onProgressCb?: (p: number) => void): Promise<{ url: string; original_name?: string }> => {
-    const prepared = await prepareImageForUpload(sourceFile);
+  const uploadOneWithRetry = async (sourceFile: File, onProgressCb?: (p: number) => void): Promise<{ url: string; original_name?: string; previewFile?: File }> => {
+    const prepared = await prepareImageForUpload(sourceFile, imageProfile);
     try {
-      return await uploadOne(prepared, onProgressCb);
+      return { ...await uploadOne(prepared, onProgressCb), previewFile: prepared.file };
     } catch (err) {
       const status = (err as { status?: number })?.status;
       const message = err instanceof Error ? err.message : String(err);
@@ -153,7 +158,7 @@ export default function ImageUploadZone({
       }
       // 网络抖动/超时等瞬态错误，延迟 1 秒后自动重试一次
       await new Promise(resolve => setTimeout(resolve, 1000));
-      return await uploadOne(prepared, onProgressCb);
+      return { ...await uploadOne(prepared, onProgressCb), previewFile: prepared.file };
     }
   };
 
@@ -216,6 +221,7 @@ export default function ImageUploadZone({
             });
             if (targetRef.current.generation !== generation) return;
             if (!data.url) throw new Error('上传服务未返回文件地址，请重新上传。');
+            if(data.previewFile?.type.startsWith('image/') && !localPreviews.current.has(data.url)) localPreviews.current.set(data.url, URL.createObjectURL(data.previewFile));
             failedUploadsRef.current.delete(file);
             uploadedUrls[idx] = data.url;
             const completedUrls = uploadedUrls.filter((u): u is string => Boolean(u));
@@ -325,7 +331,7 @@ export default function ImageUploadZone({
                   <span className="text-[10px] text-red-400 font-medium">PDF</span>
                 </div>
               ) : (
-                <img src={resolveImageUrl(url)} alt="" className="w-20 h-20 object-cover rounded-xl border border-stone-200" />
+                <img src={localPreviews.current.get(url) || resolveImageUrl(url)} loading="lazy" decoding="async" alt="" className="w-20 h-20 object-cover rounded-xl border border-stone-200" />
               )}
               <button
                 type="button"

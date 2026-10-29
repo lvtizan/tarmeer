@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { adminApi } from '@/lib/adminApi';
+import { useSupplierDraft } from '@/hooks/useSupplierDraft';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { getCountry } from '@/lib/country';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -599,11 +600,16 @@ function ProductEditModal({ supplierId, product, onClose, onSaved, t }: ProductE
   );
 }
 
-export default function AdminSupplierDetailPage() {
+export default function AdminSupplierDetailRoute() {
+  const params = useParams();
+  return <AdminSupplierDetailPage key={String(params?.id || '')} />;
+}
+
+function AdminSupplierDetailPage() {
   const routeParams = useParams();
   const id = routeParams?.id as string | undefined;
   const { t, lang } = useAdminT();
-  const { hasPermission, isSuperAdmin } = useAdmin();
+  const { admin, hasPermission, isSuperAdmin } = useAdmin();
   const canApproveCatalogs = isSuperAdmin || hasPermission('can_approve_suppliers');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -639,6 +645,20 @@ export default function AdminSupplierDetailPage() {
   const [newProductPriceError, setNewProductPriceError] = useState('');
   const [newProductPriceErrorField, setNewProductPriceErrorField] = useState<'min' | 'max' | 'unit' | 'currency' | null>(null);
   const resetNewProduct = () => { setNewProduct(emptyNewProduct()); setNewProductImages([]); setNewProductExtras(emptyExtraFields()); setNewProductPriceError(''); setNewProductPriceErrorField(null); };
+  const productDraftValue = { product: newProduct, images: newProductImages, extras: newProductExtras };
+  const productDraftValueRef = useRef(productDraftValue); productDraftValueRef.current = productDraftValue;
+  const productDraft = useSupplierDraft({supplierId:id,adminId:admin?.id,country:supplier?.country,scope:'product-new',value:productDraftValue,restore:saved=>{
+    setNewProduct({...emptyNewProduct(),...saved.product});setNewProductImages(Array.isArray(saved.images)?saved.images:[]);setNewProductExtras(saved.extras||emptyExtraFields());
+    if(saved.images?.length||saved.product?.title||saved.product?.title_translated)setShowAddProduct(true);
+  }});
+  const saveProductDraft = async () => {
+    try {await productDraft.save();showToast(t('Draft saved. Products are not published yet.','草稿已保存，产品尚未正式添加。'),'success');}
+    catch(error){showToast(error instanceof Error?error.message:t('Save failed','保存失败'),'error');}
+  };
+  const receiveProductImages = (images:string[]) => {
+    setNewProductImages(images);
+    void productDraft.save({...productDraftValueRef.current,images}).catch(()=>{});
+  };
   // 新增产品的品类下拉也接后台「产品分类」(子类按大类分组)，与编辑弹窗一致
   const [prodCatGroups, setProdCatGroups] = useState<Array<{ value: string; label: string; children: Array<{ value: string; label: string }> }>>([]);
   useEffect(() => {
@@ -661,41 +681,58 @@ export default function AdminSupplierDetailPage() {
   const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
   const [editingCatalogTitle, setEditingCatalogTitle] = useState('');
   const [savingCatalogId, setSavingCatalogId] = useState<number | null>(null);
+  const [catalogRenameError,setCatalogRenameError]=useState(false);
   const [catalogActionId, setCatalogActionId] = useState<number | null>(null);
   const catalogInputRef = useRef<HTMLInputElement>(null);
   const [uploadingCatalog, setUploadingCatalog] = useState(false);
+  const [catalogProgress,setCatalogProgress]=useState(0);
+  const [catalogError,setCatalogError]=useState('');
+  const [failedCatalog,setFailedCatalog]=useState<File|null>(null);
+  const supplierFetchGeneration=useRef(0);
+  useEffect(()=>{const warn=(event:BeforeUnloadEvent)=>{if(productImagesUploading||uploadingCatalog){event.preventDefault();event.returnValue='';}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[productImagesUploading,uploadingCatalog]);
   const catalogFileRef = useRef<HTMLInputElement>(null);
 
   const startEditCatalog = (c: { id: number; title: string }) => {
+    setCatalogRenameError(false);
     setEditingCatalogId(c.id);
     setEditingCatalogTitle(c.title);
     setTimeout(() => { catalogInputRef.current?.focus(); catalogInputRef.current?.select(); }, 30);
   };
   const cancelEditCatalog = () => { setEditingCatalogId(null); setEditingCatalogTitle(''); };
-  const saveCatalogTitle = async (catalogId: number) => {
+  const saveCatalogTitle = async (catalogId: number, close = true) => {
+    if(savingCatalogId !== null)return;
     const title = editingCatalogTitle.trim();
     if (!title) { showToast(t('Name cannot be empty', '名称不能为空'), 'error'); return; }
     setSavingCatalogId(catalogId);
     try {
       await adminApi.request(`/suppliers/catalogs/${catalogId}/title`, { method: 'PATCH', body: JSON.stringify({ title }) });
       setCatalogs(prev => prev.map(c => c.id === catalogId ? { ...c, title } : c));
-      setEditingCatalogId(null);
-      setEditingCatalogTitle('');
+      if(close){setEditingCatalogId(null);setEditingCatalogTitle('');}
       showToast(t('Catalog renamed', '目录已重命名'), 'success');
-    } catch { showToast(t('Failed to rename', '重命名失败'), 'error'); }
+    } catch {setCatalogRenameError(true);showToast(t('Failed to rename; your input is kept.', '重命名失败，输入内容已保留，请重试。'), 'error'); }
     finally { setSavingCatalogId(null); }
   };
 
+  useEffect(()=>{
+    if(catalogRenameError||!editingCatalogId||savingCatalogId!==null||!editingCatalogTitle.trim()||catalogs.find(c=>c.id===editingCatalogId)?.title===editingCatalogTitle.trim())return;
+    const timer=setTimeout(()=>void saveCatalogTitle(editingCatalogId,false),800);return()=>clearTimeout(timer);
+  },[editingCatalogId,editingCatalogTitle,savingCatalogId,catalogs,catalogRenameError]);
+
   // 管理员帮供应商上传目录 PDF
   const handleAddCatalog = async (file: File) => {
-    if (!file || !id) return;
+    if (!file || !id || uploadingCatalog) return;
+    setCatalogError('');setFailedCatalog(file);setCatalogProgress(0);
     setUploadingCatalog(true);
     try {
-      const data = await adminApi.uploadSupplierCatalog(id, file, file.name.replace(/\.pdf$/i, ''));
-      setCatalogs(prev => [...prev, data.catalog]);
-      showToast(t('Catalog added', '目录已添加'), 'success');
+      const data = await adminApi.uploadSupplierCatalog(id, file, file.name.replace(/\.pdf$/i, ''),setCatalogProgress);
+      supplierFetchGeneration.current++;
+      setCatalogs(prev => [...prev.filter(c=>c.id!==data.catalog.id), data.catalog]);
+      setFailedCatalog(null);
+      showToast(t('Catalog saved. Rendering and review do not affect this saved copy.', '目录已自动保存，转换和审核不影响已存原件。'), 'success');
     } catch (e) {
+      setCatalogError(e instanceof Error?e.message:t('Upload failed','上传失败'));
       showToast(e instanceof Error ? e.message : t('Upload failed', '上传失败'), 'error');
+      fetchSupplier();
     } finally {
       setUploadingCatalog(false);
       if (catalogFileRef.current) catalogFileRef.current.value = '';
@@ -750,6 +787,7 @@ export default function AdminSupplierDetailPage() {
 
   const fetchSupplier = useCallback(() => {
     if (!id) { setLoading(false); return; }
+    const generation=++supplierFetchGeneration.current;
     adminApi.request(`/suppliers/${id}`)
       .then((data: {
         supplier: typeof supplier;
@@ -757,6 +795,7 @@ export default function AdminSupplierDetailPage() {
         catalogs?: typeof catalogs;
         projects?: Array<{ id: number; title: string; location?: string; year?: number; area_sqm?: number; images: string[] | string; is_published?: number }>;
       }) => {
+        if(generation!==supplierFetchGeneration.current)return;
         setSupplier(data.supplier);
         setProducts(data.products || []);
         setCatalogs(data.catalogs || []);
@@ -768,8 +807,8 @@ export default function AdminSupplierDetailPage() {
             : (p.images || []),
         })));
       })
-      .catch(() => showToast(t('Failed to load supplier', '加载失败'), 'error'))
-      .finally(() => setLoading(false));
+      .catch(() => {if(generation===supplierFetchGeneration.current)showToast(t('Failed to load supplier', '加载失败'), 'error');})
+      .finally(() => {if(generation===supplierFetchGeneration.current)setLoading(false);});
   }, [id, t]);
 
   useEffect(() => { fetchSupplier(); }, [fetchSupplier]);
@@ -847,12 +886,14 @@ export default function AdminSupplierDetailPage() {
     setAddingProduct(true);
     const added: typeof products = [];
     try {
+      await productDraft.save();
       const cleanedExtras = cleanExtraFields(newProductExtras);
       for (const image_url of newProductImages) {
         const data = await adminApi.request(`/suppliers/${id}/products`, {
           method: 'POST',
           body: JSON.stringify({
             image_url,
+            from_draft: true,
             title: newProduct.title.trim() || null,
             title_translated: newProduct.title_translated.trim() || null,
             category: newProduct.category || null,
@@ -864,15 +905,19 @@ export default function AdminSupplierDetailPage() {
           }),
         });
         added.push(data.product);
+        const remaining = newProductImages.filter(url => !added.some(p => p.image_url === url));
+        setNewProductImages(remaining);
+        await productDraft.save({...productDraftValueRef.current,images:remaining});
       }
-      setProducts(prev => [...prev, ...added]);
+      setProducts(prev => [...prev, ...added.filter(item => !prev.some(existing => existing.id === item.id))]);
+      await productDraft.save({product:emptyNewProduct(),images:[],extras:emptyExtraFields()});
       resetNewProduct();
       setShowAddProduct(false);
       showToast(t('Product added', '产品图已添加'), 'success');
     } catch (error: unknown) {
       // 成功的图片立即反映到列表，未创建的保留在表单里，重试不会重复提交。
       if (added.length > 0) {
-        setProducts(prev => [...prev, ...added]);
+        setProducts(prev => [...prev, ...added.filter(item => !prev.some(existing => existing.id === item.id))]);
         const addedUrls = new Set(added.map(p => p.image_url));
         setNewProductImages(prev => prev.filter(url => !addedUrls.has(url)));
       }
@@ -1155,6 +1200,12 @@ export default function AdminSupplierDetailPage() {
             )}
           </section>
 
+          <div className="sticky top-0 z-20 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+            <div className="min-w-0 text-xs"><p role="status" className={productDraft.status==='error'?'text-red-600':'text-stone-600'}>{productDraft.status==='loading'?t('Loading saved draft…','正在恢复草稿…'):productDraft.status==='saving'?t('Saving draft…','正在保存草稿…'):productDraft.status==='error'?t('Draft not saved','草稿未保存'):productDraft.status==='unsaved'?t('Unsaved changes','有待保存的修改'):t('Draft saved','草稿已保存')}{newProductImages.length>0?` · ${newProductImages.length} ${t('images','张图片')}`:''}</p>
+              <p className="mt-1 text-stone-400">{productDraft.error||t('Images and text are auto-saved as a draft. Complete the details, then confirm to add products.','图片和文字自动保存为草稿，补全信息后点「确认添加」才生成正式产品。')}</p>
+            </div>
+            <button type="button" onClick={()=>void saveProductDraft()} disabled={!productDraft.ready || addingProduct} className="min-h-11 shrink-0 rounded-xl bg-[#b8864a] px-4 py-2 text-sm text-white hover:bg-[#a07640] disabled:opacity-40">{t('Save draft','保存草稿')}</button>
+          </div>
           {/* Products */}
           <section id="products" className="scroll-mt-24">
             <div className="flex items-center justify-between mb-3">
@@ -1163,18 +1214,20 @@ export default function AdminSupplierDetailPage() {
                 {t('Products', '产品')}
                 <span className="font-normal text-stone-400 normal-case tracking-normal">({products.length})</span>
               </h2>
-              <button disabled={addingProduct || productImagesUploading} onClick={() => setShowAddProduct(v => { if (v) resetNewProduct(); return !v; })} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#b8864a]/10 text-[#b8864a] hover:bg-[#b8864a]/20 transition-colors disabled:opacity-40">
+              <button disabled={addingProduct || productImagesUploading} onClick={() => setShowAddProduct(v => !v)} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-[#b8864a]/10 text-[#b8864a] hover:bg-[#b8864a]/20 transition-colors disabled:opacity-40">
                 <Plus className="w-3.5 h-3.5" />{t('Add Image', '添加图片')}
               </button>
             </div>
             {showAddProduct && (
               <div className="bg-white rounded-xl border border-[#b8864a]/30 p-4 mb-3 space-y-3">
+                <fieldset disabled={!productDraft.ready || addingProduct} className="space-y-3 min-w-0">
                 <p className="text-xs font-medium text-stone-500">{t('Add Product Image', '添加产品图')}</p>
                 <ImageUploadZone
                   value={newProductImages}
-                  onUpload={setNewProductImages}
+                  onUpload={receiveProductImages}
+                  imageProfile="product"
                   onUploadStateChange={setProductImagesUploading}
-                  disabled={addingProduct}
+                  disabled={addingProduct || !productDraft.ready}
                   uploadUrl={`${(process.env.NEXT_PUBLIC_API_URL?.trim() || '/api') + '/admin'}/suppliers/${id}/product-image`}
                   getHeaders={() => {
                     const token = adminApi.getToken();
@@ -1209,8 +1262,9 @@ export default function AdminSupplierDetailPage() {
                 <ProductExtraFieldsEditor value={newProductExtras} onChange={setNewProductExtras} t={t} />
                 <div className="flex gap-2">
                   <button onClick={handleAddProduct} disabled={addingProduct || productImagesUploading} className="px-4 py-1.5 rounded-lg bg-[#b8864a] text-white text-xs font-medium hover:bg-[#a07540] disabled:opacity-50 transition">{addingProduct ? t('Adding...', '添加中...') : t('Add', '确认添加')}</button>
-                  <button disabled={addingProduct || productImagesUploading} onClick={() => { setShowAddProduct(false); resetNewProduct(); }} className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition disabled:opacity-40">{t('Cancel', '取消')}</button>
+                  <button disabled={addingProduct || productImagesUploading} onClick={() => setShowAddProduct(false)} className="px-4 py-1.5 rounded-lg bg-stone-100 text-stone-600 text-xs font-medium hover:bg-stone-200 transition disabled:opacity-40">{t('Close (keep draft)', '收起（保留草稿）')}</button>
                 </div>
+                </fieldset>
               </div>
             )}
             {focusedProductId && <div className="mb-3 rounded-xl border border-[#b8864a]/30 bg-white p-3 text-sm flex items-center justify-between gap-3"><span>{products.some(p => p.id === focusedProductId) ? t(`Located Product ${focusedProductId}`, `已定位商品 #${focusedProductId}`) : t(`Product ${focusedProductId} is not in this supplier`, `本供应商中未找到商品 #${focusedProductId}`)}</span><button className="text-[#b8864a] shrink-0" onClick={() => { const next = new URLSearchParams(searchParams.toString()); next.delete('productId'); router.replace(`/admin/suppliers/${id}${next.size ? `?${next}` : ''}#products`); }}>{t('Show all products', '查看全部商品')}</button></div>}
@@ -1283,6 +1337,9 @@ export default function AdminSupplierDetailPage() {
               <input ref={catalogFileRef} type="file" accept=".pdf,application/pdf" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleAddCatalog(f); }} />
             </div>
+            <p className="mb-3 text-xs text-stone-500">{t('Catalogs save automatically after upload. Saved files may still be converting or awaiting publication.','目录上传成功后自动保存；已保存的原件与转换、审核发布是不同状态。')}</p>
+            {uploadingCatalog&&<div className="mb-3 rounded-xl border border-stone-200 bg-white p-3" role="status"><p className="text-sm">{catalogProgress>=99?t('Saving catalog…','正在保存目录…'):t(`Uploading PDF ${catalogProgress}%`,`正在上传目录 ${catalogProgress}%`)}</p><progress className="mt-2 w-full accent-[#b8864a]" max={100} value={catalogProgress}/></div>}
+            {catalogError&&<div className="mb-3 text-sm text-red-600" role="alert">{catalogError}{failedCatalog&&<button type="button" disabled={uploadingCatalog} onClick={()=>void handleAddCatalog(failedCatalog)} className="ml-3 min-h-11 rounded-xl bg-[#b8864a] px-4 py-2 text-white hover:bg-[#a07640] disabled:opacity-40">{t('Retry PDF','重试目录')}</button>}</div>}
             {catalogs.length === 0 ? (
               <p className="text-sm text-stone-400 py-6 text-center bg-white border border-dashed border-stone-200 rounded-xl">
                 {t('No catalogs yet. Click "Upload PDF" to add one.', '暂无目录，点上方「上传目录」帮供应商添加。')}
@@ -1304,9 +1361,9 @@ export default function AdminSupplierDetailPage() {
                           <input
                             ref={catalogInputRef}
                             value={editingCatalogTitle}
-                            onChange={e => setEditingCatalogTitle(e.target.value)}
+                            onChange={e => {setCatalogRenameError(false);setEditingCatalogTitle(e.target.value);}}
                             onKeyDown={e => { if (e.key === 'Enter') saveCatalogTitle(c.id); if (e.key === 'Escape') cancelEditCatalog(); }}
-                            onBlur={() => { if (!isSaving) cancelEditCatalog(); }}
+                            onBlur={() => { if (!isSaving) void saveCatalogTitle(c.id,false); }}
                             disabled={isSaving}
                             className="w-full h-8 px-2 rounded-lg border border-[#b8864a] bg-white text-sm text-[#2c2c2c] focus:outline-none focus:ring-2 focus:ring-[#B8864A]/20"
                           />

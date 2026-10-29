@@ -449,6 +449,11 @@ router.get('/portfolio-images', adminAuth_1.requireAdmin, async (req, res) => {
         res.status(500).json({ error: 'Failed to load portfolio images.' });
     }
 });
+// Serialize retries before any SELECT/write; namespaces are internal constants.
+const supplierWriteLock = (namespace, handler) => async (req,res,next) => {
+    try { await require('../lib/catalogChunkLock').withCatalogChunkLock(require('../lib/supplierWriteLockPool'), req.admin.id, () => handler(req,res), namespace); }
+    catch(error) { res.status(error.statusCode || 500).json({error:error.statusCode ? error.message : 'Unable to save. Please retry.'}); }
+};
 // Supplier management
 router.post('/suppliers', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.createAdminSupplierAccount);
 router.get('/suppliers', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.listSuppliers);
@@ -460,7 +465,7 @@ router.get('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppli
 router.put('/suppliers/:id/status', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.updateSupplierStatus);
 router.put('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.updateSupplier);
 router.delete('/suppliers/:id', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.deleteSupplier);
-router.post('/suppliers/:id/products', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminAddProduct);
+router.post('/suppliers/:id/products', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierWriteLock('admin-product', supplierAdminController_1.adminAddProduct));
 router.put('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminUpdateProduct);
 router.delete('/suppliers/:id/products/:productId', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, supplierAdminController_1.adminDeleteProduct);
 router.get('/suppliers/catalogs/:id/source', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminGetCatalogSource);
@@ -468,7 +473,13 @@ router.put('/suppliers/catalogs/:id/publish', (0, adminAuth_1.requirePermission)
 router.put('/suppliers/catalogs/:id/unpublish', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), supplierAdminController_1.adminUnpublishCatalog);
 router.put('/suppliers/catalogs/:id/file', (0, adminAuth_1.requirePermission)('can_approve_suppliers'), uploadLargePdf.single('file'), supplierAdminController_1.adminReplaceCatalogFile);
 router.patch('/suppliers/catalogs/:id/title', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminRenameCatalog);
-router.post('/suppliers/:id/catalogs', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, (req, res, next) => uploadLargePdf.single('file')(req, res, (err) => err ? res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'PDF exceeds the 60MB limit.' : 'Upload failed.' }) : next()), supplierAdminController_1.adminAddCatalog);
+const supplierDrafts = require('../lib/supplierDrafts').createSupplierDraftController(require('../config/database').default);
+router.get('/suppliers/:id/drafts/:scope', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierDrafts.get);
+router.put('/suppliers/:id/drafts/:scope', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierDrafts.put);
+const adminCatalogChunk = require('../lib/adminCatalogChunks').createAdminCatalogChunkHandler(require('../config/database').default, supplierAdminController_1.adminAddCatalog, require('../lib/supplierWriteLockPool'));
+const adminCatalogChunkUpload = require('multer')({storage:require('multer').memoryStorage(),limits:{fileSize:2*1024*1024,files:1,fields:8}});
+router.post('/suppliers/:id/catalog-chunks', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, (req,res,next)=>adminCatalogChunkUpload.single('file')(req,res,error=>error?res.status(400).json({error:'PDF chunk exceeds upload limits.'}):next()), adminCatalogChunk);
+router.post('/suppliers/:id/catalogs', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, (req, res, next) => uploadLargePdf.single('file')(req, res, (err) => err ? res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'PDF exceeds the 60MB limit.' : 'Upload failed.' }) : next()), supplierWriteLock('admin-catalog', supplierAdminController_1.adminAddCatalog));
 router.delete('/suppliers/catalogs/:id', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.adminDeleteCatalog);
 router.post('/suppliers/:id/product-image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, uploadImageFile, supplierAdminController_1.adminUploadProductImage);
 router.put('/suppliers/:id/products/:productId/image', (0, adminAuth_1.requirePermission)('can_view_suppliers'), supplierAdminController_1.requireSupplierCountryScope, upload.single('file'), supplierAdminController_1.adminReplaceProductImage);

@@ -17,8 +17,8 @@ const COMPRESSION_ATTEMPTS: readonly CompressionAttempt[] = [
   { maxDimension: 1600, quality: 0.80 },
 ];
 
-export function buildCompressionAttempts(): readonly CompressionAttempt[] {
-  return COMPRESSION_ATTEMPTS;
+export function buildCompressionAttempts(profile: ImageUploadProfile = 'default'): readonly CompressionAttempt[] {
+  return profile === 'product' ? PRODUCT_ATTEMPTS : COMPRESSION_ATTEMPTS;
 }
 
 const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'heic', 'heif']);
@@ -108,6 +108,10 @@ function drawScaled(image: HTMLImageElement, maxDimension: number): { canvas: HT
   return { canvas, context };
 }
 
+export type ImageUploadProfile = 'default' | 'product';
+export const PRODUCT_UPLOAD_SAFE_BYTES = 600 * 1024;
+const PRODUCT_ATTEMPTS: readonly CompressionAttempt[] = [{maxDimension:1600,quality:0.8},{maxDimension:1400,quality:0.76},{maxDimension:1200,quality:0.72}];
+
 export interface PreparedImageUpload {
   file: File;
   originalName: string;
@@ -115,15 +119,16 @@ export interface PreparedImageUpload {
 }
 
 /** Compress images exceeding the safe threshold before transmission. */
-export async function prepareImageForUpload(file: File): Promise<PreparedImageUpload> {
-  if (!shouldCompressImageBeforeUpload(file)) {
+export async function prepareImageForUpload(file: File, profile: ImageUploadProfile = 'default'): Promise<PreparedImageUpload> {
+  const limit = profile === 'product' ? PRODUCT_UPLOAD_SAFE_BYTES : IMAGE_UPLOAD_SAFE_BYTES;
+  if (!isImageUpload(file) || file.size <= limit) {
     return { file, originalName: file.name, compressed: false };
   }
 
   const image = await loadImage(file);
   let smallestBlob: { blob: Blob; type: 'image/jpeg' | 'image/webp' } | null = null;
 
-  for (const attempt of COMPRESSION_ATTEMPTS) {
+  for (const attempt of buildCompressionAttempts(profile)) {
     const { canvas, context } = drawScaled(image, attempt.maxDimension);
     const type = outputMimeTypeForImage(inferredImageMimeType(file), containsTransparency(context, canvas.width, canvas.height));
     const blob = await canvasToBlob(canvas, type, attempt.quality);
@@ -132,7 +137,7 @@ export async function prepareImageForUpload(file: File): Promise<PreparedImageUp
       smallestBlob = { blob, type };
     }
 
-    if (blob.size <= IMAGE_UPLOAD_SAFE_BYTES) {
+    if (blob.size <= limit) {
       return {
         file: new File([blob], replacementFileName(file.name, type), { type, lastModified: file.lastModified }),
         originalName: file.name,

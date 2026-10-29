@@ -348,7 +348,14 @@ async function adminAddCatalog(req, res) {
         const title = (typeof req.body.title === 'string' && req.body.title.trim())
             || (req.file.originalname || 'Catalog').replace(/\.pdf$/i, '').trim()
             || 'Catalog';
-        const fileName = `admin-${supplierId}-${require('crypto').randomUUID()}.pdf`;
+        const uploadId = req.body.upload_id;
+        if (uploadId !== undefined && !/^[a-f0-9]{16}$/.test(uploadId)) return res.status(400).json({ error: 'Invalid catalog upload id.' });
+        const fileName = uploadId ? `admin-${supplierId}-${req.admin.id}-${uploadId}.pdf` : `admin-${supplierId}-${require('crypto').randomUUID()}.pdf`;
+        const expectedUrl = `private://catalogs/${fileName}`;
+        if (uploadId) {
+            const [existing] = await database_1.default.execute('SELECT id,title,file_url,file_size,render_status,catalog_visible FROM supplier_catalogs WHERE supplier_profile_id=? AND file_url=? LIMIT 1', [supplierId, expectedUrl]);
+            if (existing[0]) return res.status(200).json({ catalog: existing[0] });
+        }
         const absPath = path_1.default.resolve(process.cwd(), 'private/catalogs', fileName);
         stagedPath = absPath;
         await promises_1.default.mkdir(path_1.default.dirname(absPath), { recursive: true });
@@ -692,6 +699,11 @@ async function adminAddProduct(req, res) {
         const profile = profileRows[0];
         if (!await supplierImagePathIsOwned(profile, image_url, 'photos'))
             return res.status(400).json({ error: 'Product image must be uploaded for this supplier.' });
+        // Draft retries consume the same owned upload once, even after a lost response.
+        if (req.body.from_draft === true) {
+            const [existing] = await database_1.default.execute('SELECT * FROM supplier_products WHERE supplier_profile_id = ? AND image_url = ? LIMIT 1', [id, image_url]);
+            if (existing[0]) return res.json({product:existing[0]});
+        }
         // 新增时也落规格/认证/应用场景(与编辑一致);数组→JSON串(空→'[]'),未传→null
         const jarr = (x) => Array.isArray(x) ? JSON.stringify(x) : null;
         const parsedPrice = (0, productPriceRange_1.parseProductPrice)(req.body.price, 'price', { allowClear: true });

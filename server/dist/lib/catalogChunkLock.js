@@ -4,11 +4,11 @@ function lockConflict() {
     return Object.assign(new Error('Another catalog upload request is still processing. Please wait a moment and retry.'), { statusCode: 409 });
 }
 
-async function withCatalogChunkLock(pool, userId, task) {
+async function withCatalogChunkLock(pool, userId, task, namespace = 'catalog-chunk') {
     const id = Number(userId);
     if (!Number.isSafeInteger(id) || id < 1) throw lockConflict();
     const connection = await pool.getConnection();
-    const lockName = `tarmeer:catalog-chunk:${id}`;
+    const lockName = `tarmeer:${namespace}:${id}`;
     let acquired = false;
     // Until GET_LOCK explicitly says "not acquired", the connection's lock
     // state is uncertain and it must not be returned to the pool.

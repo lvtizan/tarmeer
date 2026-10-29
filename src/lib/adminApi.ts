@@ -1,10 +1,12 @@
 'use client';
 // Admin API Client - separate token storage from designer auth
 import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/storage';
+import { xhrPost } from '@/lib/uploadRequest';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 
 const ADMIN_TOKEN_KEY = 'admin_token';
+const catalogUploadIds = new WeakMap<File, Map<string,string>>();
 
 export interface AdminUser {
   id: number;
@@ -879,23 +881,26 @@ class AdminApiClient {
   }
 
   // 管理员帮供应商上传目录 PDF（multipart，字段 file + title）
-  async uploadSupplierCatalog(supplierId: number | string, file: File, title: string): Promise<{ catalog: { id: number; title: string; file_url: string; file_size?: number } }> {
-    const fd = new FormData();
-    fd.append('file', file, file.name);
-    fd.append('title', title);
-    const url = `${API_BASE}/admin/suppliers/${supplierId}/catalogs`;
-    const token = this.getToken();
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      body: fd,
-    });
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try { const j = await res.json(); if (j?.error) msg = j.error; } catch { /* ignore */ }
-      throw new Error(msg);
+  async uploadSupplierCatalog(supplierId: number | string, file: File, title: string, onProgress?: (progress:number)=>void): Promise<{ catalog: { id: number; title: string; file_url: string; file_size?: number; render_status?: 'pending'|'processing'|'ready'|'failed'; catalog_visible?: number } }> {
+    if(!/\.pdf$/i.test(file.name)||file.size>60*1024*1024||file.size===0)throw Error('Please select a PDF up to 60 MB.');
+    const token=this.getToken();const headers:Record<string,string>=token?{Authorization:`Bearer ${token}`} : {};
+    let ids=catalogUploadIds.get(file);if(!ids){ids=new Map();catalogUploadIds.set(file,ids);}
+    let uploadId=ids.get(String(supplierId));if(!uploadId){uploadId=Array.from(crypto.getRandomValues(new Uint8Array(8))).map(n=>n.toString(16).padStart(2,'0')).join('');ids.set(String(supplierId),uploadId);}
+    const chunked=file.size>4*1024*1024,chunkSize=2*1024*1024,total=chunked?Math.ceil(file.size/chunkSize):1;
+    let result:unknown;
+    for(let index=0;index<total;index++){
+      const data=new FormData();data.append('title',title);data.append('upload_id',uploadId);
+      data.append('file',chunked?file.slice(index*chunkSize,(index+1)*chunkSize):file,file.name);
+      if(chunked){data.append('chunk_index',String(index));data.append('total_chunks',String(total));data.append('original_name',file.name);}
+      const url=`${API_BASE}/admin/suppliers/${supplierId}/${chunked?'catalog-chunks':'catalogs'}`;
+      const send=()=>xhrPost(url,headers,data,p=>onProgress?.(Math.min(99,Math.round((index+p/100)/total*100))));
+      try{result=await send();}catch(error){const status=(error as {status?:number})?.status;if(status&&status>=400&&status<500)throw error;result=await send();}
+      onProgress?.(Math.min(99,Math.round((index+1)/total*100)));
+      if((result as {catalog?:{id?:number}})?.catalog?.id)break;
     }
-    return res.json();
+    const response=result as {catalog?:{id:number;title:string;file_url:string}};
+    if(!response?.catalog?.id)throw Error('The server did not confirm that the catalog was saved. Please reload the catalog list before retrying.');
+    ids.delete(String(supplierId));onProgress?.(100);return response as {catalog:{id:number;title:string;file_url:string}};
   }
 
   async openSupplierCatalogSource(catalogId: number | string): Promise<void> {

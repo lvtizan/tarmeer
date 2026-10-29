@@ -47,3 +47,5 @@ test('文件名扩展名按输出格式正确重命名', () => {
   assert.equal(replacementFileName('photo.jpeg', 'image/jpeg'), 'photo-optimized.jpg');
   assert.equal(replacementFileName('photo.PNG', 'image/jpeg'), 'photo-optimized.jpg');
 });
+
+test('product uploads use smaller dimensions without lowering project defaults',()=>{const attempts=buildCompressionAttempts('product');assert.equal(attempts[0].maxDimension,1600);assert.equal(attempts.at(-1).maxDimension,1200);assert.equal(buildCompressionAttempts()[0].maxDimension,2400);});

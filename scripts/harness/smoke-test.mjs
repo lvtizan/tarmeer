@@ -55,6 +55,9 @@ console.log('\n[2/3] Backend route existence');
 
 const ADMIN_ROUTES = [
   ['GET',    '/api/admin/companies'],
+  ['GET', '/api/admin/suppliers/1/drafts/product-new'],
+  ['PUT', '/api/admin/suppliers/1/drafts/product-new'],
+  ['POST', '/api/admin/suppliers/1/catalog-chunks'],
   ['POST',   '/api/admin/suppliers'],
   ['PATCH',  '/api/field/survey-schema/editor'],
   ['GET',    '/api/admin/suppliers/product-review'],
@@ -303,6 +306,9 @@ catch (error) { ng('采购链接、返回路径和商品询价行为', commandTa
 
 try { execSync('node scripts/harness/materials-secondary-entrypoints.mjs', { cwd: ROOT, stdio: 'pipe' }); ok('供应商产品库及分类详情入口'); } catch (e) { ng('供应商产品库及分类详情入口', commandTail(e)); }
 
+for(const script of ['supplier-save-retries.mjs','supplier-autosave.mjs','supplier-autosave-ui.mjs','admin-catalog-chunks.mjs','admin-catalog-client.mjs']) {
+ try {execSync(`node scripts/harness/${script}`,{cwd:ROOT,stdio:'pipe'});ok(script);}catch(error){ng(script,commandTail(error));}
+}
 console.log('\n[4/4] 静态守卫: 禁止硬编码权威枚举');
 import('fs').then(({ readFileSync, existsSync }) => {
   const guards = [

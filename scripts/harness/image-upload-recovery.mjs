@@ -21,7 +21,7 @@ function mount(plans={},extra={}){
   '@/lib/uploadPasteRouting':{createPasteZoneRegistry:()=>({mount(){},unmount(){},isCurrent(){return true;}}),getPasteFiles:()=>[],isWithinFileLimit:(f,limit)=>limit===undefined||f.size<=limit},
   '@/lib/uploadRequest':{xhrPost:async(url,headers,body,progress)=>{const f=body.get('file');requests.push({name:f.name,url,headers,body});progress?.(50);const action=plans[f.name]?.shift();if(action instanceof Error)throw action;if(typeof action==='function')return action();return{url:`/uploads/${f.name}`,original_name:f.name};}},
  };
- vm.runInNewContext(compiled,{exports,require:name=>{assert.ok(name in dependencies,name);return dependencies[name];},FormData,File,Blob,crypto,document:{addEventListener(){},removeEventListener(){}},setTimeout:fn=>{queueMicrotask(fn);return 0;}});
+ vm.runInNewContext(compiled,{exports,require:name=>{assert.ok(name in dependencies,name);return dependencies[name];},FormData,File,Blob,URL,crypto,document:{addEventListener(){},removeEventListener(){}},setTimeout:fn=>{queueMicrotask(fn);return 0;}});
  const states=[];props={value:['/uploads/existing.webp'],onUpload:urls=>{props.value=Array.from(urls);},uploadUrl:'/upload',getHeaders:()=>({Authorization:'Bearer test-only'}),onUploadStateChange:v=>states.push(v),...extra};
  function render(){cursor=0;tree=exports.default(props);effects.splice(0).forEach(effect=>effect());return flatten(tree);}
  render();

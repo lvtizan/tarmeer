@@ -280,7 +280,7 @@ export default function SupplierProductsPage() {
       {/* Image picker：预填已有图片，支持加图/换图/删图 */}
       <div>
         <label className={labelCls}>{t('Product Image *', '产品图片 *')}</label>
-        <ImageUploadZone
+        <ImageUploadZone imageProfile="product"
           value={newImageUrls}
           onUpload={setNewImageUrls}
           uploadUrl={`${API_BASE}/suppliers/me/upload-image`}

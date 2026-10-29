@@ -1,0 +1,47 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import path from 'node:path';
+import {readFileSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
+import os from 'node:os';
+import {createDraftQueue} from '../../src/lib/draftQueue.ts';
+const root=path.resolve(import.meta.dirname,'../..');const require=createRequire(path.join(root,'server/dist/app.js'));
+require('dotenv').config({path:path.join(root,'server/.env'),quiet:true});
+assert.ok(['localhost','127.0.0.1'].includes(process.env.DB_HOST),'local DB only');
+const mysql=require('mysql2/promise');const db=await mysql.createConnection({host:process.env.DB_HOST,user:process.env.DB_USER||'root',password:process.env.DB_PASSWORD||''});
+const temp=mkdtempSync(path.join(os.tmpdir(),'supplier-draft-'));const image='/uploads/suppliers/s1/photos/1_12345678-1234-1234-1234-123456789abc.webp';mkdirSync(path.dirname(temp+image),{recursive:true});writeFileSync(temp+image,'fixture');
+const name=`supplier_draft_test_${process.pid}`;let server;let passed=0;
+const check=(actual,expected)=>{assert.deepEqual(actual,expected);passed++;};
+try{
+ await db.query(`CREATE DATABASE ${name}`);await db.query(`USE ${name}`);
+ await db.query('CREATE TABLE supplier_profiles (id INT PRIMARY KEY,country VARCHAR(8),slug VARCHAR(30))');await db.query("INSERT INTO supplier_profiles VALUES (1,'ae','s1'),(2,'vn','s2')");
+ const {ensureSupplierDraftSchema,createSupplierDraftController}=require(path.join(root,'server/dist/lib/supplierDrafts'));
+ await ensureSupplierDraftSchema(db);await ensureSupplierDraftSchema(db);passed++;
+ const express=require('express');const app=express();app.use(express.json({limit:'2mb'}));app.use((req,res,next)=>{req.admin={id:Number(req.headers['x-admin']||1),country:req.headers['x-country']||'ae',role:req.headers['x-role']||'sub_admin'};next();});
+ const controller=createSupplierDraftController(db,{publicRoot:temp});app.get('/suppliers/:id/drafts/:scope',controller.get);app.put('/suppliers/:id/drafts/:scope',controller.put);
+ server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
+ const hit=async(id,method='GET',data,headers={})=>{const r=await fetch(base+`/suppliers/${id}/drafts/product-new?country=${headers['x-country']||'ae'}&admin_id=${headers['x-expected-admin']||headers['x-admin']||1}`, {method,headers:{'content-type':'application/json',...headers},...(data?{body:JSON.stringify(data)}:{})});return{status:r.status,data:await r.json()};};
+ check((await hit(1,'PUT',{revision:0,data:{text:'Old account'}},{'x-admin':'2','x-expected-admin':'1'})).status,409);
+ check((await hit(1)).data,{data:null,revision:0});
+ const draft={product:{title:'Sofa',price:'',price_unit:''},images:[image],extras:{specs:[],certifications:[],application_scenes:[]}};
+ check((await hit(1,'PUT',{revision:0,data:draft})).status,200);
+ check((await hit(1)).data.data,draft);check((await hit(1)).data.revision,1);
+ check((await hit(1,'GET',null,{'x-admin':'2'})).data.data,null);
+ check((await hit(2)).status,404);check((await hit(1,'GET',null,{'x-country':'vn'})).status,404);
+ check((await hit(2,'GET',null,{'x-country':'vn','x-admin':'2'})).status,200);
+ check((await hit(2,'GET',null,{'x-role':'super_admin','x-country':'vn'})).status,200);
+ check((await hit(1,'PUT',{revision:0,data:draft})).status,409);
+ check((await hit(1,'PUT',{revision:2,data:draft})).status,409);
+ const edit={...draft,product:{title:'Updated',price:'invalid-but-unfinished-draft'}};
+ check((await hit(1,'PUT',{revision:1,data:edit})).status,200);check((await hit(1)).data.data,edit);
+ check((await hit(1,'PUT',{revision:2,data:JSON.parse('{"__proto__":{"polluted":true}}')})).status,400);
+ check((await hit(1,'PUT',{revision:-1,data:draft})).status,400);
+ check((await hit(1,'PUT',{revision:2,data:{text:'a'.repeat(100001)}})).status,400);
+ check((await hit(1,'PUT',{revision:2,data:{images:['/uploads/suppliers/s2/photos/x.webp']}})).status,400);
+ check((await hit(1,'PUT',{revision:2,data:{}})).status,200);check((await hit(1)).data.data,{});
+ // Exercise real queue ordering under concurrent edits and a failed write.
+ const writes=[];let release;const q=createDraftQueue(async value=>{writes.push(value);if(value===1)await new Promise(r=>{release=r;});});q.enqueue(1);const saving=q.flush();q.enqueue(2);q.enqueue(3);release();await saving;check(writes,[1,3]);
+ let fail=true;const recovery=createDraftQueue(async()=>{if(fail)throw Error('offline');});recovery.enqueue('kept');await assert.rejects(recovery.flush(),/offline/);check(recovery.hasPending(),true);fail=false;await recovery.flush();check(recovery.hasPending(),false);
+ const page=readFileSync(path.join(root,'src/app/admin/suppliers/[id]/page.tsx'),'utf8');check(page.includes("Save draft','保存草稿"),true);check(page.includes('onUpload={receiveProductImages}'),true);check(page.includes('role="status"'),true);
+ const routes=readFileSync(path.join(root,'server/dist/routes/admin.js'),'utf8');check(/drafts\/:scope'.*requirePermission\)\('can_view_suppliers'\)/.test(routes),true);
+ console.log(`supplier-autosave: ${passed}/${passed} PASS`);
+}finally{await new Promise(r=>server?server.close(r):r());await db.query(`DROP DATABASE IF EXISTS ${name}`);await db.end();rmSync(temp,{recursive:true,force:true});}

@@ -19,7 +19,7 @@ assert.match(uploadZone, /acceptClipboardFiles = false/);
 assert.match(uploadZone, /getPasteFiles/);
 assert.match(uploadZone, /isWithinFileLimit\(file, maxFileBytesRef\.current\)/);
 assert.match(uploadZone, /超过 \$\{Math\.floor\(maxFileBytesRef\.current \/ 1024 \/ 1024\)\} MB 限制，请压缩或拆分文件后重试/);
-assert.match(uploadZone, /网络连接失败，文件未上传，请检查网络后重试/);
+assert.match(await readFile('src/lib/uploadRequest.ts','utf8'), /网络连接失败，文件未上传，请检查网络后重试/);
 assert.match(catalogController, /Catalog upload data is invalid\. Please select the PDF and start again\./);
 assert.match(catalogController, /Catalogs must be PDF files\. Please choose a PDF and start again\./);
 assert.match(catalogController, /Catalog exceeds the 60 MB limit\. Please compress or split the PDF and try again\./);
