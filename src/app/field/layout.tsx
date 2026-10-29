@@ -10,7 +10,7 @@ export default function FieldLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     // 公开页：登录页 + 问卷（无需登录，任何人可填）
-    if (pathname === '/field/login' || pathname === '/field/survey') {
+    if (pathname === '/field/login' || pathname === '/field/survey' || pathname === '/field/admission-preview') {
       setReady(true);
       return;
     }
