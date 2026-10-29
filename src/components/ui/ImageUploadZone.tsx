@@ -6,6 +6,7 @@ import { getDroppedFiles } from '@/lib/dropFiles';
 import { resolveImageUrl } from '@/lib/imageUrl';
 import { prepareImageForUpload, type PreparedImageUpload, type ImageUploadProfile } from '@/lib/uploadImageCompression';
 import { createPasteZoneRegistry, getPasteFiles, isWithinFileLimit } from '@/lib/uploadPasteRouting';
+import { createUploadPreparation, imageUploadConcurrency } from '@/lib/uploadPreparation';
 import { xhrPost } from '@/lib/uploadRequest';
 
 // A page can contain a product form behind a project dialog. Pasting must still
@@ -146,8 +147,8 @@ export default function ImageUploadZone({
     return await xhrPost(uploadUrl, getHeaders(), fd, onProgressCb) as { url: string; original_name?: string };
   };
 
-  const uploadOneWithRetry = async (sourceFile: File, onProgressCb?: (p: number) => void): Promise<{ url: string; original_name?: string; previewFile?: File }> => {
-    const prepared = await prepareImageForUpload(sourceFile, imageProfile);
+  const uploadOneWithRetry = async (sourceFile: File, onProgressCb?: (p: number) => void, ready?: PreparedImageUpload): Promise<{ url: string; original_name?: string; previewFile?: File }> => {
+    const prepared = ready || await prepareImageForUpload(sourceFile, imageProfile);
     try {
       return { ...await uploadOne(prepared, onProgressCb), previewFile: prepared.file };
     } catch (err) {
@@ -162,7 +163,8 @@ export default function ImageUploadZone({
     }
   };
 
-  const UPLOAD_CONCURRENCY = 3;
+  const browser = typeof navigator==='undefined'?undefined:navigator as Navigator & {connection?:{saveData?:boolean;effectiveType?:string}};
+  const UPLOAD_CONCURRENCY = imageUploadConcurrency(imageProfile,browser?.connection,browser?.hardwareConcurrency);
 
   const uploadMany = async (files: File[]) => {
     if (disabledRef.current || uploadingRef.current) return; // 上传进行中/父表单保存中不接受新文件
@@ -208,17 +210,21 @@ export default function ImageUploadZone({
         }
       };
 
+      const workerCount = chunkUploadUrl ? 1 : Math.min(UPLOAD_CONCURRENCY, valid.length);
+      const preparation = createUploadPreparation(valid, file=>prepareImageForUpload(file,imageProfile), workerCount+2);
       let nextIndex = 0;
       const runWorker = async () => {
         while (nextIndex < valid.length && targetRef.current.generation === generation) {
           const idx = nextIndex++;
           const file = valid[idx];
           try {
+            const prepared = await preparation.take(idx);
+            if(targetRef.current.generation!==generation)return;
             const data = await uploadOneWithRetry(file, (p) => {
               if (targetRef.current.generation !== generation) return;
               fileProgresses[idx] = Math.min(p, 99);
               updateProgressUI();
-            });
+            }, prepared);
             if (targetRef.current.generation !== generation) return;
             if (!data.url) throw new Error('上传服务未返回文件地址，请重新上传。');
             if(data.previewFile?.type.startsWith('image/') && !localPreviews.current.has(data.url)) localPreviews.current.set(data.url, URL.createObjectURL(data.previewFile));
@@ -240,9 +246,8 @@ export default function ImageUploadZone({
       };
 
       // 分片/大文件目录上传后端有严格单用户排他限流 (limitCatalogBodyConcurrency)，须保持串行 workerCount=1
-      const workerCount = chunkUploadUrl ? 1 : Math.min(UPLOAD_CONCURRENCY, valid.length);
       const workers = Array.from({ length: workerCount }, () => runWorker());
-      await Promise.all(workers);
+      try { await Promise.all(workers); } finally { preparation.stop(); }
 
       if (targetRef.current.generation !== generation) return;
       failures.push(...failedUploadsRef.current.values());

@@ -12,6 +12,7 @@
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { existsSync as fileExists } from 'node:fs';
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..');
 const BACKEND = process.env.HARNESS_BACKEND || 'http://localhost:3002';
@@ -161,7 +162,7 @@ try {
 
 // ─── 3c. 转型新增页面可达性（本地默认 AE 站；500/404 都算失败——页面必须存在）───
 console.log('\n[3c] 转型新增页面可达性');
-for (const p of ['/materials', '/materials/showroom', '/services/china-sourcing', '/guarantee', '/for-designers', '/for-designers/china-tour']) {
+for (const p of ['/workers/image-compression-v1.js', '/materials', '/materials/showroom', '/services/china-sourcing', '/guarantee', '/for-designers', '/for-designers/china-tour']) {
   const st = await req('GET', `${FRONTEND}${p}`);
   if (st === 200) ok(`GET ${p} → 200`);
   else ng(`GET ${p}`, `${st ?? 'unreachable'}`);
@@ -308,6 +309,10 @@ try { execSync('node scripts/harness/materials-secondary-entrypoints.mjs', { cwd
 
 for(const script of ['supplier-project-submission.mjs','supplier-upload-navigation.mjs','supplier-detail-drafts.mjs','supplier-edit-modal-drafts.mjs','supplier-save-retries.mjs','supplier-autosave.mjs','supplier-autosave-ui.mjs','admin-catalog-chunks.mjs','admin-catalog-client.mjs']) {
  try {execSync(`node scripts/harness/${script}`,{cwd:ROOT,stdio:'pipe'});ok(script);}catch(error){ng(script,commandTail(error));}
+}
+try {execSync('node scripts/harness/image-worker-pipeline.mjs',{cwd:ROOT,stdio:'pipe'});ok('Web Worker 与上传流水线');}catch(error){ng('Web Worker 与上传流水线',commandTail(error));}
+if(fileExists(process.env.HARNESS_CHROME||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')) {
+ try {execSync('node scripts/harness/image-worker-browser.mjs',{cwd:ROOT,stdio:'pipe',timeout:60000});ok('真实 Chromium 图片线程/透明/方向/降级');}catch(error){ng('真实 Chromium 图片线程/透明/方向/降级',commandTail(error));}
 }
 console.log('\n[4/4] 静态守卫: 禁止硬编码权威枚举');
 import('fs').then(({ readFileSync, existsSync }) => {

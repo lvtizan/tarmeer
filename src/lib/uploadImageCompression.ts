@@ -1,3 +1,4 @@
+import {compressInWorker} from './imageCompressionWorker.js';
 /**
  * Safe threshold before client-side image compression.
  * Images larger than this (e.g. phone/camera raw photos > 1.5MB) are automatically
@@ -125,6 +126,11 @@ export async function prepareImageForUpload(file: File, profile: ImageUploadProf
     return { file, originalName: file.name, compressed: false };
   }
 
+  const workerBlob = await compressInWorker(file, buildCompressionAttempts(profile), limit);
+  if (workerBlob) return {
+    file: new File([workerBlob], replacementFileName(file.name, workerBlob.type), {type:workerBlob.type,lastModified:file.lastModified}),
+    originalName:file.name, compressed:true,
+  };
   const image = await loadImage(file);
   let smallestBlob: { blob: Blob; type: 'image/jpeg' | 'image/webp' } | null = null;
 
