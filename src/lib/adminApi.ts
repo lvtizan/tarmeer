@@ -1162,6 +1162,15 @@ class AdminApiClient {
   async updateInterview(id: number, data: Record<string, any>, country?: string) {
     return this.request(`/interviews/${id}${country ? `?country=${encodeURIComponent(country)}` : ''}`, { method: 'PATCH', body: JSON.stringify(data) });
   }
+  async approveContractorQualification(id: number, country?: string) {
+    return this.request(`/interviews/${id}/approve-qualification${country ? `?country=${encodeURIComponent(country)}` : ''}`, { method: 'POST' });
+  }
+  async downloadContractorAttachment(id:number,filename:string,country?:string):Promise<Blob>{
+    const token=this.getToken();const qs=country?`?country=${encodeURIComponent(country)}`:'';
+    const response=await fetch(`${API_BASE}/admin/interviews/${id}/attachments/${encodeURIComponent(filename)}${qs}`,{headers:token?{Authorization:`Bearer ${token}`}:{}});
+    if(!response.ok)throw new Error('Unable to download application attachment.');
+    return response.blob();
+  }
   async deleteInterviews(ids: number[], country?: string) {
     return this.request(`/interviews${country ? `?country=${encodeURIComponent(country)}` : ''}`, { method: 'DELETE', body: JSON.stringify({ ids }) });
   }
@@ -1250,6 +1259,13 @@ function getDraftAccess(id: number): DraftAccess | undefined {
   } catch { return undefined; }
 }
 
+function storeDraftAccess(id: number, token: string, country?: string) {
+  if (!Number.isSafeInteger(id) || id <= 0 || !token) return;
+  const access = { token, country };
+  draftAccess.set(id, access);
+  safeSetItem(draftAccessKey(id), JSON.stringify(access));
+}
+
 function draftHeaders(id: number, country?: string): Record<string, string> {
   const access = getDraftAccess(id);
   const selectedCountry = country || access?.country;
@@ -1312,11 +1328,18 @@ export const fieldApi = {
     return created;
   },
   getDraft: (id: number, country?: string) => fieldRequest(`/interviews/draft?id=${id}`, { headers: draftHeaders(id, country) }),
+  getContractorApplication: (id: number, country?: string) => fieldRequest(`/interviews/${id}/application`, { headers: draftHeaders(id, country), cache: 'no-store' }),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveDraft: (id: number, data: Record<string, any>, country?: string) =>
     fieldRequest(`/interviews/${id}`, { method: 'PATCH', body: JSON.stringify(data), headers: draftHeaders(id, country) }),
+  saveContractorProfile: (id: number, data: Record<string, unknown>, country?: string) =>
+    fieldRequest(`/interviews/${id}/profile`, { method: 'PATCH', body: JSON.stringify(data), headers: draftHeaders(id, country) }),
   submit: (id: number, country?: string) =>
     fieldRequest(`/interviews/${id}/submit`, { method: 'POST', headers: draftHeaders(id, country) }),
+  submitContractorProfile: (id: number, country?: string) =>
+    fieldRequest(`/interviews/${id}/profile-submit`, { method: 'POST', headers: draftHeaders(id, country) }),
+  storeDraftAccess,
+  getDraftAccessToken: (id: number) => getDraftAccess(id)?.token,
   searchCompanies: (q: string, country?: string) =>
     fieldRequest(`/companies/search?q=${encodeURIComponent(q)}${country ? `&country=${country}` : ''}`),
   getSurveySchema: (country?: string, version?: string) => {
@@ -1379,5 +1402,19 @@ export const fieldApi = {
       throw new FieldApiError(err.error || `Upload failed: ${res.status}`, res.status, typeof err.field_key === 'string' ? err.field_key : undefined);
     }
     return res.json();
+  },
+  uploadContractorAttachment: async (id:number,file:File,fieldKey:string,country?:string):Promise<{url:string;name:string;type:string;size:number}>=>{
+    const token=typeof window!=='undefined'?(localStorage.getItem('field_token')||localStorage.getItem('admin_token')):null;
+    const fd=new FormData();fd.append('file',file,file.name);fd.append('field_key',fieldKey);
+    const res=await fetch(`${FIELD_API_BASE}/interviews/${id}/contractor-attachments`,{method:'POST',headers:{...(token?{Authorization:`Bearer ${token}`}:{ }),...draftHeaders(id,country)},body:fd});
+    if(!res.ok){const err=await res.json().catch(()=>({})) as {error?:string;field_key?:string};throw new FieldApiError(err.error||`Upload failed: ${res.status}`,res.status,err.field_key);}
+    return res.json();
+  },
+  downloadContractorAttachment:async(id:number,url:string,country?:string):Promise<Blob>=>{
+    const filename=decodeURIComponent(url.split('/').pop()||'');
+    const token=typeof window!=='undefined'?(localStorage.getItem('field_token')||localStorage.getItem('admin_token')):null;
+    const res=await fetch(`${FIELD_API_BASE}/interviews/${id}/attachments/${encodeURIComponent(filename)}`,{headers:{...(token?{Authorization:`Bearer ${token}`}:{ }),...draftHeaders(id,country)}});
+    if(!res.ok)throw new FieldApiError('Unable to download application attachment.',res.status);
+    return res.blob();
   },
 };

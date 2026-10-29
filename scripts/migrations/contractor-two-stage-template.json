@@ -1,0 +1,1097 @@
+{
+  "version": "tarmeer-verification-v7",
+  "country": "ae",
+  "title": "Contractor registration",
+  "workflow": "contractor-two-stage",
+  "sections": [
+    {
+      "key": "qualification_company",
+      "phase": "qualification",
+      "title": "Company and licence details",
+      "description": "Share your company details and basic workforce capacity.",
+      "fields": [
+        {
+          "key": "company_name",
+          "label": "Company name",
+          "type": "text",
+          "placeholder": "Registered company name",
+          "role": "company_name",
+          "required": true
+        },
+        {
+          "key": "license_number_1",
+          "label": "Trade licence number 1",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "license_years_1",
+          "label": "Licence 1 registration years",
+          "type": "text",
+          "placeholder": "e.g. 2018 or 8 years"
+        },
+        {
+          "key": "license_workers_1",
+          "label": "Workers under licence 1",
+          "type": "number",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "key": "license_number_2",
+          "label": "Trade licence number 2",
+          "type": "text"
+        },
+        {
+          "key": "license_years_2",
+          "label": "Licence 2 registration years",
+          "type": "text"
+        },
+        {
+          "key": "license_workers_2",
+          "label": "Workers under licence 2",
+          "type": "number",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "key": "license_number_3",
+          "label": "Trade licence number 3",
+          "type": "text"
+        },
+        {
+          "key": "license_years_3",
+          "label": "Licence 3 registration years",
+          "type": "text"
+        },
+        {
+          "key": "license_workers_3",
+          "label": "Workers under licence 3",
+          "type": "number",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "key": "owner_phone",
+          "label": "Owner phone number",
+          "type": "tel",
+          "placeholder": "+971"
+        },
+        {
+          "key": "partners",
+          "label": "Partner phone numbers",
+          "type": "repeat",
+          "layout": "inline",
+          "maxItems": 3,
+          "fields": [
+            {
+              "key": "phone",
+              "label": "Partner",
+              "type": "tel",
+              "placeholder": "+971"
+            }
+          ]
+        },
+        {
+          "key": "email",
+          "label": "Company official email",
+          "type": "email",
+          "placeholder": "name@company.com"
+        },
+        {
+          "key": "engineer_phone",
+          "label": "Site engineer / supervisor number",
+          "type": "tel",
+          "placeholder": "+971"
+        },
+        {
+          "key": "emergency_phone",
+          "label": "Emergency number",
+          "type": "tel",
+          "placeholder": "+971"
+        },
+        {
+          "key": "website",
+          "label": "Website",
+          "type": "url",
+          "placeholder": "https://www.company.com"
+        },
+        {
+          "key": "office_address",
+          "label": "Office address",
+          "type": "text",
+          "placeholder": "Building, street and area"
+        },
+        {
+          "key": "workshop_location",
+          "label": "Location of workshop / store",
+          "type": "select",
+          "options": [
+            "Dubai",
+            "Abu Dhabi",
+            "Sharjah",
+            "Ajman",
+            "Ras Al Khaimah",
+            "Umm Al Quwain"
+          ]
+        },
+        {
+          "key": "office_location",
+          "label": "Office registration location",
+          "type": "select",
+          "options": [
+            "Dubai",
+            "Abu Dhabi",
+            "Sharjah",
+            "Ajman",
+            "Ras Al Khaimah",
+            "Umm Al Quwain"
+          ]
+        },
+        {
+          "key": "specialist_categories",
+          "label": "What work can your company deliver? Select all that apply.",
+          "type": "checkbox",
+          "required": true,
+          "options": [
+            "Civil work",
+            "Mechanical work",
+            "Fit-out works",
+            "Steel structure works",
+            "GRC works",
+            "Landscaping works",
+            "Engineering, architecture & 3D rendering",
+            "Additional technical works"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "qualification_documents",
+      "phase": "qualification",
+      "title": "Registration documents",
+      "description": "Select each document you can provide and upload its supporting file. PDF, JPG, PNG and WebP are accepted.",
+      "fields": [
+        {
+          "key": "trade_license_documents",
+          "label": "Valid trade licence — all pages",
+          "type": "checkbox",
+          "required": true,
+          "options": [
+            "I can provide this document"
+          ]
+        },
+        {
+          "key": "trade_license_evidence",
+          "label": "Upload trade licence",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 3,
+          "required": true,
+          "visibleWhen": {
+            "field": "trade_license_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "ejari_documents",
+          "label": "Office rental agreement / Ejari (if applicable)",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ]
+        },
+        {
+          "key": "ejari_evidence",
+          "label": "Upload office rental agreement / Ejari",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "ejari_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "vat_documents",
+          "label": "VAT registration certificate",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "vat_evidence",
+          "label": "Upload VAT certificate",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "vat_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "mohre_company_documents",
+          "label": "MOHRE establishment / company details",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "mohre_company_evidence",
+          "label": "Upload MOHRE company details",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "mohre_company_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "mohre_worker_documents",
+          "label": "MOHRE labour / worker records",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "mohre_worker_evidence",
+          "label": "Upload MOHRE worker records",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "mohre_worker_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "workshop_rental_documents",
+          "label": "Workshop or store rental agreement",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "workshop_rental_evidence",
+          "label": "Upload workshop / store rental agreement",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "workshop_rental_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "bank_details_documents",
+          "label": "Company bank details on company letterhead",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "bank_details_evidence",
+          "label": "Upload company bank details",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "bank_details_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "iban_documents",
+          "label": "Bank account confirmation / IBAN certificate",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "iban_evidence",
+          "label": "Upload account confirmation / IBAN certificate",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "iban_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "emaar_documents",
+          "label": "Emaar contractor registration evidence",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "emaar_evidence",
+          "label": "Upload Emaar registration evidence",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "emaar_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "nakheel_documents",
+          "label": "Nakheel contractor registration evidence",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "nakheel_evidence",
+          "label": "Upload Nakheel registration evidence",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "nakheel_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "damac_documents",
+          "label": "DAMAC contractor registration evidence",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "damac_evidence",
+          "label": "Upload DAMAC registration evidence",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "damac_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "adnoc_documents",
+          "label": "ADNOC supplier / contractor registration evidence",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "adnoc_evidence",
+          "label": "Upload ADNOC registration evidence",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true,
+          "visibleWhen": {
+            "field": "adnoc_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        },
+        {
+          "key": "other_registration_documents",
+          "label": "Other client or authority registration documents",
+          "type": "checkbox",
+          "options": [
+            "I can provide this document"
+          ],
+          "required": true
+        },
+        {
+          "key": "other_registration_evidence",
+          "label": "Upload other registration documents",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 5,
+          "required": true,
+          "visibleWhen": {
+            "field": "other_registration_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "key": "qualification_projects",
+      "phase": "qualification",
+      "title": "Three latest completed projects",
+      "description": "Provide project agreements and site photos for your three latest completed projects.",
+      "fields": [
+        {
+          "key": "project_1_agreement",
+          "label": "Project 1 agreement",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true
+        },
+        {
+          "key": "project_1_photos",
+          "label": "Project 1 site photos",
+          "type": "attachment",
+          "accept": "image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 5,
+          "required": true
+        },
+        {
+          "key": "project_2_agreement",
+          "label": "Project 2 agreement",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true
+        },
+        {
+          "key": "project_2_photos",
+          "label": "Project 2 site photos",
+          "type": "attachment",
+          "accept": "image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 5,
+          "required": true
+        },
+        {
+          "key": "project_3_agreement",
+          "label": "Project 3 agreement",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1,
+          "required": true
+        },
+        {
+          "key": "project_3_photos",
+          "label": "Project 3 site photos",
+          "type": "attachment",
+          "accept": "image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 5,
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "profile_company_details",
+      "phase": "profile",
+      "title": "Company information",
+      "description": "Your answers from the admission application are carried into this profile. Review and complete them here.",
+      "fields": [
+        {
+          "key": "company_name",
+          "label": "Company name",
+          "type": "text",
+          "role": "company_name",
+          "required": true
+        },
+        {
+          "key": "license_number_1",
+          "label": "Trade licence number 1",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "license_years_1",
+          "label": "Licence 1 registration years",
+          "type": "text"
+        },
+        {
+          "key": "license_workers_1",
+          "label": "Workers under licence 1",
+          "type": "number",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "key": "license_number_2",
+          "label": "Trade licence number 2",
+          "type": "text"
+        },
+        {
+          "key": "license_years_2",
+          "label": "Licence 2 registration years",
+          "type": "text"
+        },
+        {
+          "key": "license_workers_2",
+          "label": "Workers under licence 2",
+          "type": "number",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "key": "license_number_3",
+          "label": "Trade licence number 3",
+          "type": "text"
+        },
+        {
+          "key": "license_years_3",
+          "label": "Licence 3 registration years",
+          "type": "text"
+        },
+        {
+          "key": "license_workers_3",
+          "label": "Workers under licence 3",
+          "type": "number",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "key": "owner_phone",
+          "label": "Owner phone number",
+          "type": "tel",
+          "placeholder": "+971"
+        },
+        {
+          "key": "partners",
+          "label": "Partner phone numbers",
+          "type": "repeat",
+          "layout": "inline",
+          "maxItems": 3,
+          "fields": [
+            {
+              "key": "phone",
+              "label": "Partner",
+              "type": "tel",
+              "placeholder": "+971"
+            }
+          ]
+        },
+        {
+          "key": "email",
+          "label": "Company official email",
+          "type": "email",
+          "placeholder": "name@company.com"
+        },
+        {
+          "key": "engineer_phone",
+          "label": "Site engineer / supervisor number",
+          "type": "tel",
+          "placeholder": "+971"
+        },
+        {
+          "key": "emergency_phone",
+          "label": "Emergency number",
+          "type": "tel",
+          "placeholder": "+971"
+        },
+        {
+          "key": "website",
+          "label": "Website",
+          "type": "url",
+          "placeholder": "https://www.company.com"
+        },
+        {
+          "key": "office_address",
+          "label": "Office address",
+          "type": "text",
+          "placeholder": "Building, street and area"
+        },
+        {
+          "key": "workshop_location",
+          "label": "Location of workshop / store",
+          "type": "select",
+          "options": [
+            "Dubai",
+            "Abu Dhabi",
+            "Sharjah",
+            "Ajman",
+            "Ras Al Khaimah",
+            "Umm Al Quwain"
+          ]
+        },
+        {
+          "key": "office_location",
+          "label": "Office registration location",
+          "type": "select",
+          "options": [
+            "Dubai",
+            "Abu Dhabi",
+            "Sharjah",
+            "Ajman",
+            "Ras Al Khaimah",
+            "Umm Al Quwain"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "profile_services",
+      "phase": "profile",
+      "title": "Contractor business profile",
+      "description": "Select all services your company provides and describe your specialist work.",
+      "fields": [
+        {
+          "key": "specialist_civil",
+          "label": "Civil work",
+          "type": "checkbox",
+          "options": [
+            "General civil work",
+            "Excavation work",
+            "Concrete work",
+            "Block work",
+            "Plaster & tiles work",
+            "Road paving",
+            "Interlock installation",
+            "External décor work",
+            "Stone work"
+          ]
+        },
+        {
+          "key": "specialist_mechanical",
+          "label": "Mechanical work",
+          "type": "checkbox",
+          "options": [
+            "HVAC work",
+            "Chiller AC system",
+            "Plumbing works",
+            "Firefighting work, piping, panel installation and configuration",
+            "Water supply system",
+            "Pump installation",
+            "Ducting — all kinds",
+            "Drainage system installation",
+            "Electrical works"
+          ]
+        },
+        {
+          "key": "specialist_fitout",
+          "label": "Fit-out works",
+          "type": "checkbox",
+          "options": [
+            "Complete fit-out work",
+            "Gypsum partition and dry wall work",
+            "Suspended ceiling and ceiling tile",
+            "Flooring tiles and marble works",
+            "Vinyl carpet and wooden flooring",
+            "Wall cladding works",
+            "Painting and decorative works",
+            "Joinery and custom-made furniture",
+            "Doors, frames and iron framing works",
+            "Glass partitions and glass doors",
+            "Aluminium and glazing work",
+            "Kitchen cabinets and countertops",
+            "Wardrobes and storage units",
+            "Wallpaper and wall covering",
+            "Signage and decorative features",
+            "Office fit-out",
+            "Retail shops and showroom fit-out",
+            "Restaurant and café fit-out works",
+            "Hotel and hospital fit-out work",
+            "Demolition and dismantling work",
+            "Deep cleaning of ducting, sofas and properties"
+          ]
+        },
+        {
+          "key": "specialist_steel",
+          "label": "Steel structure works",
+          "type": "checkbox",
+          "options": [
+            "Complete steel structure works",
+            "Steel fabrication minor works",
+            "Steel canopy",
+            "Steel pergola and all kinds of steel parking",
+            "Luxury decorative internal villa staircase",
+            "External stairs and spiral stairs",
+            "Mezzanine structure",
+            "Metal roofing works",
+            "Luxury internal villa handrail",
+            "All kinds of 304 stainless steel works",
+            "All stainless steel works",
+            "CNC doors and partition installation",
+            "All kinds of wall cladding, APC and other types",
+            "Anchor bolt plates installation",
+            "Fence and gate works"
+          ]
+        },
+        {
+          "key": "specialist_grc",
+          "label": "GRC works",
+          "type": "checkbox",
+          "options": [
+            "GRC cladding installation",
+            "GRC decorative works",
+            "GRC columns",
+            "GRC cornices"
+          ]
+        },
+        {
+          "key": "specialist_landscaping",
+          "label": "Landscaping works (soft & hard works)",
+          "type": "checkbox",
+          "options": [
+            "Natural grass / artificial grass / lawn installation",
+            "Planting trees and palms",
+            "Soil preparation and improvement",
+            "Interlock, natural stone and paving installation",
+            "Decorative concrete paving",
+            "Garden decorative works",
+            "Stepping stones",
+            "Decorative wooden garden fence",
+            "Automatic irrigation testing and commissioning",
+            "Outdoor BBQ counter and complete villa / hotel decorative works",
+            "Landscaping maintenance"
+          ]
+        },
+        {
+          "key": "specialist_engineering",
+          "label": "Engineering, architecture & 3D animation rendering",
+          "type": "checkbox",
+          "options": [
+            "Complete 2D project work",
+            "3D animation and rendering",
+            "Modification",
+            "Complete villa project",
+            "Complete design for shops and other properties"
+          ]
+        },
+        {
+          "key": "specializations",
+          "label": "Additional technical works",
+          "type": "textarea",
+          "placeholder": "Describe additional technical services"
+        }
+      ]
+    },
+    {
+      "key": "profile_capacity",
+      "phase": "profile",
+      "title": "Contractor capacity",
+      "description": "Share the project values and workload your company can manage.",
+      "fields": [
+        {
+          "key": "minimum_project_value",
+          "label": "Minimum project value you can handle",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "maximum_project_value",
+          "label": "Maximum project value you can handle",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "largest_contract_24_months",
+          "label": "Largest completed contract in the last 24 months",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "current_active_projects",
+          "label": "Current active / ongoing projects",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "key": "upcoming_projects_90_days",
+          "label": "Additional projects expected to start in the next 90 days",
+          "type": "textarea",
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "profile_projects",
+      "phase": "profile",
+      "title": "Project presentation",
+      "description": "Complete details for your latest projects. Company and contact details from your application are carried forward.",
+      "fields": [
+        {
+          "key": "presentation_project_1_name",
+          "label": "Project 1 — project name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_1_client",
+          "label": "Project 1 — client name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_1_consultant",
+          "label": "Project 1 — consultant name",
+          "type": "text"
+        },
+        {
+          "key": "presentation_project_1_authority",
+          "label": "Project 1 — authority approval",
+          "type": "text"
+        },
+        {
+          "key": "presentation_project_1_location",
+          "label": "Project 1 — location",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_1_value",
+          "label": "Project 1 — contract value",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_1_start",
+          "label": "Project 1 — starting date",
+          "type": "date"
+        },
+        {
+          "key": "presentation_project_1_completion",
+          "label": "Project 1 — completion date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "presentation_project_1_agreement",
+          "label": "Project 1 — client agreement",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1
+        },
+        {
+          "key": "presentation_project_2_name",
+          "label": "Project 2 — project name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_2_client",
+          "label": "Project 2 — client name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_2_consultant",
+          "label": "Project 2 — consultant name",
+          "type": "text"
+        },
+        {
+          "key": "presentation_project_2_authority",
+          "label": "Project 2 — authority approval",
+          "type": "text"
+        },
+        {
+          "key": "presentation_project_2_location",
+          "label": "Project 2 — location",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_2_value",
+          "label": "Project 2 — contract value",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_2_start",
+          "label": "Project 2 — starting date",
+          "type": "date"
+        },
+        {
+          "key": "presentation_project_2_completion",
+          "label": "Project 2 — completion date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "presentation_project_2_agreement",
+          "label": "Project 2 — client agreement",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1
+        },
+        {
+          "key": "presentation_project_3_name",
+          "label": "Project 3 — project name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_3_client",
+          "label": "Project 3 — client name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_3_consultant",
+          "label": "Project 3 — consultant name",
+          "type": "text"
+        },
+        {
+          "key": "presentation_project_3_authority",
+          "label": "Project 3 — authority approval",
+          "type": "text"
+        },
+        {
+          "key": "presentation_project_3_location",
+          "label": "Project 3 — location",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_3_value",
+          "label": "Project 3 — contract value",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "presentation_project_3_start",
+          "label": "Project 3 — starting date",
+          "type": "date"
+        },
+        {
+          "key": "presentation_project_3_completion",
+          "label": "Project 3 — completion date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "presentation_project_3_agreement",
+          "label": "Project 3 — client agreement",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1
+        }
+      ]
+    },
+    {
+      "key": "profile_agreements",
+      "phase": "profile",
+      "title": "Service agreements and supporting documents",
+      "description": "Review the standard UAE service requirements and attach any supporting agreements.",
+      "fields": [
+        {
+          "key": "after_service_agreement",
+          "label": "I agree to provide after-service support as standard in the UAE.",
+          "type": "checkbox",
+          "required": true,
+          "options": [
+            "I agree"
+          ]
+        },
+        {
+          "key": "after_service_project",
+          "label": "After-service agreement — project name",
+          "type": "text"
+        },
+        {
+          "key": "after_service_evidence",
+          "label": "Upload after-service agreement",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1
+        },
+        {
+          "key": "security_cheque_acknowledgement",
+          "label": "I acknowledge the requirement to issue a security cheque for 10% of the project signing agreement, payable to Al Tameer United Building Materials Trading L.L.C.",
+          "type": "checkbox",
+          "required": true,
+          "options": [
+            "I acknowledge this requirement"
+          ]
+        },
+        {
+          "key": "security_cheque_project",
+          "label": "Security cheque — project name",
+          "type": "text"
+        },
+        {
+          "key": "security_cheque_evidence",
+          "label": "Upload related security cheque agreement",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 1
+        },
+        {
+          "key": "other_supporting_documents",
+          "label": "Other supporting documents",
+          "type": "attachment",
+          "accept": "application/pdf,image/jpeg,image/png,image/webp",
+          "maxBytes": 15728640,
+          "maxItems": 10
+        }
+      ]
+    }
+  ]
+}

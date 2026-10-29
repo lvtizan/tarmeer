@@ -896,6 +896,29 @@ export default function FieldSurveyPage() {
     const authReturnEditId = editQuery && Number.isSafeInteger(Number(editQuery)) && Number(editQuery) > 0 ? Number(editQuery) : null;
     void (async () => {
       const country = getVerificationCountry();
+      const searchParams=new URLSearchParams(window.location.search);
+      const hashParams=new URLSearchParams(window.location.hash.replace(/^#/,''));
+      const requestedApplication=searchParams.get('application');
+      const incomingAccess=hashParams.get('access');
+      if(requestedApplication&&incomingAccess){
+        fieldApi.storeDraftAccess(Number(requestedApplication),incomingAccess,country);
+        const cleanUrl=new URL(window.location.href);cleanUrl.hash='';window.history.replaceState(null,'',cleanUrl);
+      }
+      const isNewForm=searchParams.get('new')==='1';
+      const rememberedApplication=!isNewForm&&country==='ae'?localStorage.getItem('contractor_application_id_ae'):null;
+      const applicationId=requestedApplication||rememberedApplication;
+      if(applicationId){
+        if(!/^\d+$/.test(applicationId)||!Number.isSafeInteger(Number(applicationId))||Number(applicationId)<=0)throw new Error('Invalid application link.');
+        const response=await fieldApi.getContractorApplication(Number(applicationId),country) as {application:VerificationRecord};
+        const record=response.application;
+        const snapshot=typeof record.schema_snapshot==='string'?JSON.parse(record.schema_snapshot):record.schema_snapshot;
+        if(!snapshot||snapshot.workflow!=='contractor-two-stage'||snapshot.country!==country)throw new Error('This contractor application is unavailable. Use its private application link or start a new application.');
+        parseVerificationData(record.verification_data);
+        const evidence=typeof record.attachments==='string'?JSON.parse(record.attachments):record.attachments;
+        if(evidence!=null&&(!Array.isArray(evidence)||evidence.some(item=>!item||typeof item.name!=='string'||typeof item.url!=='string')))throw new Error('Saved attachments are invalid. Contact an administrator.');
+        if(active)setState({legacy:false,schema:snapshot,record,editingId:null});
+        return;
+      }
       const rawEdit = new URLSearchParams(window.location.search).get('edit');
       const editingId = rawEdit ? Number(rawEdit) : null;
       if (rawEdit && (!Number.isSafeInteger(editingId) || Number(editingId) <= 0)) throw new Error('Invalid interview ID.');
@@ -907,7 +930,7 @@ export default function FieldSurveyPage() {
         const response = await fieldApi.loadInterview(editingId) as {interview:VerificationRecord|null};
         record = response.interview;
         if (!record) throw new Error('Interview not found.');
-      } else if (new URLSearchParams(window.location.search).get('new') !== '1') {
+      } else if (!isNewForm) {
         record = await restoreStoredVerificationDraft(localStorage, country, id => fieldApi.getDraft(id), fieldApi.clearDraftAccess);
       }
       if (record?.country && record.country !== country) {
@@ -942,7 +965,8 @@ export default function FieldSurveyPage() {
       if (!draft.id) throw new Error('Unable to create a verification draft.');
       localStorage.setItem(`field_draft_id_${country}`,String(draft.id));
       localStorage.setItem('field_draft_id',String(draft.id));
-      const cleanUrl = new URL(window.location.href); cleanUrl.searchParams.delete('new'); window.history.replaceState(null,'',cleanUrl);
+      if(isNewForm)localStorage.removeItem('contractor_application_id_ae');
+      const cleanUrl = new URL(window.location.href); cleanUrl.searchParams.delete('new'); cleanUrl.searchParams.delete('application'); cleanUrl.hash=''; window.history.replaceState(null,'',cleanUrl);
       if (active) setState({legacy:false,schema,record:draft,editingId});
     })().catch(e => {
       if (!active) return;

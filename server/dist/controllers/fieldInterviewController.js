@@ -5,8 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createDraft = createDraft;
 exports.getMyDraft = getMyDraft;
+exports.getContractorApplication = getContractorApplication;
 exports.saveDraft = saveDraft;
+exports.saveContractorProfile = saveContractorProfile;
 exports.submitInterview = submitInterview;
+exports.submitContractorProfile = submitContractorProfile;
 exports.searchCompanies = searchCompanies;
 exports.uploadPhoto = uploadPhoto;
 exports.getSurveySchema = getSurveySchema;
@@ -64,6 +67,12 @@ exports.uploadAttachmentMiddleware = (0, multer_1.default)({
         if (_ALLOWED_ATTACHMENT_TYPES.has(file.mimetype)) cb(null, true);
         else cb(new Error('File type not allowed'));
     },
+}).single('file');
+const PRIVATE_CONTRACTOR_ATTACHMENTS_DIR=path_1.default.join(__dirname,'..','..','private','contractor-attachments');
+if(!fs_1.default.existsSync(PRIVATE_CONTRACTOR_ATTACHMENTS_DIR)) fs_1.default.mkdirSync(PRIVATE_CONTRACTOR_ATTACHMENTS_DIR,{recursive:true,mode:0o700});
+exports.uploadContractorAttachmentMiddleware=(0,multer_1.default)({
+  storage:multer_1.default.diskStorage({destination:(_req,_file,cb)=>cb(null,PRIVATE_CONTRACTOR_ATTACHMENTS_DIR),filename:(_req,file,cb)=>cb(null,`ca-${Date.now()}-${crypto_1.default.randomBytes(12).toString('hex')}${path_1.default.extname(file.originalname).toLowerCase()||'.bin'}`)}),
+  limits:{fileSize:15*1024*1024},fileFilter:(_req,file,cb)=>_ALLOWED_ATTACHMENT_TYPES.has(file.mimetype)?cb(null,true):cb(new Error('File type not allowed')),
 }).single('file');
 
 // ── Survey → company_profiles 字段映射 ──────────────────────────────────────
@@ -173,6 +182,26 @@ async function ensureInterviewColumns() {
       await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN filled_by VARCHAR(120) NULL`);
       console.log('[field] added column: filled_by');
     }
+    if (!existingSet.has('contractor_stage')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN contractor_stage VARCHAR(20) NOT NULL DEFAULT 'legacy'`);
+      console.log('[field] added column: contractor_stage');
+    }
+    if (!existingSet.has('contractor_review_status')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN contractor_review_status VARCHAR(20) NULL`);
+      console.log('[field] added column: contractor_review_status');
+    }
+    if (!existingSet.has('contractor_reviewed_at')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN contractor_reviewed_at DATETIME NULL`);
+      console.log('[field] added column: contractor_reviewed_at');
+    }
+    if (!existingSet.has('contractor_reviewed_by')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN contractor_reviewed_by INT NULL`);
+      console.log('[field] added column: contractor_reviewed_by');
+    }
+    if (!existingSet.has('contractor_qualification_snapshot')) {
+      await database_1.default.execute(`ALTER TABLE company_interviews ADD COLUMN contractor_qualification_snapshot JSON NULL`);
+      console.log('[field] added column: contractor_qualification_snapshot');
+    }
     // 公开问卷无外勤人员：interviewer_id 允许为空
     const [nullCheck] = await database_1.default.execute(
       `SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'company_interviews' AND COLUMN_NAME = 'interviewer_id'`
@@ -260,7 +289,13 @@ async function fetchAccessibleInterview(req, res, status, db=database_1.default,
     return row;
 }
 async function guardDraftUpload(req,res,next) {
-    try { const row=await fetchAccessibleInterview(req,res,req.admin ? null : 'draft'); if(!row) return; req.interview=row; next(); }
+    try {
+        const row=await fetchAccessibleInterview(req,res,null);
+        if(!row) return;
+        const approvedProfile=row.status==='submitted'&&row.contractor_stage==='profile'&&row.contractor_review_status==='approved';
+        if(!req.admin&&row.status!=='draft'&&!approvedProfile) return res.status(404).json({error:'Interview not found.'});
+        req.interview=row; next();
+    }
     catch(e) { console.error('guardDraftUpload:',e); res.status(500).json({error:'Unable to verify draft access.'}); }
 }
 exports.guardDraftUpload=guardDraftUpload;
@@ -273,10 +308,11 @@ async function createDraft(req, res) {
         const version=schema?.version || 'legacy';
         if(req.body.schema_version && req.body.schema_version !== version) return res.status(409).json({error:'The requested survey version is no longer available. Please reload.'});
         const token=version===verification.VERSION ? verification.createToken() : null;
+        const workflow=schema?.workflow==='contractor-two-stage';
         const [result]=await database_1.default.execute(
-            `INSERT INTO company_interviews (status, interviewer_id, country, schema_version, schema_snapshot, draft_token_hash) VALUES ('draft', ?, ?, ?, ?, ?)`,
-            [interviewerId,country,version,schema ? JSON.stringify(schema) : null,token ? verification.hashToken(token) : null]);
-        res.status(201).json({id:result.insertId,country,schema_version:version,schema_snapshot:schema,...(token?{draft_token:token}:{})});
+            `INSERT INTO company_interviews (status, interviewer_id, country, schema_version, schema_snapshot, draft_token_hash, contractor_stage, contractor_review_status) VALUES ('draft', ?, ?, ?, ?, ?, ?, NULL)`,
+            [interviewerId,country,version,schema ? JSON.stringify(schema) : null,token ? verification.hashToken(token) : null,workflow?'qualification':'legacy']);
+        res.status(201).json({id:result.insertId,country,schema_version:version,schema_snapshot:schema,contractor_stage:workflow?'qualification':'legacy',contractor_review_status:null,...(token?{draft_token:token}:{})});
     } catch(e) { console.error('createDraft error:',e); res.status(500).json({error:'Failed to create draft.'}); }
 }
 async function getMyDraft(req,res) {
@@ -284,6 +320,92 @@ async function getMyDraft(req,res) {
     if(!Number.isSafeInteger(id)||id<=0) return res.json({draft:null});
     try { const row=await fetchAccessibleInterview(req,res,'draft'); if(row) res.json({draft:verification.sanitizeInterview(row)}); }
     catch(e) { res.status(500).json({error:'Failed to fetch draft.'}); }
+}
+function schemaPhase(schema,phase) {
+    return {...schema,sections:(schema?.sections||[]).filter(section=>section.phase===phase)};
+}
+function requiredContractorEvidenceError(schema,phase,data,evidence) {
+    const required=schemaPhase(schema,phase).sections.flatMap(section=>section.fields||[]).filter(field=>field.type==='attachment'&&field.required&&!field.retired);
+    for(const field of required) {
+        const rule=field.visibleWhen;
+        if(rule) {
+            const value=data?.[rule.field];
+            const present=rule.values ? (Array.isArray(value)?rule.values.some(item=>value.includes(item)):rule.values.includes(value)) : !!value;
+            if(rule.not ? present : !present) continue;
+        }
+        if(!(evidence||[]).some(item=>item.field_key===field.key)) return {error:`${field.label} is required.`,field_key:field.key};
+    }
+    return null;
+}
+function validateContractorPhase(data,schema,phase,complete=true) {
+    const structural=verification.validateAnswersDetailed(data,schema,false);
+    if(structural) return structural;
+    const sections=schemaPhase(schema,phase).sections.map(section=>({...section,fields:(section.fields||[]).map(field=>field.type==='attachment'?{...field,required:false}:field)}));
+    const allowed=new Set(sections.flatMap(section=>section.fields||[]).map(field=>field.key));
+    const phaseData=Object.fromEntries(Object.entries(data||{}).filter(([key])=>allowed.has(key)));
+    return verification.validateAnswersDetailed(phaseData,{...schema,sections},complete);
+}
+async function getContractorApplication(req,res) {
+    const row=await fetchAccessibleInterview(req,res,null);
+    if(!row) return;
+    const schema=verification.parseJSON(row.schema_snapshot);
+    if(row.country!=='ae'||row.schema_version!==verification.VERSION||schema?.workflow!=='contractor-two-stage') return res.status(404).json({error:'Contractor application not found.'});
+    res.set('Cache-Control','no-store');
+    res.json({application:verification.sanitizeInterview(row)});
+}
+async function saveContractorProfile(req,res) {
+    const {id}=req.params;let db,committed=false;
+    try {
+        db=await database_1.default.getConnection();await db.beginTransaction();
+        const row=await fetchAccessibleInterview(req,res,null,db,true);
+        if(!row) return;
+        const schema=verification.parseJSON(row.schema_snapshot);
+        if(row.status!=='submitted'||row.contractor_stage!=='profile'||row.contractor_review_status!=='approved'||row.country!=='ae'||schema?.workflow!=='contractor-two-stage') {await db.rollback();return res.status(409).json({error:'This application is not ready for profile completion.'});}
+        const incoming=req.body?.verification_data;
+        if(!incoming||typeof incoming!=='object'||Array.isArray(incoming)) {await db.rollback();return res.status(400).json({error:'Profile answers must be an object.'});}
+        const profileKeys=new Set(schemaPhase(schema,'profile').sections.flatMap(section=>section.fields||[]).map(field=>field.key));
+        if(Object.keys(incoming).some(key=>!profileKeys.has(key))) {await db.rollback();return res.status(400).json({error:'Only profile-stage answers can be changed.'});}
+        const previousData=verification.parseJSON(row.verification_data)||{};
+        const identityKeys=['company_name','license_number_1','license_number_2','license_number_3'];
+        if(identityKeys.some(key=>Object.prototype.hasOwnProperty.call(incoming,key)&&String(previousData[key]||'').trim()&&String(incoming[key]||'').trim()!==String(previousData[key]).trim())) {await db.rollback();return res.status(409).json({error:'Company name and submitted trade licence numbers cannot be changed after admission approval.'});}
+        const data={...previousData,...incoming};
+        const invalid=validateContractorPhase(data,schema,'profile',false);
+        if(invalid) {await db.rollback();return res.status(400).json(invalid);}
+        let attachments=verification.parseJSON(row.attachments)||[];
+        if(req.body.removed_attachment_urls!==undefined) {
+            const qualificationKeys=new Set(schemaPhase(schema,'qualification').sections.flatMap(section=>section.fields||[]).map(field=>field.key));
+            const allowedProfileUrls=new Set(attachments.filter(item=>schemaPhase(schema,'profile').sections.some(section=>(section.fields||[]).some(field=>field.key===item.field_key))).map(item=>item.url));
+            if(!Array.isArray(req.body.removed_attachment_urls)||req.body.removed_attachment_urls.some(url=>!allowedProfileUrls.has(url)||attachments.some(item=>item.url===url&&qualificationKeys.has(item.field_key)))) {await db.rollback();return res.status(409).json({error:'Only profile-stage evidence can be changed after approval.'});}
+            const result=verification.removeEvidence(req.body.removed_attachment_urls,attachments);
+            if(result.error) {await db.rollback();return res.status(400).json({error:result.error});}
+            attachments=result.attachments;
+        }
+        const companyField=profileKeys.has('company_name')&&typeof data.company_name==='string'?data.company_name:row.company_name;
+        await db.execute('UPDATE company_interviews SET verification_data = ?, attachments = ?, company_name = ? WHERE id = ?',[JSON.stringify(data),JSON.stringify(attachments),companyField,id]);
+        await db.commit();committed=true;res.json({ok:true});
+    } catch(error) {if(db)await db.rollback();console.error('saveContractorProfile:',error);res.status(500).json({error:'Failed to save contractor profile.'});}
+    finally {if(db){if(!committed) await db.rollback();db.release();}}
+}
+async function submitContractorProfile(req,res) {
+    const {id}=req.params;let db;
+    try {
+        db=await database_1.default.getConnection();await db.beginTransaction();
+        const row=await fetchAccessibleInterview(req,res,null,db,true);
+        if(!row) return;
+        const schema=verification.parseJSON(row.schema_snapshot),data=verification.parseJSON(row.verification_data)||{},evidence=verification.parseJSON(row.attachments)||[];
+        if(row.status!=='submitted'||row.contractor_stage!=='profile'||row.contractor_review_status!=='approved'||row.country!=='ae'||schema?.workflow!=='contractor-two-stage') {await db.rollback();return res.status(409).json({error:'This application is not ready for profile completion.'});}
+        let invalid=validateContractorPhase(data,schema,'profile',true)||requiredContractorEvidenceError(schema,'profile',data,evidence);
+        if(!invalid) {
+            const noAttachmentRequired={...schema,sections:(schema.sections||[]).map(section=>({...section,fields:(section.fields||[]).map(field=>field.type==='attachment'?{...field,required:false}:field)}))};
+            invalid=verification.validateAnswersDetailed(data,noAttachmentRequired,true);
+        }
+        if(!invalid) invalid=requiredContractorEvidenceError(schema,'qualification',data,evidence);
+        if(invalid) {await db.rollback();return res.status(400).json(invalid);}
+        await db.execute("UPDATE company_interviews SET contractor_stage = 'complete' WHERE id = ?",[id]);
+        await db.commit();res.json({ok:true,contractor_stage:'complete'});
+        autoBindCompanyRef(parseInt(id,10)).then(()=>mergeInterviewToProfile(parseInt(id,10))).catch(()=>{});
+    } catch(error) {if(db)await db.rollback();console.error('submitContractorProfile:',error);res.status(500).json({error:'Failed to submit contractor profile.'});}
+    finally {if(db){await db.rollback().catch(()=>{});db.release();}}
 }
 // 根据关联公司（profile = company_profiles / uae = uae_companies）查国家，查不到返回 null
 async function resolveCompanyRefCountry(refId, refSource) {
@@ -421,29 +543,43 @@ async function submitInterview(req, res) {
     try {
         const current=await fetchAccessibleInterview(req,res,'draft');
         if(!current) return;
+        const currentSchema=verification.parseJSON(current.schema_snapshot);
+        const contractorWorkflow=currentSchema?.workflow==='contractor-two-stage';
         if(current.schema_version===verification.VERSION) {
-            const error=verification.validateAnswersDetailed(verification.parseJSON(current.verification_data)||{},verification.parseJSON(current.schema_snapshot),true);
+            const data=verification.parseJSON(current.verification_data)||{};
+            const evidence=verification.parseJSON(current.attachments)||[];
+            const error=contractorWorkflow
+              ? validateContractorPhase(data,currentSchema,'qualification',true)||requiredContractorEvidenceError(currentSchema,'qualification',data,evidence)
+              : verification.validateAnswersDetailed(data,currentSchema,true);
             if(error) return res.status(400).json(error);
         }
-        await autoBindCompanyRef(parseInt(id, 10));
+        if(!contractorWorkflow) await autoBindCompanyRef(parseInt(id, 10));
         const db=await database_1.default.getConnection();
         try {
             await db.beginTransaction();
             const [locked]=await db.execute("SELECT * FROM company_interviews WHERE id = ? AND status = 'draft' FOR UPDATE",[id]);
             if(!locked.length) {await db.rollback();return res.status(409).json({error:'This record has already been submitted.'});}
             if(locked[0].schema_version===verification.VERSION) {
-                const error=verification.validateAnswersDetailed(verification.parseJSON(locked[0].verification_data)||{},verification.parseJSON(locked[0].schema_snapshot),true);
+                const lockedSchema=verification.parseJSON(locked[0].schema_snapshot);
+                const data=verification.parseJSON(locked[0].verification_data)||{};
+                const evidence=verification.parseJSON(locked[0].attachments)||[];
+                const isContractor=lockedSchema?.workflow==='contractor-two-stage';
+                const error=isContractor
+                  ? validateContractorPhase(data,lockedSchema,'qualification',true)||requiredContractorEvidenceError(lockedSchema,'qualification',data,evidence)
+                  : verification.validateAnswersDetailed(data,lockedSchema,true);
                 if(error) {await db.rollback();return res.status(400).json(error);}
             }
-            await db.execute("UPDATE company_interviews SET status = 'submitted', submitted_at = NOW() WHERE id = ?",[id]);
+            await db.execute(contractorWorkflow
+              ? "UPDATE company_interviews SET status = 'submitted', submitted_at = NOW(), contractor_stage = 'qualification', contractor_review_status = 'pending' WHERE id = ?"
+              : "UPDATE company_interviews SET status = 'submitted', submitted_at = NOW() WHERE id = ?",[id]);
             const editorId=req.adminId||0;
             const [editors]=await db.execute('SELECT full_name FROM admin_users WHERE id = ?',[editorId]);
             await db.execute(`INSERT INTO interview_edit_logs (interview_id,editor_id,editor_name,snapshot_before,edit_summary) VALUES (?,?,?,NULL,'Initial submission')`,[id,editorId,editors[0]?.full_name||'—']);
             await db.commit();
         } catch(error) {await db.rollback();throw error;} finally {db.release();}
         res.json({ ok: true });
-        // fire-and-forget：满足条件时自动合并 + 同步 CRM
-        mergeInterviewToProfile(parseInt(id, 10)).catch(() => {});
+        // Two-stage applications are only merged after the full profile is approved and submitted.
+        if(!contractorWorkflow) mergeInterviewToProfile(parseInt(id, 10)).catch(() => {});
     }
     catch (e) {
         res.status(500).json({ error: 'Failed to submit.' });
@@ -486,21 +622,34 @@ async function uploadAttachment(req, res) {
     try {
         db = await database_1.default.getConnection();
         await db.beginTransaction();
-        const row = await fetchAccessibleInterview(req, res, req.admin ? null : 'draft', db, true);
+        const row = await fetchAccessibleInterview(req, res, null, db, true);
         if (!row) { await db.rollback(); await fs_1.default.promises.unlink(req.file.path); return; }
+        const contractorSchema=verification.parseJSON(row.schema_snapshot);
+        const approvedProfile=row.status==='submitted'&&row.contractor_stage==='profile'&&row.contractor_review_status==='approved'&&contractorSchema?.workflow==='contractor-two-stage';
+        if(!req.admin&&row.status!=='draft'&&!approvedProfile){await db.rollback();await fs_1.default.promises.unlink(req.file.path);return res.status(404).json({error:'Interview not found.'});}
         const attachments = verification.parseJSON(row.attachments) || [];
         let error;
         if (row.schema_version === verification.VERSION) {
             const snapshot = verification.parseJSON(row.schema_snapshot);
-            const field = snapshot.sections.flatMap(section => section.fields).find(field => field.key === req.body.field_key && field.type === 'attachment' && !field.retired);
-            error = !field ? 'Select an evidence category from the survey.' : verification.validateEvidenceFile(req.file);
+            if(snapshot.workflow==='contractor-two-stage'&&!req.privateContractorAttachment){await db.rollback();await fs_1.default.promises.unlink(req.file.path);return res.status(400).json({error:'Contractor application evidence must use private upload handling.'});}
+            const contractorStage=snapshot.workflow==='contractor-two-stage';
+            const allowedPhase=approvedProfile?'profile':'qualification';
+            const field = snapshot.sections.flatMap(section => section.fields.map(item=>({...item,_phase:section.phase}))).find(field => field.key === req.body.field_key && field.type === 'attachment' && !field.retired && (!(req.privateContractorAttachment||contractorStage)||field._phase===allowedPhase));
+            if(req.privateContractorAttachment&&snapshot.workflow!=='contractor-two-stage') error='This upload route is for contractor applications only.';
+            else error = !field ? 'Select an evidence category from the survey.' : verification.validateEvidenceFile(req.file);
+            if (!error && field.visibleWhen) {
+                const answers=verification.parseJSON(row.verification_data)||{};
+                const rule=field.visibleWhen,value=answers[rule.field];
+                const present=rule.values?(Array.isArray(value)?rule.values.some(item=>value.includes(item)):rule.values.includes(value)):!!value;
+                if(rule.not?present:!present) error='Complete the related selection before uploading this evidence.';
+            }
             if (!error && field.maxBytes && req.file.size > field.maxBytes) error = `Maximum ${Math.round(field.maxBytes / 1024 / 1024)} MB per file.`;
             if (!error && field.accept && !field.accept.split(',').map(type => type.trim()).includes(req.file.mimetype)) error = 'This file format is not allowed for this field.';
             if (!error && field.maxItems && attachments.filter(item => item.field_key === field.key).length >= field.maxItems) error = `Choose up to ${field.maxItems} files for this project.`;
         }
         if (error) { await db.rollback(); await fs_1.default.promises.unlink(req.file.path); return res.status(400).json({ error, field_key: req.body.field_key }); }
-        await fs_1.default.promises.chmod(req.file.path, 0o644);
-        const meta = { url: `/uploads/field-attachments/${req.file.filename}`, name: req.file.originalname, type: req.file.mimetype, size: req.file.size, field_key: req.body.field_key || undefined, uploaded_at: new Date().toISOString() };
+        if(!req.privateContractorAttachment) await fs_1.default.promises.chmod(req.file.path, 0o644);
+        const meta = { url: req.privateContractorAttachment?`/api/field/interviews/${row.id}/attachments/${encodeURIComponent(req.file.filename)}`:`/uploads/field-attachments/${req.file.filename}`, name: req.file.originalname, type: req.file.mimetype, size: req.file.size, field_key: req.body.field_key || undefined, uploaded_at: new Date().toISOString() };
         await db.execute("UPDATE company_interviews SET attachments = JSON_ARRAY_APPEND(COALESCE(attachments, JSON_ARRAY()), '$', CAST(? AS JSON)) WHERE id = ?", [JSON.stringify(meta), row.id]);
         await db.commit(); res.json(meta);
     } catch (error) {
@@ -510,6 +659,18 @@ async function uploadAttachment(req, res) {
     } finally { if (db) db.release(); }
 }
 exports.uploadAttachment = uploadAttachment;
+async function downloadContractorAttachment(req,res) {
+  const row=await fetchAccessibleInterview(req,res,null);
+  if(!row)return;
+  const filename=path_1.default.basename(req.params.filename||'');
+  const attachments=verification.parseJSON(row.attachments)||[];
+  if(row.schema_version!==verification.VERSION||verification.parseJSON(row.schema_snapshot)?.workflow!=='contractor-two-stage'||!attachments.some(item=>item.url===`/api/field/interviews/${row.id}/attachments/${encodeURIComponent(filename)}`)) return res.status(404).json({error:'Attachment not found.'});
+  const filePath=path_1.default.join(PRIVATE_CONTRACTOR_ATTACHMENTS_DIR,filename);
+  if(!fs_1.default.existsSync(filePath))return res.status(404).json({error:'Attachment not found.'});
+  res.set({'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Disposition':'attachment'});
+  res.sendFile(filePath);
+}
+exports.downloadContractorAttachment=downloadContractorAttachment;
 async function getSurveySchema(req,res) {
     try { const schema=await verification.loadSchema(database_1.default,verification.requestCountry(req),req.query.version || req.query.schema_version); res.json({schema}); }
     catch(e) { console.error('getSurveySchema:',e); res.status(500).json({error:'Failed to load survey schema.'}); }
@@ -589,21 +750,26 @@ async function reSubmitInterview(req, res) {
     if (rows.length === 0) return res.status(404).json({ error: 'Submitted interview not found.' });
     const current = rows[0];
     if(!verification.canAccessCountry(req,current.country)) return res.status(404).json({error:'Interview not found.'});
-    if(current.schema_version === verification.VERSION) {
-        if(Object.keys(req.body).some(k=>/^section_[1-9]$/.test(k))) return res.status(400).json({error:'V7 answers must use verification_data.'});
-        if(req.body.verification_data !== undefined) {
-            if(!req.body.verification_data || typeof req.body.verification_data!=='object' || Array.isArray(req.body.verification_data)) return res.status(400).json({error:'Verification answers must be an object.'});
-            req.body.verification_data={...(verification.parseJSON(current.verification_data)||{}),...req.body.verification_data};
-            const error=verification.validateAnswersDetailed(req.body.verification_data,verification.parseJSON(current.schema_snapshot),true);
-            if(error) return res.status(400).json(error);
-        }
-    } else if(req.body.verification_data!==undefined) return res.status(400).json({error:'This record uses the legacy survey.'});
-
     if(req.body.attachments!==undefined) {
         const result=verification.validateEvidence(req.body.attachments,current.attachments);
         if(result.error) return res.status(400).json({error:result.error});
         req.body.attachments=result.attachments;
     }
+    const effectiveEvidence=req.body.attachments===undefined?(verification.parseJSON(current.attachments)||[]):req.body.attachments;
+    if(current.schema_version === verification.VERSION) {
+        if(Object.keys(req.body).some(k=>/^section_[1-9]$/.test(k))) return res.status(400).json({error:'V7 answers must use verification_data.'});
+        if(req.body.verification_data !== undefined) {
+            if(!req.body.verification_data || typeof req.body.verification_data!=='object' || Array.isArray(req.body.verification_data)) return res.status(400).json({error:'Verification answers must be an object.'});
+            req.body.verification_data={...(verification.parseJSON(current.verification_data)||{}),...req.body.verification_data};
+            const snapshot=verification.parseJSON(current.schema_snapshot);
+            let error;
+            if(snapshot?.workflow==='contractor-two-stage') {
+              const noAttachmentRequired={...snapshot,sections:(snapshot.sections||[]).map(section=>({...section,fields:(section.fields||[]).map(field=>field.type==='attachment'?{...field,required:false}:field)}))};
+              error=verification.validateAnswersDetailed(req.body.verification_data,noAttachmentRequired,true)||requiredContractorEvidenceError(snapshot,'qualification',req.body.verification_data,effectiveEvidence)||requiredContractorEvidenceError(snapshot,'profile',req.body.verification_data,effectiveEvidence);
+            } else error=verification.validateAnswersDetailed(req.body.verification_data,snapshot,true);
+            if(error) return res.status(400).json(error);
+        }
+    } else if(req.body.verification_data!==undefined) return res.status(400).json({error:'This record uses the legacy survey.'});
     // Build update fields
     const fields = {};
     for (const key of allowed) {

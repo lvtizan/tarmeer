@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.listInterviews = listInterviews;
 exports.getInterview = getInterview;
+exports.approveContractorQualification = approveContractorQualification;
 exports.editInterview = editInterview;
 exports.deleteInterviews = deleteInterviews;
 exports.listStaff = listStaff;
@@ -35,7 +36,7 @@ async function listInterviews(req, res) {
     const country = verification.requestCountry(req);
     try {
         const [rows] = await database_1.default.execute(`
-      SELECT ci.id, ci.company_name, ci.status, ci.submitted_at, ci.created_at,
+      SELECT ci.id, ci.company_name, ci.status, ci.submitted_at, ci.created_at, ci.contractor_stage, ci.contractor_review_status,
              ci.company_ref_id, ci.company_ref_source, ci.section_9, ci.schema_version, ci.country, ci.verification_data, ci.schema_snapshot,
              COALESCE(au.full_name, '—') AS interviewer_name,
              CASE ci.company_ref_source
@@ -69,6 +70,35 @@ async function listInterviews(req, res) {
     catch (e) {
         res.status(500).json({ error: 'Failed to list interviews.' });
     }
+}
+async function approveContractorQualification(req,res) {
+  const {id}=req.params;let db,committed=false;
+  try {
+    db=await database_1.default.getConnection();await db.beginTransaction();
+    const [rows]=await db.execute('SELECT id,country,status,contractor_stage,contractor_review_status,schema_version,schema_snapshot,verification_data,attachments FROM company_interviews WHERE id = ? FOR UPDATE',[id]);
+    const row=rows[0];
+    if(!row||!verification.canAccessCountry(req,row.country)) {await db.rollback();return res.status(404).json({error:'Application not found.'});}
+    const schema=verification.parseJSON(row.schema_snapshot);
+    if(row.country!=='ae'||row.status!=='submitted'||row.contractor_stage!=='qualification'||row.contractor_review_status!=='pending'||row.schema_version!==verification.VERSION||schema?.workflow!=='contractor-two-stage') {await db.rollback();return res.status(409).json({error:'This application is not awaiting qualification approval.'});}
+    const data=verification.parseJSON(row.verification_data)||{};
+    const qualificationSections=(schema.sections||[]).filter(section=>section.phase==='qualification');
+    const sections=qualificationSections.map(section=>({...section,fields:(section.fields||[]).map(field=>field.type==='attachment'?{...field,required:false}:field)}));
+    const allowed=new Set(sections.flatMap(section=>section.fields||[]).map(field=>field.key));
+    const answers=Object.fromEntries(Object.entries(data).filter(([key])=>allowed.has(key)));
+    let invalid=verification.validateAnswersDetailed(answers,{...schema,sections},true);
+    const evidence=verification.parseJSON(row.attachments)||[];
+    if(!invalid) for(const field of qualificationSections.flatMap(section=>section.fields||[]).filter(field=>field.type==='attachment'&&field.required&&!field.retired)) {
+      const rule=field.visibleWhen, value=rule?data[rule.field]:undefined;
+      const present=rule?(rule.values?(Array.isArray(value)?rule.values.some(item=>value.includes(item)):rule.values.includes(value)):!!value):true;
+      if(rule&&(rule.not?present:!present)) continue;
+      if(!evidence.some(item=>item.field_key===field.key)){invalid={error:`${field.label} is required.`,field_key:field.key};break;}
+    }
+    if(invalid){await db.rollback();return res.status(409).json({error:'Application data or required evidence is incomplete.',details:invalid});}
+    await db.execute("UPDATE company_interviews SET contractor_stage='profile',contractor_review_status='approved',contractor_reviewed_at=NOW(),contractor_reviewed_by=?,contractor_qualification_snapshot=? WHERE id=?",[req.adminId,JSON.stringify({verification_data:data,attachments:evidence,approved_at:new Date().toISOString(),approved_by:req.adminId}),id]);
+    await db.execute("INSERT INTO interview_edit_logs (interview_id,editor_id,editor_name,snapshot_before,edit_summary) VALUES (?,?,?,?, 'Qualification approved; profile stage opened')",[id,req.adminId,req.admin?.full_name||'—',JSON.stringify({contractor_stage:row.contractor_stage,contractor_review_status:row.contractor_review_status})]);
+    await db.commit();committed=true;res.json({ok:true,contractor_stage:'profile',contractor_review_status:'approved'});
+  } catch(error) {if(db)await db.rollback();console.error('approveContractorQualification:',error);res.status(500).json({error:'Failed to approve contractor application.'});}
+  finally {if(db){if(!committed)await db.rollback();db.release();}}
 }
 // GET /api/admin/interviews/:id
 async function getInterview(req, res) {

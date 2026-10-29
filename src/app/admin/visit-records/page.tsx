@@ -10,6 +10,7 @@ import { MapPin, ExternalLink, X, ClipboardList, Trash2, FileText, Download, Pen
 import VerificationRecordSections from '@/components/admin/VerificationRecordSections';
 import { parseRecordSchema, parseRecordFiles, parseRecordServiceAreas as parseServiceAreas, type RecordServiceArea as SvcArea } from '@/components/admin/VerificationRecordModel';
 import { formatAdminDateTime, ADMIN_TIME_CLS } from '@/lib/formatTime';
+import { useAdmin } from '@/contexts/AdminContext';
 
 interface VisitRecord {
   id: number;
@@ -19,6 +20,8 @@ interface VisitRecord {
   company_ref_id: number | null;
   company_ref_source: string | null;
   status: 'draft' | 'submitted';
+  contractor_stage?: 'legacy'|'qualification'|'profile'|'complete';
+  contractor_review_status?: 'pending'|'approved'|'rejected'|null;
   submitted_at: string | null;
   created_at: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,6 +54,8 @@ interface BindCandidate {
 
 interface VisitRecordDetail extends VisitRecord {
   country?: string;
+  contractor_reviewed_at?: string|null;
+  contractor_reviewed_by?: number|null;
   schema_snapshot?: unknown;
   schema_version?: string;
   verification_data?: unknown;
@@ -366,6 +371,8 @@ function AdminVisitRecordsContent() {
   const { t: _rawT } = useAdminT();
   const t = (en: string, _zh?: string) => en;
   const { country } = useAdminCountry();
+  const { hasPermission } = useAdmin();
+  const canApprove = hasPermission('can_approve');
   const [records, setRecords] = useState<VisitRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState(false);
@@ -398,6 +405,8 @@ function AdminVisitRecordsContent() {
   const [bindSearching, setBindSearching] = useState(false);
   const [bindError, setBindError] = useState(false);
   const [binding, setBinding] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [approvalError, setApprovalError] = useState('');
   const detailBackRef = useRef<HTMLDivElement>(null);
   const detailOverviewRef = useRef<HTMLDivElement>(null);
   const [detailBackHeight, setDetailBackHeight] = useState(0);
@@ -595,6 +604,18 @@ function AdminVisitRecordsContent() {
     }
   };
 
+  const approveQualification = async () => {
+    if(!detail || !canApprove || approving) return;
+    setApproving(true);setApprovalError('');
+    try {
+      await adminApi.approveContractorQualification(detail.id,detail.country||country);
+      await openDetail(detail.id);
+      await fetchRecords();
+    } catch(error) {
+      setApprovalError(error instanceof Error?error.message:'Approval failed. Please retry.');
+    } finally {setApproving(false);}
+  };
+
   const filtered = (recordsCountry === country ? records : []).filter(r => {
     if (statusFilter && r.status !== statusFilter) return false;
     if (search) {
@@ -772,6 +793,7 @@ function AdminVisitRecordsContent() {
 
                   {/* Actions on the far right */}
                   <div className="flex items-center gap-2 print:hidden shrink-0">
+                    {canApprove&&detail.status==='submitted'&&detail.contractor_stage==='qualification'&&detail.contractor_review_status==='pending'&&<button type="button" disabled={approving} onClick={()=>void approveQualification()} className="inline-flex items-center h-9 px-3.5 rounded-lg bg-[#b8864a] text-white text-sm font-medium hover:bg-[#a07640] disabled:opacity-40">{approving?'Approving…':'Approve admission'}</button>}
                     <button
                       type="button"
                       onClick={() => window.print()}
@@ -779,7 +801,7 @@ function AdminVisitRecordsContent() {
                     >
                       {t('Print', 'Print')}
                     </button>
-                    {detail.status === 'submitted' && (
+                    {detail.status === 'submitted' && (!detail.contractor_stage||detail.contractor_stage==='legacy') && (
                       <a
                         href={`/field/survey?edit=${detail.id}`}
                         target="_blank"
@@ -795,6 +817,8 @@ function AdminVisitRecordsContent() {
                 </div>
               </div>
             </div>
+            {approvalError&&<p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{approvalError}</p>}
+            {detail.contractor_stage&&detail.contractor_stage!=='legacy'&&<p className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600">Application stage: <strong>{detail.contractor_stage==='qualification'?(detail.contractor_review_status==='pending'?'Awaiting admission review':'Admission application'):detail.contractor_stage==='profile'?'Profile completion':'Complete'}</strong></p>}
 
             {/* Photos */}
             {(() => {
@@ -832,7 +856,8 @@ function AdminVisitRecordsContent() {
                   </h2>
                   <div className="space-y-2">
                     {attachments.map((att, i) => {
-                      const isImage = (att.type || '').startsWith('image/');
+                      const isPrivateContractorFile=att.url.startsWith('/api/field/interviews/');
+                      const isImage = !isPrivateContractorFile&&(att.type || '').startsWith('image/');
                       const name = att.name || att.url.split('/').pop() || `file-${i + 1}`;
                       return (
                         <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50/60">
@@ -858,6 +883,7 @@ function AdminVisitRecordsContent() {
                           </div>
                           <a
                             href={att.url}
+                            onClick={isPrivateContractorFile?event=>{event.preventDefault();const filename=decodeURIComponent(att.url.split('/').pop()||'');void adminApi.downloadContractorAttachment(detail.id,filename,detail.country||country).then(blob=>{const objectUrl=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=objectUrl;anchor.download=name;anchor.click();URL.revokeObjectURL(objectUrl);}).catch(error=>alert(error instanceof Error?error.message:'Unable to download attachment.'));}:undefined}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="shrink-0 inline-flex items-center gap-1 text-sm font-medium text-[#b8864a] hover:underline"
@@ -1113,6 +1139,7 @@ function AdminVisitRecordsContent() {
                   </div>
                   <div className="flex items-center gap-3 text-sm text-stone-500 flex-wrap">
                     <span className="font-medium text-stone-700">{r.interviewer_name}</span>
+                    {r.contractor_stage&&r.contractor_stage!=='legacy'&&<span className="text-[#8b6537]">{r.contractor_stage==='qualification'?(r.contractor_review_status==='pending'?'Awaiting review':'Admission'):r.contractor_stage==='profile'?'Profile completion':'Complete'}</span>}
                     <span className={ADMIN_TIME_CLS}>{formatDate(r.submitted_at || r.created_at)}</span>
                   </div>
                 </div>

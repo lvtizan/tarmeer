@@ -22,10 +22,15 @@ router.get('/survey-questions', surveyQuestionsController_1.listQuestions);
 // 问卷公开填写（无需登录）：国家归属按站点 x-country；interviewer_id 为空
 router.post('/interviews', fieldInterviewController_1.createDraft);
 router.get('/interviews/draft', fieldInterviewController_1.getMyDraft);
+router.get('/interviews/:id/application', fieldInterviewController_1.getContractorApplication);
 router.patch('/interviews/:id', fieldInterviewController_1.saveDraft);
+router.patch('/interviews/:id/profile', fieldInterviewController_1.saveContractorProfile);
 router.post('/interviews/:id/submit', fieldInterviewController_1.submitInterview);
+router.post('/interviews/:id/profile-submit', fieldInterviewController_1.submitContractorProfile);
 router.post('/interviews/:id/photos', fieldInterviewController_1.guardDraftUpload, fieldInterviewController_1.uploadPhotoMiddleware, fieldInterviewController_1.uploadPhoto);
-router.post('/interviews/:id/attachments', fieldInterviewController_1.guardDraftUpload, fieldInterviewController_1.uploadAttachmentMiddleware, fieldInterviewController_1.uploadAttachment);
+router.post('/interviews/:id/attachments', fieldInterviewController_1.guardDraftUpload, (req,res,next)=>{try{const schema=typeof req.interview?.schema_snapshot==='string'?JSON.parse(req.interview.schema_snapshot):req.interview?.schema_snapshot;if(schema?.workflow==='contractor-two-stage')return res.status(400).json({error:'Contractor application evidence must use private upload handling.'});next();}catch{return res.status(400).json({error:'Invalid survey schema.'});}}, fieldInterviewController_1.uploadAttachmentMiddleware, fieldInterviewController_1.uploadAttachment);
+router.post('/interviews/:id/contractor-attachments', fieldInterviewController_1.guardDraftUpload, (req,res,next)=>{req.privateContractorAttachment=true;fieldInterviewController_1.uploadContractorAttachmentMiddleware(req,res,next);}, fieldInterviewController_1.uploadAttachment);
+router.get('/interviews/:id/attachments/:filename', fieldInterviewController_1.downloadContractorAttachment);
 
 // Protected routes
 // authenticateAdmin sets req.adminId; requireAdmin fetches from DB and sets req.admin

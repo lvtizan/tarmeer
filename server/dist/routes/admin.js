@@ -47,6 +47,7 @@ const antiScraping_1 = require("../middleware/antiScraping");
 const analyticsEvents_1 = require("../lib/analyticsEvents");
 const adminController_1 = require("../controllers/adminController");
 const fieldAdminController_1 = require("../controllers/fieldAdminController");
+const fieldInterviewController_1 = require("../controllers/fieldInterviewController");
 const designerAdminController_1 = require("../controllers/designerAdminController");
 const activityLogController_1 = require("../controllers/activityLogController");
 const visitorAdminController_1 = require("../controllers/visitorAdminController");
@@ -499,7 +500,9 @@ router.delete('/admins/:id', adminAuth_1.requireSuperAdmin, adminController_1.de
 // Field interviews (all admins)
 router.get('/interviews', fieldAdminController_1.listInterviews);
 router.get('/interviews/:id', fieldAdminController_1.getInterview);
+router.get('/interviews/:id/attachments/:filename', (0, adminAuth_1.requirePermission)('can_view_interviews'), fieldInterviewController_1.downloadContractorAttachment);
 router.patch('/interviews/:id', fieldAdminController_1.editInterview);
+router.post('/interviews/:id/approve-qualification', (0, adminAuth_1.requirePermission)('can_approve'), fieldAdminController_1.approveContractorQualification);
 router.delete('/interviews', fieldAdminController_1.deleteInterviews);
 // Field staff management (super_admin or can_manage_field_staff)
 router.get('/staff', (0, adminAuth_1.requirePermission)('can_manage_field_staff'), fieldAdminController_1.listStaff);

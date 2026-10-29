@@ -9,12 +9,12 @@ export interface VerificationField {
   group?: string; groupKey?:string; role?: string; accept?:string; maxBytes?:number; maxItems?:number; visibleWhen?: {field:string; values?:string[]; not?:boolean; notEmpty?:boolean; excludeValues?:string[]};
   copyFrom?: string; copyLabel?: string; fields?: VerificationField[]; exclusiveValue?: string;
 }
-export interface VerificationSection {key:string; title:string; titleEn?:string; description?:string; fields:VerificationField[];}
-export interface VerificationSchema {version:string; country:string; title?:string; sections:VerificationSection[];}
+export interface VerificationSection {key:string; title:string; titleEn?:string; description?:string; phase?:'qualification'|'profile'; fields:VerificationField[];}
+export interface VerificationSchema {version:string; country:string; title?:string; workflow?:string; sections:VerificationSection[];}
 export type VerificationValue = string | string[] | Record<string,unknown>[];
 export type VerificationData = Record<string, VerificationValue>;
 export interface VerificationEvidence {name:string; url:string; type:string; size?:number; field_key?:string;}
-export interface VerificationRecord {id:number; country?:string; company_name?:string; company_ref_id?:number|null; company_ref_source?:string|null; schema_version?:string; schema_snapshot?:VerificationSchema|string|null; verification_data?:VerificationData|string|null; attachments?:VerificationEvidence[]|string|null; [key:string]:unknown;}
+export interface VerificationRecord {id:number; country?:string; company_name?:string; company_ref_id?:number|null; company_ref_source?:string|null; schema_version?:string; schema_snapshot?:VerificationSchema|string|null; verification_data?:VerificationData|string|null; attachments?:VerificationEvidence[]|string|null; contractor_stage?:'legacy'|'qualification'|'profile'|'complete'; contractor_review_status?:'pending'|'approved'|'rejected'|null; [key:string]:unknown;}
 export function parseVerificationData(raw: unknown): VerificationData {
   if (raw === null || raw === undefined) return {};
   const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
