@@ -21,6 +21,7 @@ const checklistItems=qualification.filter(field=>field.type==='checkbox'&&field.
 assert.equal(checklistItems.length,16,'all 13 registration documents and 3 projects are separate PDF checklist items');
 for(const item of checklistItems){
   assert.equal(item.appearance,'document-checklist',`${item.key} uses the PDF checklist control`);
+  assert.equal(item.required,undefined,`${item.key} can remain unchecked`);
   assert.ok(qualification.some(field=>field.type==='attachment'&&field.visibleWhen?.field===item.key),`${item.key} reveals its matching upload`);
 }
 for(const project of [1,2,3]){
@@ -61,10 +62,12 @@ for (const key of ['trade_license_evidence', 'project_1_agreement', 'project_1_p
   assert.ok(field?.required, `${key} is a required admission attachment`);
   assert.equal(field.type, 'attachment');
 }
-for (const key of ['vat_documents','mohre_company_documents','mohre_worker_documents','workshop_rental_documents','bank_details_documents','iban_documents','emaar_documents','nakheel_documents','damac_documents','adnoc_documents']) {
-  assert.ok(qualification.find(field=>field.key===key)?.required, `${key} is a required document checklist item`);
+for (const key of ['trade_license_documents','ejari_documents','vat_documents','mohre_company_documents','mohre_worker_documents','workshop_rental_documents','bank_details_documents','iban_documents','emaar_documents','nakheel_documents','damac_documents','adnoc_documents','other_registration_documents','project_1_documents','project_2_documents','project_3_documents']) {
+  assert.equal(qualification.find(field=>field.key===key)?.required, undefined, `${key} is optional until checked`);
 }
-assert.equal(qualification.find(field=>field.key==='ejari_documents')?.required, undefined, 'Ejari remains conditional as described in the source document');
+for (const field of qualification.filter(item=>item.type==='attachment'&&item.visibleWhen)) {
+  assert.equal(field.required,true,`${field.key} becomes required after its checkbox is selected`);
+}
 for (const key of ['specialist_civil', 'minimum_project_value', 'current_active_projects', 'after_service_agreement', 'security_cheque_acknowledgement']) {
   assert.ok(profileByKey.has(key), `profile includes ${key}`);
 }

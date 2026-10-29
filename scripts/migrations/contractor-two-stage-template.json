@@ -177,7 +177,6 @@
           "label": "Valid trade licence — all pages",
           "type": "checkbox",
           "appearance": "document-checklist",
-          "required": true,
           "options": [
             "I can provide this document"
           ]
@@ -228,8 +227,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "vat_evidence",
@@ -253,8 +251,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "mohre_company_evidence",
@@ -278,8 +275,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "mohre_worker_evidence",
@@ -303,8 +299,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "workshop_rental_evidence",
@@ -328,8 +323,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "bank_details_evidence",
@@ -353,8 +347,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "iban_evidence",
@@ -378,8 +371,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "emaar_evidence",
@@ -403,8 +395,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "nakheel_evidence",
@@ -428,8 +419,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "damac_evidence",
@@ -453,8 +443,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "adnoc_evidence",
@@ -478,8 +467,7 @@
           "appearance": "document-checklist",
           "options": [
             "I can provide this document"
-          ],
-          "required": true
+          ]
         },
         {
           "key": "other_registration_evidence",
@@ -509,8 +497,9 @@
           "label": "Project 1: Project agreement + site photos",
           "type": "checkbox",
           "appearance": "document-checklist",
-          "options": ["I can provide this document"],
-          "required": true
+          "options": [
+            "I can provide this document"
+          ]
         },
         {
           "key": "project_1_agreement",
@@ -520,7 +509,12 @@
           "maxBytes": 15728640,
           "maxItems": 1,
           "required": true,
-          "visibleWhen": { "field": "project_1_documents", "values": ["I can provide this document"] }
+          "visibleWhen": {
+            "field": "project_1_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
         },
         {
           "key": "project_1_photos",
@@ -530,15 +524,21 @@
           "maxBytes": 15728640,
           "maxItems": 5,
           "required": true,
-          "visibleWhen": { "field": "project_1_documents", "values": ["I can provide this document"] }
+          "visibleWhen": {
+            "field": "project_1_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
         },
         {
           "key": "project_2_documents",
           "label": "Project 2: Project agreement + site photos",
           "type": "checkbox",
           "appearance": "document-checklist",
-          "options": ["I can provide this document"],
-          "required": true
+          "options": [
+            "I can provide this document"
+          ]
         },
         {
           "key": "project_2_agreement",
@@ -548,7 +548,12 @@
           "maxBytes": 15728640,
           "maxItems": 1,
           "required": true,
-          "visibleWhen": { "field": "project_2_documents", "values": ["I can provide this document"] }
+          "visibleWhen": {
+            "field": "project_2_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
         },
         {
           "key": "project_2_photos",
@@ -558,15 +563,21 @@
           "maxBytes": 15728640,
           "maxItems": 5,
           "required": true,
-          "visibleWhen": { "field": "project_2_documents", "values": ["I can provide this document"] }
+          "visibleWhen": {
+            "field": "project_2_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
         },
         {
           "key": "project_3_documents",
           "label": "Project 3: Project agreement + site photos",
           "type": "checkbox",
           "appearance": "document-checklist",
-          "options": ["I can provide this document"],
-          "required": true
+          "options": [
+            "I can provide this document"
+          ]
         },
         {
           "key": "project_3_agreement",
@@ -576,7 +587,12 @@
           "maxBytes": 15728640,
           "maxItems": 1,
           "required": true,
-          "visibleWhen": { "field": "project_3_documents", "values": ["I can provide this document"] }
+          "visibleWhen": {
+            "field": "project_3_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
         },
         {
           "key": "project_3_photos",
@@ -586,7 +602,12 @@
           "maxBytes": 15728640,
           "maxItems": 5,
           "required": true,
-          "visibleWhen": { "field": "project_3_documents", "values": ["I can provide this document"] }
+          "visibleWhen": {
+            "field": "project_3_documents",
+            "values": [
+              "I can provide this document"
+            ]
+          }
         }
       ]
     },
