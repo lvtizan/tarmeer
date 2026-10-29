@@ -156,6 +156,20 @@ function validateEvidenceFile(file) {
     if(!valid || !extensions[mime]?.includes(require('path').extname(file.originalname).toLowerCase())) return 'Evidence must be a valid JPG, PNG, WebP or PDF file with the correct extension.';
     return null;
 }
+function isFieldVisible(field,data) {
+    if(field.retired) return false;
+    const rule=field.visibleWhen;if(!rule)return true;
+    const value=data?.[rule.field];
+    const present=rule.excludeValues?Array.isArray(value)&&value.some(v=>typeof v==='string'&&!rule.excludeValues.includes(v)):rule.values?rule.values.some(v=>Array.isArray(value)?value.includes(v):value===v):typeof value==='string'?!!value.trim():Array.isArray(value)?value.length>0:false;
+    return rule.not?!present:present;
+}
+function contractorEvidenceError(schema,phase,data,evidence) {
+    const fields=(schema?.sections||[]).filter(section=>!phase||section.phase===phase).flatMap(section=>section.fields||[]).filter(field=>field.type==='attachment'&&!field.retired);
+    const byKey=new Map(fields.map(field=>[field.key,field]));
+    for(const item of evidence||[]) { const field=byKey.get(item?.field_key);if(field?.visibleWhen&&!isFieldVisible(field,data))return {error:`${field.label} is selected but its document item is not checked.`,field_key:field.key}; }
+    for(const field of fields) if(field.required&&isFieldVisible(field,data)&&!(evidence||[]).some(item=>item?.field_key===field.key))return {error:`${field.label} is required.`,field_key:field.key};
+    return null;
+}
 async function ensureVerificationSchema(pool) {
     const [rows] = await pool.execute("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'company_interviews'");
     const cols = new Set(rows.map(r=>r.COLUMN_NAME));
@@ -171,4 +185,4 @@ async function loadSchema(pool, country, version) {
     if(id===7) { const [legacy]=await pool.execute('SELECT schema_json FROM survey_schema WHERE id = ?', [1]); return legacy.length ? parseJSON(legacy[0].schema_json) : null; }
     return null;
 }
-module.exports={VERSION,parseJSON,withValidationPolicies,withDatePolicies,calendarDate,dateBounds,requestCountry,canAccessCountry,createToken,hashToken,matchesToken,sanitizeInterview,validateAnswers,validateAnswersDetailed,validateEvidence,removeEvidence,validateEvidenceFile,ensureVerificationSchema,loadSchema};
+module.exports={VERSION,parseJSON,withValidationPolicies,withDatePolicies,calendarDate,dateBounds,requestCountry,canAccessCountry,createToken,hashToken,matchesToken,sanitizeInterview,validateAnswers,validateAnswersDetailed,validateEvidence,removeEvidence,validateEvidenceFile,isFieldVisible,contractorEvidenceError,ensureVerificationSchema,loadSchema};

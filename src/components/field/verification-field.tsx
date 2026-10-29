@@ -15,6 +15,8 @@ export default function VerificationFieldInput({field,data,onChange,error,eviden
   const label=(field.labelEn||field.label)+(labelSuffix||'');
   const path=fieldPath||[field.key];
   const optionList=(field.options||[]).map(option=>typeof option==='string'?{label:option,value:option}:option);
+  const documentChecklist=field.type==='checkbox'&&field.appearance==='document-checklist';
+  const checked=Array.isArray(value)&&optionList.some(option=>value.includes(option.value as never));
   const text=typeof value==='string'?value:'';
   const bounds=verificationFieldBounds(field);
   const maxLength=field.inputPolicy?.maxLength;
@@ -26,9 +28,12 @@ export default function VerificationFieldInput({field,data,onChange,error,eviden
   const common={id,disabled,required:!!field.required,onBlur:()=>onValidate?.(field.key),'aria-invalid':!!error,'aria-describedby':error?`${id}-error`:undefined};
   const full=['checkbox','radio','attachment','textarea'].includes(field.type)||(field.type==='repeat'&&field.layout!=='inline');
   return <div className={full?'min-w-0 md:col-span-2':'min-w-0'} data-field-key={field.key} data-field-type={field.type} aria-invalid={!!error} tabIndex={-1} style={{scrollMarginTop:100,scrollMarginBottom:120}}>
-    <SurveyFieldLabel field={field} fieldPath={path} htmlFor={id} sectionKey={sectionKey} displayLabel={label}/>
+    {!documentChecklist&&<SurveyFieldLabel field={field} fieldPath={path} htmlFor={id} sectionKey={sectionKey} displayLabel={label}/>}
     {field.help&&<p className="mb-2 text-sm text-stone-500">{field.help}</p>}
-    {field.type==='checkbox'||field.type==='radio'? <fieldset id={id} disabled={disabled} aria-label={label} aria-invalid={!!error} onBlur={()=>onValidate?.(field.key)} aria-describedby={error?`${id}-error`:undefined} className="min-w-0">
+    {documentChecklist?<label htmlFor={id} className="flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm leading-relaxed text-stone-800 hover:border-[#b8864a] has-[:checked]:border-[#b8864a] has-[:checked]:bg-[#fbf7f1]">
+      <input id={id} type="checkbox" checked={checked} disabled={disabled} required={!!field.required} aria-invalid={!!error} aria-describedby={error?`${id}-error`:undefined} onBlur={()=>onValidate?.(field.key)} onChange={event=>onChange(field.key,event.target.checked?optionList.map(option=>option.value):[],true)} className="mt-0.5 size-5 shrink-0 accent-[#b8864a]"/>
+      <span>{label}</span>
+    </label>:field.type==='checkbox'||field.type==='radio'? <fieldset id={id} disabled={disabled} aria-label={label} aria-invalid={!!error} onBlur={()=>onValidate?.(field.key)} aria-describedby={error?`${id}-error`:undefined} className="min-w-0">
       <ChipSelect options={optionList.map(option=>option.label)} multi={field.type==='checkbox'} value={field.type==='checkbox'?(Array.isArray(value)?value.filter(v=>typeof v==='string').map(v=>optionList.find(o=>o.value===v)?.label||v) as string[]:[]):optionList.find(o=>o.value===value)?.label||''} onChange={next=>{
         if(field.type==='radio')onChange(field.key,optionList.find(o=>o.label===next)?.value||'',true);
         else {let values=(Array.isArray(next)?next:[]).map(label=>optionList.find(o=>o.label===label)?.value||label);if(field.exclusiveValue&&values.includes(field.exclusiveValue)&&values.length>1){const current=Array.isArray(value)?value:[];values=current.includes(field.exclusiveValue as never)?values.filter(v=>v!==field.exclusiveValue):[field.exclusiveValue];}onChange(field.key,values,true);}

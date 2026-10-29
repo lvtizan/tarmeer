@@ -176,6 +176,7 @@
           "key": "trade_license_documents",
           "label": "Valid trade licence — all pages",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "required": true,
           "options": [
             "I can provide this document"
@@ -200,6 +201,7 @@
           "key": "ejari_documents",
           "label": "Office rental agreement / Ejari (if applicable)",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ]
@@ -223,6 +225,7 @@
           "key": "vat_documents",
           "label": "VAT registration certificate",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -247,6 +250,7 @@
           "key": "mohre_company_documents",
           "label": "MOHRE establishment / company details",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -271,6 +275,7 @@
           "key": "mohre_worker_documents",
           "label": "MOHRE labour / worker records",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -295,6 +300,7 @@
           "key": "workshop_rental_documents",
           "label": "Workshop or store rental agreement",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -319,6 +325,7 @@
           "key": "bank_details_documents",
           "label": "Company bank details on company letterhead",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -343,6 +350,7 @@
           "key": "iban_documents",
           "label": "Bank account confirmation / IBAN certificate",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -367,6 +375,7 @@
           "key": "emaar_documents",
           "label": "Emaar contractor registration evidence",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -391,6 +400,7 @@
           "key": "nakheel_documents",
           "label": "Nakheel contractor registration evidence",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -415,6 +425,7 @@
           "key": "damac_documents",
           "label": "DAMAC contractor registration evidence",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -439,6 +450,7 @@
           "key": "adnoc_documents",
           "label": "ADNOC supplier / contractor registration evidence",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -463,6 +475,7 @@
           "key": "other_registration_documents",
           "label": "Other client or authority registration documents",
           "type": "checkbox",
+          "appearance": "document-checklist",
           "options": [
             "I can provide this document"
           ],
@@ -492,13 +505,22 @@
       "description": "Provide project agreements and site photos for your three latest completed projects.",
       "fields": [
         {
+          "key": "project_1_documents",
+          "label": "Project 1: Project agreement + site photos",
+          "type": "checkbox",
+          "appearance": "document-checklist",
+          "options": ["I can provide this document"],
+          "required": true
+        },
+        {
           "key": "project_1_agreement",
           "label": "Project 1 agreement",
           "type": "attachment",
           "accept": "application/pdf,image/jpeg,image/png,image/webp",
           "maxBytes": 15728640,
           "maxItems": 1,
-          "required": true
+          "required": true,
+          "visibleWhen": { "field": "project_1_documents", "values": ["I can provide this document"] }
         },
         {
           "key": "project_1_photos",
@@ -507,6 +529,15 @@
           "accept": "image/jpeg,image/png,image/webp",
           "maxBytes": 15728640,
           "maxItems": 5,
+          "required": true,
+          "visibleWhen": { "field": "project_1_documents", "values": ["I can provide this document"] }
+        },
+        {
+          "key": "project_2_documents",
+          "label": "Project 2: Project agreement + site photos",
+          "type": "checkbox",
+          "appearance": "document-checklist",
+          "options": ["I can provide this document"],
           "required": true
         },
         {
@@ -516,7 +547,8 @@
           "accept": "application/pdf,image/jpeg,image/png,image/webp",
           "maxBytes": 15728640,
           "maxItems": 1,
-          "required": true
+          "required": true,
+          "visibleWhen": { "field": "project_2_documents", "values": ["I can provide this document"] }
         },
         {
           "key": "project_2_photos",
@@ -525,6 +557,15 @@
           "accept": "image/jpeg,image/png,image/webp",
           "maxBytes": 15728640,
           "maxItems": 5,
+          "required": true,
+          "visibleWhen": { "field": "project_2_documents", "values": ["I can provide this document"] }
+        },
+        {
+          "key": "project_3_documents",
+          "label": "Project 3: Project agreement + site photos",
+          "type": "checkbox",
+          "appearance": "document-checklist",
+          "options": ["I can provide this document"],
           "required": true
         },
         {
@@ -534,7 +575,8 @@
           "accept": "application/pdf,image/jpeg,image/png,image/webp",
           "maxBytes": 15728640,
           "maxItems": 1,
-          "required": true
+          "required": true,
+          "visibleWhen": { "field": "project_3_documents", "values": ["I can provide this document"] }
         },
         {
           "key": "project_3_photos",
@@ -543,7 +585,8 @@
           "accept": "image/jpeg,image/png,image/webp",
           "maxBytes": 15728640,
           "maxItems": 5,
-          "required": true
+          "required": true,
+          "visibleWhen": { "field": "project_3_documents", "values": ["I can provide this document"] }
         }
       ]
     },

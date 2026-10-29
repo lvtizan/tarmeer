@@ -325,17 +325,7 @@ function schemaPhase(schema,phase) {
     return {...schema,sections:(schema?.sections||[]).filter(section=>section.phase===phase)};
 }
 function requiredContractorEvidenceError(schema,phase,data,evidence) {
-    const required=schemaPhase(schema,phase).sections.flatMap(section=>section.fields||[]).filter(field=>field.type==='attachment'&&field.required&&!field.retired);
-    for(const field of required) {
-        const rule=field.visibleWhen;
-        if(rule) {
-            const value=data?.[rule.field];
-            const present=rule.values ? (Array.isArray(value)?rule.values.some(item=>value.includes(item)):rule.values.includes(value)) : !!value;
-            if(rule.not ? present : !present) continue;
-        }
-        if(!(evidence||[]).some(item=>item.field_key===field.key)) return {error:`${field.label} is required.`,field_key:field.key};
-    }
-    return null;
+    return verification.contractorEvidenceError(schema,phase,data,evidence);
 }
 function validateContractorPhase(data,schema,phase,complete=true) {
     const structural=verification.validateAnswersDetailed(data,schema,false);
@@ -761,12 +751,15 @@ async function reSubmitInterview(req, res) {
         if(req.body.verification_data !== undefined) {
             if(!req.body.verification_data || typeof req.body.verification_data!=='object' || Array.isArray(req.body.verification_data)) return res.status(400).json({error:'Verification answers must be an object.'});
             req.body.verification_data={...(verification.parseJSON(current.verification_data)||{}),...req.body.verification_data};
-            const snapshot=verification.parseJSON(current.schema_snapshot);
-            let error;
-            if(snapshot?.workflow==='contractor-two-stage') {
-              const noAttachmentRequired={...snapshot,sections:(snapshot.sections||[]).map(section=>({...section,fields:(section.fields||[]).map(field=>field.type==='attachment'?{...field,required:false}:field)}))};
-              error=verification.validateAnswersDetailed(req.body.verification_data,noAttachmentRequired,true)||requiredContractorEvidenceError(snapshot,'qualification',req.body.verification_data,effectiveEvidence)||requiredContractorEvidenceError(snapshot,'profile',req.body.verification_data,effectiveEvidence);
-            } else error=verification.validateAnswersDetailed(req.body.verification_data,snapshot,true);
+        }
+        const snapshot=verification.parseJSON(current.schema_snapshot);
+        if(snapshot?.workflow==='contractor-two-stage' && (req.body.verification_data !== undefined || req.body.attachments !== undefined)) {
+            const effectiveData=req.body.verification_data||verification.parseJSON(current.verification_data)||{};
+            const noAttachmentRequired={...snapshot,sections:(snapshot.sections||[]).map(section=>({...section,fields:(section.fields||[]).map(field=>field.type==='attachment'?{...field,required:false}:field)}))};
+            const error=verification.validateAnswersDetailed(effectiveData,noAttachmentRequired,true)||requiredContractorEvidenceError(snapshot,'qualification',effectiveData,effectiveEvidence)||requiredContractorEvidenceError(snapshot,'profile',effectiveData,effectiveEvidence);
+            if(error) return res.status(400).json(error);
+        } else if(req.body.verification_data !== undefined) {
+            const error=verification.validateAnswersDetailed(req.body.verification_data,snapshot,true);
             if(error) return res.status(400).json(error);
         }
     } else if(req.body.verification_data!==undefined) return res.status(400).json({error:'This record uses the legacy survey.'});

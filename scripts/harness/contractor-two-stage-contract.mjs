@@ -17,6 +17,35 @@ assert.ok(schema.sections.some(section => section.phase === 'qualification'));
 assert.ok(schema.sections.some(section => section.phase === 'profile'));
 
 const qualification = fields('qualification');
+const checklistItems=qualification.filter(field=>field.type==='checkbox'&&field.appearance==='document-checklist');
+assert.equal(checklistItems.length,16,'all 13 registration documents and 3 projects are separate PDF checklist items');
+for(const item of checklistItems){
+  assert.equal(item.appearance,'document-checklist',`${item.key} uses the PDF checklist control`);
+  assert.ok(qualification.some(field=>field.type==='attachment'&&field.visibleWhen?.field===item.key),`${item.key} reveals its matching upload`);
+}
+for(const project of [1,2,3]){
+  const gate=`project_${project}_documents`;
+  for(const suffix of ['agreement','photos']){
+    const attachment=qualification.find(field=>field.key===`project_${project}_${suffix}`);
+    assert.equal(attachment?.visibleWhen?.field,gate,`Project ${project} ${suffix} is gated by its checklist box`);
+  }
+}
+const ejari=checklistItems.find(field=>field.key==='ejari_documents');
+const ejariUpload=qualification.find(field=>field.visibleWhen?.field===ejari.key);
+const ejariOnly={sections:[{phase:'qualification',fields:[ejariUpload]}]};
+assert.equal(verification.contractorEvidenceError(ejariOnly,'qualification',{},[]),null,'unchecked optional document needs no file');
+assert.equal(verification.contractorEvidenceError(ejariOnly,'qualification',{[ejari.key]:['I can provide this document']},[])?.field_key,ejariUpload.key,'checked document requires its matching upload');
+assert.equal(verification.contractorEvidenceError(ejariOnly,'qualification',{},[{field_key:ejariUpload.key}])?.field_key,ejariUpload.key,'unchecked document evidence cannot be submitted');
+assert.equal(verification.contractorEvidenceError(ejariOnly,'qualification',{[ejari.key]:['I can provide this document']},[{field_key:ejariUpload.key}]),null,'checked document with matching evidence passes');
+for(const project of [1,2,3]){
+  const gate=`project_${project}_documents`;
+  const attachments=qualification.filter(field=>field.visibleWhen?.field===gate);
+  assert.equal(attachments.length,2,`project ${project} has agreement and photo uploads`);
+  const projectOnly={sections:[{phase:'qualification',fields:attachments}]};
+  assert.equal(verification.contractorEvidenceError(projectOnly,'qualification',{},[{field_key:attachments[0].key}])?.field_key,attachments[0].key,`unchecked project ${project} evidence is rejected`);
+  assert.equal(verification.contractorEvidenceError(projectOnly,'qualification',{[gate]:['I can provide this document']},[{field_key:attachments[0].key},{field_key:attachments[1].key}]),null,`checked project ${project} with both materials passes`);
+  assert.equal(verification.contractorEvidenceError(projectOnly,'qualification',{[gate]:['I can provide this document']},[{field_key:attachments[1].key}])?.field_key,attachments[0].key,`attachments-only re-submit cannot remove project ${project} agreement`);
+}
 const profile = fields('profile');
 const qualificationKeys = new Set(qualification.map(field => field.key));
 const profileByKey = new Map(profile.map(field => [field.key, field]));
@@ -47,12 +76,18 @@ assert.ok(profileError?.field_key, 'profile cannot submit without required profi
 
 const interviewController=fs.readFileSync(path.join(root,'server/dist/controllers/fieldInterviewController.js'),'utf8');
 const adminController=fs.readFileSync(path.join(root,'server/dist/controllers/fieldAdminController.js'),'utf8');
+const fieldInput=fs.readFileSync(path.join(root,'src/components/field/verification-field.tsx'),'utf8');
+const surveyComponent=fs.readFileSync(path.join(root,'src/components/field/verification-survey.tsx'),'utf8');
 const fieldRoutes=fs.readFileSync(path.join(root,'server/dist/routes/field.js'),'utf8');
 assert.match(fieldRoutes,/contractor-attachments/,'contractor forms use a dedicated private upload route');
 assert.match(fieldRoutes,/attachments\/:filename/,'contractor evidence downloads have a token-checked route');
 assert.match(interviewController,/Only profile-stage evidence can be changed after approval/,'profile saves cannot remove approved-stage evidence');
+assert.match(interviewController,/req\.body\.verification_data !== undefined \|\| req\.body\.attachments !== undefined/,'attachments-only re-submit runs contractor evidence validation');
+assert.match(interviewController,/effectiveData=req\.body\.verification_data\|\|verification\.parseJSON\(current\.verification_data\)/,'attachments-only re-submit validates against saved answers');
 assert.match(adminController,/contractor_qualification_snapshot=\?/,'approval preserves the original reviewed answers and evidence');
 assert.match(interviewController,/Company name and submitted trade licence numbers cannot be changed after admission approval/,'approved identity fields remain frozen while blank optional carry-over fields can be completed');
 assert.match(adminController,/attachments FROM company_interviews/,'approval loads persisted application data and evidence under lock');
+assert.match(fieldInput,/type="checkbox" checked=\{checked\}/,'PDF checklist rows render as actual square checkboxes');
+assert.match(surveyComponent,/removedEvidenceUrls\.current\.add\(item\.url\)/,'unchecking a document removes its uploaded file from the submitted evidence list');
 
 console.log('PASS contractor two-stage workflow contract: phases, carry-over, mandatory evidence, private upload/download, approval and post-approval boundaries');

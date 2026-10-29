@@ -87,12 +87,7 @@ async function approveContractorQualification(req,res) {
     const answers=Object.fromEntries(Object.entries(data).filter(([key])=>allowed.has(key)));
     let invalid=verification.validateAnswersDetailed(answers,{...schema,sections},true);
     const evidence=verification.parseJSON(row.attachments)||[];
-    if(!invalid) for(const field of qualificationSections.flatMap(section=>section.fields||[]).filter(field=>field.type==='attachment'&&field.required&&!field.retired)) {
-      const rule=field.visibleWhen, value=rule?data[rule.field]:undefined;
-      const present=rule?(rule.values?(Array.isArray(value)?rule.values.some(item=>value.includes(item)):rule.values.includes(value)):!!value):true;
-      if(rule&&(rule.not?present:!present)) continue;
-      if(!evidence.some(item=>item.field_key===field.key)){invalid={error:`${field.label} is required.`,field_key:field.key};break;}
-    }
+    if(!invalid) invalid=verification.contractorEvidenceError(schema,'qualification',data,evidence);
     if(invalid){await db.rollback();return res.status(409).json({error:'Application data or required evidence is incomplete.',details:invalid});}
     await db.execute("UPDATE company_interviews SET contractor_stage='profile',contractor_review_status='approved',contractor_reviewed_at=NOW(),contractor_reviewed_by=?,contractor_qualification_snapshot=? WHERE id=?",[req.adminId,JSON.stringify({verification_data:data,attachments:evidence,approved_at:new Date().toISOString(),approved_by:req.adminId}),id]);
     await db.execute("INSERT INTO interview_edit_logs (interview_id,editor_id,editor_name,snapshot_before,edit_summary) VALUES (?,?,?,?, 'Qualification approved; profile stage opened')",[id,req.adminId,req.admin?.full_name||'—',JSON.stringify({contractor_stage:row.contractor_stage,contractor_review_status:row.contractor_review_status})]);
