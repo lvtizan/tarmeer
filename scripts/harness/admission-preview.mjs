@@ -13,7 +13,7 @@ function load(file) {
   const source = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020, esModuleInterop: true } }).outputText;
   const localRequire = specifier => {
     if (specifier === '@/lib/admission-preview') return load('src/lib/admission-preview.ts');
-    if (specifier === '@/lib/verification') return load('src/lib/verification.ts');
+    if (specifier === '@/lib/verification' || specifier === './verification') return load('src/lib/verification.ts');
     if (specifier === '@/content/contractor-admission-letter.json') return require(path.join(root, 'src/content/contractor-admission-letter.json'));
     if (specifier === './verification-field') return { VerificationFields: () => { throw Error('Company fields must not render before the checklist'); } };
     return require(specifier);
@@ -21,7 +21,7 @@ function load(file) {
   new Function('exports', 'require', source)(exports, localRequire);
   return exports;
 }
-const { admissionPreviewSections, admissionOption, admissionFileError, selectedAdmissionUploads } = load('src/lib/admission-preview.ts');
+const { admissionPreviewSections, admissionOption, admissionFileError, admissionStepReady, selectedAdmissionUploads } = load('src/lib/admission-preview.ts');
 const schema = JSON.parse(fs.readFileSync(path.join(root, 'scripts/migrations/contractor-two-stage-template.json'), 'utf8'));
 const split = admissionPreviewSections(schema);
 const items = split.checklists.flatMap(section => section.items);
@@ -50,6 +50,38 @@ check('selected items reveal only their matching file controls', () => {
 check('selected project reveals both agreement and photos', () => {
   const item = items.find(item => item.uploads.length === 2);
   assert.equal(selectedAdmissionUploads(schema, { [item.field.key]: [admissionOption(item.field)] }).length, 2);
+});
+check('continue stays hidden with no selection or missing files, and appears when selected evidence is complete', () => {
+  const item = items[0], data = { [item.field.key]: [admissionOption(item.field)] };
+  const files = Object.fromEntries(item.uploads.map(field => [field.key, [pdf]]));
+  assert.equal(admissionStepReady(schema, {}, {}, 0), false);
+  assert.equal(admissionStepReady(schema, data, {}, 0), false);
+  assert.equal(admissionStepReady(schema, data, files, 0), true);
+});
+check('selecting another unfinished qualification hides continue again', () => {
+  const data = Object.fromEntries(items.slice(0, 2).map(item => [item.field.key, [admissionOption(item.field)]]));
+  const files = Object.fromEntries(items[0].uploads.map(field => [field.key, [pdf]]));
+  assert.equal(admissionStepReady(schema, data, files, 0), false);
+  for (const field of items[1].uploads) files[field.key] = [pdf];
+  assert.equal(admissionStepReady(schema, data, files, 0), true);
+});
+check('removing a required file or deselecting the last qualification hides continue', () => {
+  const item = items[0], data = { [item.field.key]: [admissionOption(item.field)] };
+  assert.equal(admissionStepReady(schema, data, { [item.uploads[0].key]: [] }, 0), false);
+  assert.equal(admissionStepReady(schema, { [item.field.key]: [] }, { [item.uploads[0].key]: [pdf] }, 0), false);
+});
+check('project completeness requires both agreement and site photos', () => {
+  const item = items.find(item => item.uploads.length === 2), data = { [item.field.key]: [admissionOption(item.field)] };
+  assert.equal(admissionStepReady(schema, data, { [item.uploads[0].key]: [pdf] }, 0), false);
+  assert.equal(admissionStepReady(schema, data, Object.fromEntries(item.uploads.map(field => [field.key, [pdf]])), 0), true);
+});
+check('review appears only after required company fields and field formats are valid', () => {
+  const item = items[0], data = { [item.field.key]: [admissionOption(item.field)] };
+  const files = Object.fromEntries(item.uploads.map(field => [field.key, [pdf]]));
+  assert.equal(admissionStepReady(schema, data, files, 1), false);
+  const complete = { ...data, company_name: 'Preview Contractor', license_number_1: 'TEST-001', specialist_categories: ['Civil work'] };
+  assert.equal(admissionStepReady(schema, complete, files, 1), true);
+  assert.equal(admissionStepReady(schema, { ...complete, email: 'invalid' }, files, 1), false);
 });
 check('PDF and image files obey schema MIME types', () => {
   const field = items[0].uploads[0];
@@ -97,7 +129,8 @@ check('real React initial render shows all 16 checkboxes and no uploads or compa
   assert.equal(html.includes('type="file"'), false);
   assert.equal(html.includes('type="text"'), false);
   assert.match(html, /Files stay in this browser tab/);
-  assert.match(html, /Continue to company details/);
+  assert.equal(html.includes('Continue to company details'), false, 'continue is absent until the selected qualifications are complete');
+  assert.match(html, /Select a qualification and choose its required files to continue/);
   const letter = require(path.join(root, 'src/content/contractor-admission-letter.json'));
   for (const key of ['title', 'subject', 'salutation', 'introduction', 'checklistHeading', 'submissionHeading', 'submissionRequirements']) assert.ok(html.includes(letter[key]), `source document ${key} is preserved verbatim`);
   assert.equal(html.includes('Your qualifications.'), false);
