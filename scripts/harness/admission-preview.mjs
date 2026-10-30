@@ -12,6 +12,7 @@ function load(file) {
   cache.set(file, exports);
   const source = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020, esModuleInterop: true } }).outputText;
   const localRequire = specifier => {
+    if (specifier === '@/components/TarmeerLogo') return load('src/components/TarmeerLogo.tsx');
     if (specifier === '@/lib/admission-preview') return load('src/lib/admission-preview.ts');
     if (specifier === '@/lib/verification' || specifier === './verification') return load('src/lib/verification.ts');
     if (specifier === '@/content/contractor-admission-letter.json') return require(path.join(root, 'src/content/contractor-admission-letter.json'));
@@ -135,7 +136,7 @@ check('real React initial render shows all 16 checkboxes and no uploads or compa
   assert.equal(html.includes('Continue to company details'), false, 'continue is absent until the selected qualifications are complete');
   assert.match(html, /Select a qualification and choose its required files to continue/);
   const letter = require(path.join(root, 'src/content/contractor-admission-letter.json'));
-  for (const key of ['title', 'subject', 'salutation', 'introduction', 'checklistHeading', 'submissionHeading', 'submissionRequirements']) assert.ok(html.includes(letter[key]), `source document ${key} is preserved verbatim`);
+  for (const key of ['subject', 'salutation', 'introduction', 'checklistHeading', 'submissionHeading', 'submissionRequirements']) assert.ok(html.includes(letter[key]), `source document ${key} is preserved verbatim`);
   assert.equal(html.includes('Your qualifications.'), false);
 });
 check('first page has no sidebar, future-step navigation or duplicate selection counters', () => {
@@ -145,5 +146,13 @@ check('first page has no sidebar, future-step navigation or duplicate selection 
   assert.equal(html.includes('qualifications selected'), false);
   assert.equal(html.includes('local files selected'), false);
   assert.equal(html.includes('0 selected'), false);
+});
+check('preview uses the shared site logo and a document heading without a misleading total step count', () => {
+  const html = renderInitialPreview();
+  assert.match(html, /src="\/images\/tarmeer_logo\.svg"/);
+  assert.match(html, /href="\/"/);
+  assert.equal(html.includes('/ 03'), false);
+  assert.equal(html.match(/<h1[^>]*>(.*?)<\/h1>/)[1].replace(/<[^>]+>/g, ''), 'CONTRACTOR REGISTRATION REQUIRED DOCUMENTS');
+  assert.match(html, /<span[^>]*>CONTRACTOR REGISTRATION<\/span><span[^>]*> REQUIRED DOCUMENTS<\/span>/);
 });
 console.log(`Admission preview: ${passed}/${passed} PASS`);
