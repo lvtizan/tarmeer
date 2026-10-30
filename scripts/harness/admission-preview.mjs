@@ -10,10 +10,11 @@ function load(file) {
   if (cache.has(file)) return cache.get(file);
   const exports = {};
   cache.set(file, exports);
-  const source = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const source = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020, esModuleInterop: true } }).outputText;
   const localRequire = specifier => {
     if (specifier === '@/lib/admission-preview') return load('src/lib/admission-preview.ts');
     if (specifier === '@/lib/verification') return load('src/lib/verification.ts');
+    if (specifier === '@/content/contractor-admission-letter.json') return require(path.join(root, 'src/content/contractor-admission-letter.json'));
     if (specifier === './verification-field') return { VerificationFields: () => { throw Error('Company fields must not render before the checklist'); } };
     return require(specifier);
   };
@@ -77,6 +78,16 @@ check('all non-retired qualification fields remain accounted for exactly once', 
   const expected = schema.sections.filter(section => section.phase === 'qualification').flatMap(section => section.fields).filter(field => !field.retired).map(field => field.key);
   assert.deepEqual(keys.sort(), expected.sort());
 });
+check('document introduction and submission requirements match the original PDF wording', () => {
+  const letter = require(path.join(root, 'src/content/contractor-admission-letter.json'));
+  assert.equal(letter.title, 'CONTRACTOR REGISTRATION — REQUIRED DOCUMENTS');
+  assert.equal(letter.subject, 'Subject: Submission of Mandatory Documents for Contractor Registration');
+  assert.equal(letter.salutation, 'Dear Contractor,');
+  assert.equal(letter.checklistHeading, 'DOCUMENT CHECKLIST');
+  assert.equal(letter.introduction, 'To complete your company registration with TARMEER, please submit the following documents. All documents must be clear, complete, valid where applicable, and provided in scanned PDF format.');
+  assert.equal(letter.submissionHeading, 'SUBMISSION REQUIREMENTS');
+  assert.equal(letter.submissionRequirements, 'Please ensure every document is legible, complete, valid where applicable, and scanned into PDF format before submission.');
+});
 check('real React initial render shows all 16 checkboxes and no uploads or company inputs', () => {
   const React = require('react');
   const { renderToStaticMarkup } = require('react-dom/server');
@@ -87,5 +98,8 @@ check('real React initial render shows all 16 checkboxes and no uploads or compa
   assert.equal(html.includes('type="text"'), false);
   assert.match(html, /Files stay in this browser tab/);
   assert.match(html, /Continue to company details/);
+  const letter = require(path.join(root, 'src/content/contractor-admission-letter.json'));
+  for (const key of ['title', 'subject', 'salutation', 'introduction', 'checklistHeading', 'submissionHeading', 'submissionRequirements']) assert.ok(html.includes(letter[key]), `source document ${key} is preserved verbatim`);
+  assert.equal(html.includes('Your qualifications.'), false);
 });
 console.log(`Admission preview: ${passed}/${passed} PASS`);
