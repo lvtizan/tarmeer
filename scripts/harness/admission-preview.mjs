@@ -132,7 +132,8 @@ check('real React initial render shows all 16 checkboxes and no uploads or compa
   assert.equal((html.match(/type="checkbox"/g) || []).length, 16);
   assert.equal(html.includes('type="file"'), false);
   assert.equal(html.includes('type="text"'), false);
-  assert.match(html, /Files stay in this browser tab/);
+  assert.match(html, /role="note" aria-label="Preview information"/);
+  assert.match(html, /Preview only\. Files stay in this browser tab; nothing is submitted\. Refreshing clears your selections\./);
   assert.equal(html.includes('Continue to company details'), false, 'continue is absent until the selected qualifications are complete');
   assert.match(html, /Select a qualification and choose its required files to continue/);
   const letter = require(path.join(root, 'src/content/contractor-admission-letter.json'));
