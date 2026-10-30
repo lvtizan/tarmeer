@@ -28,6 +28,12 @@ const items = split.checklists.flatMap(section => section.items);
 let passed = 0;
 function check(label, run) { run(); passed++; console.log(`PASS ${label}`); }
 const pdf = { name: 'qualification.pdf', size: 100, type: 'application/pdf' };
+function renderInitialPreview() {
+  const React = require('react');
+  const { renderToStaticMarkup } = require('react-dom/server');
+  const Preview = load('src/components/field/admission-preview.tsx').default;
+  return renderToStaticMarkup(React.createElement(Preview, { schema }));
+}
 check('qualification checklist precedes company fields without mutating the original schema', () => {
   const before = JSON.stringify(schema);
   assert.equal(items.length, 16);
@@ -121,10 +127,7 @@ check('document introduction and submission requirements match the original PDF 
   assert.equal(letter.submissionRequirements, 'Please ensure every document is legible, complete, valid where applicable, and scanned into PDF format before submission.');
 });
 check('real React initial render shows all 16 checkboxes and no uploads or company inputs', () => {
-  const React = require('react');
-  const { renderToStaticMarkup } = require('react-dom/server');
-  const Preview = load('src/components/field/admission-preview.tsx').default;
-  const html = renderToStaticMarkup(React.createElement(Preview, { schema }));
+  const html = renderInitialPreview();
   assert.equal((html.match(/type="checkbox"/g) || []).length, 16);
   assert.equal(html.includes('type="file"'), false);
   assert.equal(html.includes('type="text"'), false);
@@ -134,5 +137,13 @@ check('real React initial render shows all 16 checkboxes and no uploads or compa
   const letter = require(path.join(root, 'src/content/contractor-admission-letter.json'));
   for (const key of ['title', 'subject', 'salutation', 'introduction', 'checklistHeading', 'submissionHeading', 'submissionRequirements']) assert.ok(html.includes(letter[key]), `source document ${key} is preserved verbatim`);
   assert.equal(html.includes('Your qualifications.'), false);
+});
+check('first page has no sidebar, future-step navigation or duplicate selection counters', () => {
+  const html = renderInitialPreview();
+  assert.equal(html.includes('<aside'), false);
+  assert.equal(html.includes('aria-label="Preview steps"'), false);
+  assert.equal(html.includes('qualifications selected'), false);
+  assert.equal(html.includes('local files selected'), false);
+  assert.equal(html.includes('0 selected'), false);
 });
 console.log(`Admission preview: ${passed}/${passed} PASS`);
