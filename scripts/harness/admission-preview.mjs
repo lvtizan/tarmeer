@@ -37,17 +37,19 @@ function renderInitialPreview() {
 }
 check('qualification checklist precedes company fields without mutating the original schema', () => {
   const before = JSON.stringify(schema);
-  assert.equal(items.length, 16);
+  assert.equal(items.length, 14);
   assert.ok(split.details.length > 0);
   assert.equal(JSON.stringify(schema), before);
   assert.equal(split.checklists.some(section => section.phase === 'profile'), false);
 });
-check('every checklist item has matching conditional uploads, including both project documents', () => {
+check('every checklist item has matching conditional uploads or inputs, including both project documents', () => {
   for (const item of items) {
-    assert.ok(item.uploads.length > 0);
+    assert.ok(item.uploads.length > 0 || item.inputs.length > 0);
     for (const upload of item.uploads) assert.equal(upload.visibleWhen.field, item.field.key);
+    for (const input of item.inputs) assert.equal(input.visibleWhen.field, item.field.key);
   }
   assert.equal(items.filter(item => item.uploads.length === 2).length, 3);
+  assert.equal(items.filter(item => item.inputs.length === 1 && item.uploads.length === 0).length, 4);
 });
 check('unchecked items require no local file controls', () => assert.deepEqual(selectedAdmissionUploads(schema, {}), []));
 check('selected items reveal only their matching file controls', () => {
@@ -110,10 +112,10 @@ check('retired checklist items and profile fields are excluded', () => {
   const target = copy.sections.flatMap(section => section.fields).find(field => field.key === items[0].field.key);
   target.retired = true;
   const result = admissionPreviewSections(copy);
-  assert.equal(result.checklists.flatMap(section => section.items).length, 15);
+  assert.equal(result.checklists.flatMap(section => section.items).length, 13);
 });
 check('all non-retired qualification fields remain accounted for exactly once', () => {
-  const keys = [...items.flatMap(item => [item.field.key, ...item.uploads.map(upload => upload.key)]), ...split.details.flatMap(section => section.fields.map(field => field.key))];
+  const keys = [...items.flatMap(item => [item.field.key, ...item.uploads.map(upload => upload.key), ...item.inputs.map(input => input.key)]), ...split.details.flatMap(section => section.fields.map(field => field.key))];
   const expected = schema.sections.filter(section => section.phase === 'qualification').flatMap(section => section.fields).filter(field => !field.retired).map(field => field.key);
   assert.deepEqual(keys.sort(), expected.sort());
 });
@@ -127,18 +129,26 @@ check('document introduction and submission requirements match the original PDF 
   assert.equal(letter.submissionHeading, 'SUBMISSION REQUIREMENTS');
   assert.equal(letter.submissionRequirements, 'Please ensure every document is legible, complete, valid where applicable, and scanned into PDF format before submission.');
 });
-check('real React initial render shows all 16 checkboxes and no uploads or company inputs', () => {
+check('real React initial render shows all 14 checkboxes and no uploads or company inputs', () => {
   const html = renderInitialPreview();
-  assert.equal((html.match(/type="checkbox"/g) || []).length, 16);
+  assert.equal((html.match(/type="checkbox"/g) || []).length, 14);
   assert.equal(html.includes('type="file"'), false);
   assert.equal(html.includes('type="text"'), false);
   assert.match(html, /role="note" aria-label="Preview information"/);
   assert.match(html, /Preview only\. Files stay in this browser tab; nothing is submitted\. Refreshing clears your selections\./);
   assert.equal(html.includes('Continue to company details'), false, 'continue is absent until the selected qualifications are complete');
-  assert.match(html, /Select a qualification and choose its required files to continue/);
+  assert.match(html, /Select a qualification and choose its required files or details to continue/);
   const letter = require(path.join(root, 'src/content/contractor-admission-letter.json'));
   for (const key of ['subject', 'salutation', 'introduction', 'checklistHeading', 'submissionHeading', 'submissionRequirements']) assert.ok(html.includes(letter[key]), `source document ${key} is preserved verbatim`);
   assert.equal(html.includes('Your qualifications.'), false);
+});
+check('checklist item with input field gates continuation until filled', () => {
+  const emaarItem = items.find(item => item.field.key === 'emaar_documents');
+  assert.ok(emaarItem && emaarItem.inputs.length === 1);
+  const inputKey = emaarItem.inputs[0].key;
+  assert.equal(admissionStepReady(schema, { [emaarItem.field.key]: [admissionOption(emaarItem.field)] }, {}, 0), false);
+  assert.equal(admissionStepReady(schema, { [emaarItem.field.key]: [admissionOption(emaarItem.field)], [inputKey]: '   ' }, {}, 0), false);
+  assert.equal(admissionStepReady(schema, { [emaarItem.field.key]: [admissionOption(emaarItem.field)], [inputKey]: 'EMAAR-REG-12345' }, {}, 0), true);
 });
 check('first page has no sidebar, future-step navigation or duplicate selection counters', () => {
   const html = renderInitialPreview();

@@ -18,11 +18,11 @@ assert.ok(schema.sections.some(section => section.phase === 'profile'));
 
 const qualification = fields('qualification');
 const checklistItems=qualification.filter(field=>field.type==='checkbox'&&field.appearance==='document-checklist');
-assert.equal(checklistItems.length,16,'all 13 registration documents and 3 projects are separate PDF checklist items');
+assert.equal(checklistItems.length,14,'all 11 registration documents and 3 projects are separate PDF checklist items');
 for(const item of checklistItems){
   assert.equal(item.appearance,'document-checklist',`${item.key} uses the PDF checklist control`);
   assert.equal(item.required,undefined,`${item.key} can remain unchecked`);
-  assert.ok(qualification.some(field=>field.type==='attachment'&&field.visibleWhen?.field===item.key),`${item.key} reveals its matching upload`);
+  assert.ok(qualification.some(field=>(field.type==='attachment'||field.type==='text')&&field.visibleWhen?.field===item.key),`${item.key} reveals its matching upload or input`);
 }
 for(const project of [1,2,3]){
   const gate=`project_${project}_documents`;
@@ -62,7 +62,7 @@ for (const key of ['trade_license_evidence', 'project_1_agreement', 'project_1_p
   assert.ok(field?.required, `${key} is a required admission attachment`);
   assert.equal(field.type, 'attachment');
 }
-for (const key of ['trade_license_documents','ejari_documents','vat_documents','mohre_company_documents','mohre_worker_documents','workshop_rental_documents','bank_details_documents','iban_documents','emaar_documents','nakheel_documents','damac_documents','adnoc_documents','other_registration_documents','project_1_documents','project_2_documents','project_3_documents']) {
+for (const key of ['trade_license_documents','ejari_documents','vat_documents','mohre_worker_documents','workshop_rental_documents','bank_details_documents','emaar_documents','nakheel_documents','damac_documents','adnoc_documents','other_registration_documents','project_1_documents','project_2_documents','project_3_documents']) {
   assert.equal(qualification.find(field=>field.key===key)?.required, undefined, `${key} is optional until checked`);
 }
 for (const field of qualification.filter(item=>item.type==='attachment'&&item.visibleWhen)) {

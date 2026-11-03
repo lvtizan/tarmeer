@@ -198,7 +198,7 @@
         },
         {
           "key": "ejari_documents",
-          "label": "Office rental agreement / Ejari (if applicable)",
+          "label": "Office rental agreement / Ejari",
           "type": "checkbox",
           "appearance": "document-checklist",
           "options": [
@@ -239,30 +239,6 @@
           "required": true,
           "visibleWhen": {
             "field": "vat_documents",
-            "values": [
-              "I can provide this document"
-            ]
-          }
-        },
-        {
-          "key": "mohre_company_documents",
-          "label": "MOHRE establishment / company details",
-          "type": "checkbox",
-          "appearance": "document-checklist",
-          "options": [
-            "I can provide this document"
-          ]
-        },
-        {
-          "key": "mohre_company_evidence",
-          "label": "Upload MOHRE company details",
-          "type": "attachment",
-          "accept": "application/pdf,image/jpeg,image/png,image/webp",
-          "maxBytes": 15728640,
-          "maxItems": 1,
-          "required": true,
-          "visibleWhen": {
-            "field": "mohre_company_documents",
             "values": [
               "I can provide this document"
             ]
@@ -341,30 +317,6 @@
           }
         },
         {
-          "key": "iban_documents",
-          "label": "Bank account confirmation / IBAN certificate",
-          "type": "checkbox",
-          "appearance": "document-checklist",
-          "options": [
-            "I can provide this document"
-          ]
-        },
-        {
-          "key": "iban_evidence",
-          "label": "Upload account confirmation / IBAN certificate",
-          "type": "attachment",
-          "accept": "application/pdf,image/jpeg,image/png,image/webp",
-          "maxBytes": 15728640,
-          "maxItems": 1,
-          "required": true,
-          "visibleWhen": {
-            "field": "iban_documents",
-            "values": [
-              "I can provide this document"
-            ]
-          }
-        },
-        {
           "key": "emaar_documents",
           "label": "Emaar contractor registration evidence",
           "type": "checkbox",
@@ -375,11 +327,9 @@
         },
         {
           "key": "emaar_evidence",
-          "label": "Upload Emaar registration evidence",
-          "type": "attachment",
-          "accept": "application/pdf,image/jpeg,image/png,image/webp",
-          "maxBytes": 15728640,
-          "maxItems": 1,
+          "label": "Registration / vendor number",
+          "type": "text",
+          "placeholder": "Enter Emaar registration or vendor number",
           "required": true,
           "visibleWhen": {
             "field": "emaar_documents",
@@ -399,11 +349,9 @@
         },
         {
           "key": "nakheel_evidence",
-          "label": "Upload Nakheel registration evidence",
-          "type": "attachment",
-          "accept": "application/pdf,image/jpeg,image/png,image/webp",
-          "maxBytes": 15728640,
-          "maxItems": 1,
+          "label": "Registration / vendor number",
+          "type": "text",
+          "placeholder": "Enter Nakheel registration or vendor number",
           "required": true,
           "visibleWhen": {
             "field": "nakheel_documents",
@@ -423,11 +371,9 @@
         },
         {
           "key": "damac_evidence",
-          "label": "Upload DAMAC registration evidence",
-          "type": "attachment",
-          "accept": "application/pdf,image/jpeg,image/png,image/webp",
-          "maxBytes": 15728640,
-          "maxItems": 1,
+          "label": "Registration / vendor number",
+          "type": "text",
+          "placeholder": "Enter DAMAC registration or vendor number",
           "required": true,
           "visibleWhen": {
             "field": "damac_documents",
@@ -447,11 +393,9 @@
         },
         {
           "key": "adnoc_evidence",
-          "label": "Upload ADNOC registration evidence",
-          "type": "attachment",
-          "accept": "application/pdf,image/jpeg,image/png,image/webp",
-          "maxBytes": 15728640,
-          "maxItems": 1,
+          "label": "Registration / vendor number",
+          "type": "text",
+          "placeholder": "Enter ADNOC supplier / registration number",
           "required": true,
           "visibleWhen": {
             "field": "adnoc_documents",

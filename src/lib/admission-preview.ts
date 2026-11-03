@@ -6,16 +6,18 @@ export function admissionPreviewSections(schema: VerificationSchema) {
   const allFields = sections.flatMap(section => section.fields).filter(field => !field.retired);
   const gates = allFields.filter(field => field.type === 'checkbox' && field.appearance === 'document-checklist');
   const gateKeys = new Set(gates.map(field => field.key));
-  const isLinkedUpload = (field: VerificationField) => field.type === 'attachment' && !!field.visibleWhen && gateKeys.has(field.visibleWhen.field);
+  const isLinkedField = (field: VerificationField) => !!field.visibleWhen && gateKeys.has(field.visibleWhen.field);
+  const isLinkedUpload = (field: VerificationField) => field.type === 'attachment' && isLinkedField(field);
   return {
     checklists: sections.map(section => ({
       ...section,
       items: section.fields.filter(field => gateKeys.has(field.key)).map(field => ({
         field,
         uploads: allFields.filter(upload => isLinkedUpload(upload) && upload.visibleWhen!.field === field.key),
+        inputs: allFields.filter(input => !isLinkedUpload(input) && isLinkedField(input) && input.visibleWhen!.field === field.key),
       })),
     })).filter(section => section.items.length),
-    details: sections.map(section => ({ ...section, fields: section.fields.filter(field => !field.retired && !gateKeys.has(field.key) && !isLinkedUpload(field)) })).filter(section => section.fields.length),
+    details: sections.map(section => ({ ...section, fields: section.fields.filter(field => !field.retired && !gateKeys.has(field.key) && !isLinkedField(field)) })).filter(section => section.fields.length),
   };
 }
 
@@ -41,11 +43,19 @@ export function selectedAdmissionUploads(schema: VerificationSchema, data: Verif
     .flatMap(item => item.uploads);
 }
 
+export function selectedAdmissionInputs(schema: VerificationSchema, data: VerificationData) {
+  return admissionPreviewSections(schema).checklists.flatMap(section => section.items)
+    .filter(({ field }) => Array.isArray(data[field.key]) && (data[field.key] as string[]).includes(admissionOption(field)))
+    .flatMap(item => item.inputs);
+}
+
 export function admissionStepReady(schema: VerificationSchema, data: VerificationData, files: Record<string, readonly Pick<File, 'name' | 'size' | 'type'>[]>, step: number): boolean {
   const { checklists, details } = admissionPreviewSections(schema);
   const selected = checklists.flatMap(section => section.items).filter(({ field }) => Array.isArray(data[field.key]) && (data[field.key] as string[]).includes(admissionOption(field)));
-  if (!selected.length || selected.some(item => !item.uploads.length)) return false;
+  if (!selected.length || selected.some(item => !item.uploads.length && !item.inputs.length)) return false;
   const requiredUploads = [...selected.flatMap(item => item.uploads), ...(step === 1 ? details.flatMap(section => section.fields).filter(field => field.type === 'attachment') : [])];
   if (requiredUploads.some(field => visibleField(field, data) && field.required && !files[field.key]?.length)) return false;
+  const requiredInputs = selected.flatMap(item => item.inputs);
+  if (requiredInputs.some(field => visibleField(field, data) && field.required && (!data[field.key] || typeof data[field.key] !== 'string' || !(data[field.key] as string).trim()))) return false;
   return step !== 1 || Object.keys(validateVerification({ sections: details.map(section => ({ ...section, fields: section.fields.filter(field => field.type !== 'attachment') })) }, data)).length === 0;
 }
