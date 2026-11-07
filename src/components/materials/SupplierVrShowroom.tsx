@@ -5,10 +5,13 @@ import { ExternalLink, Maximize2 } from 'lucide-react';
 
 interface SupplierVrShowroomProps {
   url: string;
+  sleepCenterUrl?: string;
 }
 
-export default function SupplierVrShowroom({ url }: SupplierVrShowroomProps) {
+export default function SupplierVrShowroom({ url, sleepCenterUrl }: SupplierVrShowroomProps) {
   const [mobileVrActive, setMobileVrActive] = useState(false);
+  const [sleepCenterSelected, setSleepCenterSelected] = useState(false);
+  const activeUrl = sleepCenterSelected && sleepCenterUrl ? sleepCenterUrl : url;
 
   return (
     <section className="border-t border-stone-200 bg-[#171513] py-12 text-white sm:py-16">
@@ -26,7 +29,7 @@ export default function SupplierVrShowroom({ url }: SupplierVrShowroomProps) {
             </p>
           </div>
           <a
-            href={url}
+            href={activeUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-11 shrink-0 items-center justify-center gap-2 self-start rounded-full border border-white/20 px-5 text-sm font-semibold text-white transition hover:border-[#d2aa73] hover:text-[#d2aa73] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2aa73] sm:self-auto"
@@ -35,13 +38,25 @@ export default function SupplierVrShowroom({ url }: SupplierVrShowroomProps) {
           </a>
         </div>
 
+        {sleepCenterUrl && (
+          <div className="mb-5 flex gap-2" aria-label="Choose VR showroom">
+            {[{ label: 'Home showroom', selected: false }, { label: 'Sleep center', selected: true }].map((option) => (
+              <button key={option.label} type="button" aria-pressed={sleepCenterSelected === option.selected}
+                onClick={() => { setSleepCenterSelected(option.selected); setMobileVrActive(false); }}
+                className={`rounded-full border px-5 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2aa73] ${sleepCenterSelected === option.selected ? 'border-[#d2aa73] bg-[#d2aa73] text-[#171513]' : 'border-white/25 text-white hover:border-[#d2aa73]'}`}>
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] border border-white/10 bg-black shadow-[0_28px_80px_rgba(0,0,0,0.35)] sm:aspect-video sm:rounded-[30px]">
           <div className="pointer-events-none absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/55 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/80 backdrop-blur-md">
             <Maximize2 className="h-3.5 w-3.5 text-[#d2aa73]" aria-hidden="true" />
             Live VR experience
           </div>
           <iframe
-            src={url}
+            key={activeUrl}
+            src={activeUrl}
             title="Supplier VR showroom"
             loading="lazy"
             allow="fullscreen; accelerometer; gyroscope"

@@ -15,7 +15,7 @@ const checks = [
   ['other suppliers render no empty VR section', detail.includes('{vrShowroomUrl && (')],
   ['VR navigation appears only when configured', detail.includes("label: 'VR Showroom'") && detail.includes('count: vrShowroomUrl ? 1 : 0')],
   ['VR tab is wired to the VR section ref', /\{ key: 'vr' as const,[^}]*ref: vrShowroomRef \}/.test(detail)],
-  ['trusted Realsee URL is embedded', showroom.includes('src={url}')],
+  ['selected Realsee URL is embedded', showroom.includes('src={activeUrl}')],
   ['iframe has an accessible title', showroom.includes('title="Supplier VR showroom"')],
   ['iframe is lazy loaded', showroom.includes('loading="lazy"')],
   ['iframe supports full screen', showroom.includes('allowFullScreen') && showroom.includes('fullscreen; accelerometer; gyroscope')],
@@ -29,7 +29,10 @@ const checks = [
 
 for (const [label, passed] of checks) assert.ok(passed, label);
 
-for (const url of ['https://realsee.ai/lq22JMMX', 'https://realsee.ai/LNwwZjzK']) {
+assert.ok(detail.includes("sleepCenterUrl={slug === 'supplier-1130' ? 'https://realsee.ai/lq22J3Dg' : undefined}"));
+assert.ok(showroom.includes('href={activeUrl}') && showroom.includes('src={activeUrl}'));
+assert.ok(showroom.includes('setMobileVrActive(false)') && showroom.includes('aria-pressed='));
+for (const url of ['https://realsee.ai/lq22JMMX', 'https://realsee.ai/LNwwZjzK', 'https://realsee.ai/lq22J3Dg']) {
 const response = await fetch(url, {
   redirect: 'follow',
   signal: AbortSignal.timeout(10_000),
@@ -37,4 +40,4 @@ const response = await fetch(url, {
 assert.equal(response.status, 200, 'Realsee VR destination is reachable');
 }
 
-console.log(`${checks.length + 2}/${checks.length + 2} PASS — supplier-specific VR scope, responsive embed, security and destination`);
+console.log(`${checks.length + 6}/${checks.length + 6} PASS — supplier-specific VR scope, responsive embed, security and destination`);

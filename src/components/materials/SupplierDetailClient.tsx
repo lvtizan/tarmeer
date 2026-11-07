@@ -465,7 +465,7 @@ export default function SupplierDetailClient({ slug, initialSupplier = null, ini
 
       {vrShowroomUrl && (
         <div ref={vrShowroomRef} id="section-vr-showroom" className="scroll-mt-28">
-          <SupplierVrShowroom url={vrShowroomUrl} />
+          <SupplierVrShowroom key={requestIdentity} url={vrShowroomUrl} sleepCenterUrl={slug === 'supplier-1130' ? 'https://realsee.ai/lq22J3Dg' : undefined} />
         </div>
       )}
 
