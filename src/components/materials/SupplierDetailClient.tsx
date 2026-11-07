@@ -43,6 +43,7 @@ const CatalogReader = dynamic(() => import('./CatalogReader'), {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.trim() || '/api';
 const SUPPLIER_VR_SHOWROOMS: Readonly<Record<string, string>> = {
   'supplier-1127': 'https://realsee.ai/lq22JMMX',
+  'supplier-1130': 'https://realsee.ai/LNwwZjzK',
 };
 
 export interface SupplierProfile {

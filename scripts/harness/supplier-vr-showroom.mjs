@@ -9,7 +9,8 @@ const [detail, showroom] = await Promise.all([
 ]);
 
 const checks = [
-  ['VR is scoped to supplier-1127', detail.includes("'supplier-1127': 'https://realsee.ai/lq22JMMX'")],
+  ['existing VR remains scoped to supplier-1127', detail.includes("'supplier-1127': 'https://realsee.ai/lq22JMMX'")],
+  ['Zhida VR is scoped to supplier-1130', detail.includes("'supplier-1130': 'https://realsee.ai/LNwwZjzK'")],
   ['VR is restricted to the AE site', detail.includes("country.code === 'ae' ? SUPPLIER_VR_SHOWROOMS[slug] : undefined")],
   ['other suppliers render no empty VR section', detail.includes('{vrShowroomUrl && (')],
   ['VR navigation appears only when configured', detail.includes("label: 'VR Showroom'") && detail.includes('count: vrShowroomUrl ? 1 : 0')],
@@ -28,10 +29,12 @@ const checks = [
 
 for (const [label, passed] of checks) assert.ok(passed, label);
 
-const response = await fetch('https://realsee.ai/lq22JMMX', {
+for (const url of ['https://realsee.ai/lq22JMMX', 'https://realsee.ai/LNwwZjzK']) {
+const response = await fetch(url, {
   redirect: 'follow',
   signal: AbortSignal.timeout(10_000),
 });
 assert.equal(response.status, 200, 'Realsee VR destination is reachable');
+}
 
-console.log(`${checks.length + 1}/${checks.length + 1} PASS — supplier-specific VR scope, responsive embed, security and destination`);
+console.log(`${checks.length + 2}/${checks.length + 2} PASS — supplier-specific VR scope, responsive embed, security and destination`);
